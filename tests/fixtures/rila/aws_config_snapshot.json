@@ -1,0 +1,9 @@
+{
+  "xid": "x259830",
+  "role_arn": "arn:aws:iam::159058241883:role/isg-usbie-annuity-CA-s3-sharing",
+  "sts_endpoint_url": "https://sts.us-east-1.amazonaws.com",
+  "source_bucket_name": "pruvpcaws031-east-isg-ie-lake",
+  "output_bucket_name": "cdo-annuity-364524684987-bucket",
+  "output_base_path": "ANN_Price_Elasticity_Data_Science",
+  "capture_date": "2026-01-15T19:39:05.802218"
+}

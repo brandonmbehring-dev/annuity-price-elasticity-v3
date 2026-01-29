@@ -1,0 +1,18 @@
+{
+  "capture_date": "2026-01-16T15:40:51.638375",
+  "files": [
+    "baseline_predictions.npy",
+    "trained_model.joblib",
+    "rate_scenarios.npy",
+    "rate_adjustments_dollars.parquet",
+    "rate_adjustments_pct.parquet",
+    "confidence_intervals.parquet",
+    "bi_export_tableau.parquet"
+  ],
+  "predictions_shape": [
+    100
+  ],
+  "n_estimators": 100,
+  "random_state": 42,
+  "features_count": 50
+}

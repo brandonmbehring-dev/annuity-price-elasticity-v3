@@ -1,0 +1,76 @@
+# Pre-commit configuration for RILA Price Elasticity v2
+#
+# Install: pip install pre-commit && pre-commit install
+# Run all: pre-commit run --all-files
+# Skip: git commit --no-verify (NOT RECOMMENDED)
+
+repos:
+  # Standard hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+
+  # Python formatting
+  - repo: https://github.com/psf/black
+    rev: 24.3.0
+    hooks:
+      - id: black
+        args: ['--line-length=100']
+        language_version: python3.12
+
+  # Python linting
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.4
+    hooks:
+      - id: ruff
+        args: ['--fix']
+
+  # Local verification hooks
+  - repo: local
+    hooks:
+      # Stub Hunter - find placeholder implementations
+      - id: stub-hunter
+        name: Stub Hunter
+        entry: python scripts/stub_hunter.py --path src/ --allowlist scripts/stub_allowlist.json
+        language: python
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+
+      # Type Import Validator
+      - id: type-imports
+        name: Type Import Validator
+        entry: bash scripts/validate_type_imports.sh
+        language: system
+        pass_filenames: false
+        always_run: true
+        stages: [commit]
+
+      # Hardcode Scanner - advisory only (no fail)
+      - id: hardcode-scanner
+        name: Hardcode Scanner (Advisory)
+        entry: python scripts/hardcode_scanner.py --path src/models/
+        language: python
+        pass_filenames: false
+        always_run: true
+        verbose: true
+        stages: [commit]
+
+      # Equivalence Guard - run on manual commits only
+      # Disabled by default (slow); enable with: pre-commit run equivalence-guard
+      # - id: equivalence-guard
+      #   name: Equivalence Guard (1e-12 precision)
+      #   entry: python scripts/equivalence_guard.py --baseline tests/baselines/pre_refactoring/
+      #   language: python
+      #   pass_filenames: false
+      #   stages: [manual]
+
+# Configuration
+default_stages: [commit]
+fail_fast: false

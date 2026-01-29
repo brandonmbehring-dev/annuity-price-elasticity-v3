@@ -1,0 +1,11 @@
+{
+  "capture_date": "2026-01-16T15:40:51.651273",
+  "files": [
+    "forecasting_config.json",
+    "model_sign_correction_config.json",
+    "benchmark_sign_correction_config.json",
+    "forecasting_predictions.parquet",
+    "cv_scores.parquet",
+    "benchmark_results.parquet"
+  ]
+}

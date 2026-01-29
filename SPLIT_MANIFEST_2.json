@@ -1,0 +1,13 @@
+{
+  "archive_number": 2,
+  "total_archives": 3,
+  "compressed_size_mb": 45.09,
+  "file_count": 4,
+  "contents_summary": "RILA primary fixtures (raw sales and WINK data)",
+  "dependencies": [
+    1
+  ],
+  "created": "2026-01-29T21:59:16.834466",
+  "created_by": "split_refactoring_package.py",
+  "minimum_setup": "Full validation: complete testing, mathematical equivalence checks (requires Archive 1)"
+}

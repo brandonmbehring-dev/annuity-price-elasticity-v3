@@ -1,0 +1,15 @@
+{
+    "_comment": "Intentional stubs - not flagged by stub_hunter.py. Remove entries as implementations are completed.",
+    "src/products/myga_methodology.py": {
+        "patterns": ["NotImplementedError", "not_implemented"],
+        "reason": "MYGA not yet implemented - see docs/architecture/PRODUCT_EXTENSION_GUIDE.md"
+    },
+    "src/visualization/": {
+        "patterns": ["zero_numeric_return", "empty_dict_return", "Optional_None_return"],
+        "reason": "Visualization functions intentionally return None/empty when no data to display"
+    },
+    "tests/": {
+        "patterns": ["zero_numeric_return"],
+        "reason": "Test fixtures and mocks may return zeros intentionally"
+    }
+}

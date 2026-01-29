@@ -1,0 +1,10 @@
+{
+  "notebook": "nb02_forecasting",
+  "capture_timestamp": "2026-01-16T16:31:53.538410",
+  "random_seed": 42,
+  "python_version": "3.13",
+  "pandas_version": "2.3.3",
+  "numpy_version": "2.4.1",
+  "outputs": {},
+  "consolidation_source": "tests/baselines/nb02"
+}

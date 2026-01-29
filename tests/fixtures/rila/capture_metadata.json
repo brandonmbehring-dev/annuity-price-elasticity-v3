@@ -1,0 +1,393 @@
+{
+  "capture_date": "2026-01-15T19:39:05.802218",
+  "version": 6,
+  "product": "FlexGuard indexed variable annuity 6Y 20%",
+  "stages": {
+    "stage_1": {
+      "name": "raw_sales_data",
+      "shape": [
+        2817439,
+        133
+      ],
+      "file_size_mb": 323.24827003479004,
+      "columns": [
+        "contract_number",
+        "contract_source_system",
+        "contract_status",
+        "contract_tax_status",
+        "contract_issue_date",
+        "contract_issue_state",
+        "contract_issuing_company",
+        "contract_issuing_company_description",
+        "policyissuedate",
+        "product_brand_name",
+        "product_code",
+        "product_name",
+        "product_group",
+        "product_pvt_lbl_code",
+        "product_share_class",
+        "product_sub_type",
+        "product_type",
+        "productcode",
+        "annuitant_gender",
+        "annuitant_name",
+        "app_sig_dt",
+        "application_signed_date",
+        "commission_option_election",
+        "contract_annuitant_dob",
+        "annuitant_state",
+        "annuitant_zip4",
+        "annuitant_zip",
+        "contract_1035_exchange_indicator",
+        "owner_dateofbirth",
+        "owner_gender",
+        "owner_name",
+        "owner_state",
+        "owner_type",
+        "owner_zip4",
+        "owner_zip",
+        "contract_pvt_lbl",
+        "contract_type_of_business",
+        "contract_value_category",
+        "contract_initial_premium_amount",
+        "living_benefit_detail",
+        "living_benefit_election_option",
+        "living_benefit_election_date",
+        "living_benefit",
+        "contract_surrender_charge_ruleset",
+        "fp_territory_num",
+        "current_ws",
+        "fp_address_1",
+        "fp_city",
+        "fp_email",
+        "fp_focus_list",
+        "fp_individual_id",
+        "fp_name",
+        "fp_producer_tier",
+        "fp_state",
+        "fp_tap",
+        "fp_telephone",
+        "fp_zipcode",
+        "ip_first_ticket_date",
+        "fp_last_name",
+        "new_producer_end_date",
+        "new_producer_start_date",
+        "agent_id",
+        "crd_number",
+        "crm_adbid",
+        "house_acct_ind",
+        "death_benefit_detail",
+        "death_benefit_election_option",
+        "death_benefit_election_date",
+        "death_benefit",
+        "external_company_code",
+        "contract_reinsurance_code",
+        "replacementindicator",
+        "territory_number",
+        "transaction_source_system",
+        "commission_split_percent",
+        "firm_identifier",
+        "crm_contact_id",
+        "premium_type_code",
+        "tran_from_to",
+        "transaction_type_code",
+        "sales_amount",
+        "transaction_amount_factor",
+        "transaction_group_code",
+        "transaction_name",
+        "processed_date",
+        "fund_cusip",
+        "fund_code",
+        "fund_group_name",
+        "fund_group_trust_name",
+        "fund_manager",
+        "fund_type",
+        "child_firm_number",
+        "wh_firm_code",
+        "firm_name",
+        "firm_channel",
+        "firm_industry_channel",
+        "firm_code",
+        "parent_firm_name",
+        "division_name",
+        "dsm_name",
+        "external_wholesaler_name",
+        "rsc1_name",
+        "rsc2_name",
+        "rsc3_name",
+        "rsc4_name",
+        "rsc5_name",
+        "territory_channel",
+        "territory_name",
+        "territory_number_crm_ann",
+        "territory_real_indicator",
+        "annuitant_current_age",
+        "annuitant_issue_age",
+        "fortitude_indicator",
+        "day_of_year",
+        "latest_processed_date",
+        "mtd_indicator",
+        "partial_month_flag",
+        "partial_quarter_flag",
+        "prior_business_day_indicator",
+        "prior_month_mtd_indicator",
+        "prior_quarter_qtd_indicator",
+        "prior_year_indicator",
+        "prior_year_mtd_indicator",
+        "prior_year_qtd_indicator",
+        "prior_year_ytd_indicator",
+        "qtd_indicator",
+        "wtd_indicator",
+        "ytd_indicator",
+        "ytd_yoy_comparison",
+        "buffer_rate",
+        "index",
+        "indexing_method",
+        "term"
+      ],
+      "date_range": [
+        "1900-01-01",
+        "2026-01-13"
+      ],
+      "checksum": "10548033708429360645"
+    },
+    "stage_2": {
+      "name": "raw_wink_data",
+      "shape": [
+        1093271,
+        78
+      ],
+      "file_size_mb": 49.65377330780029,
+      "columns": [
+        "fundproductgrp_dim_key",
+        "amBestRating",
+        "annualFeeForIndexingMethod",
+        "bonusRate",
+        "bonusRate1",
+        "bonusRate2",
+        "bonusRate3",
+        "bonusRate4",
+        "bonusRate5",
+        "bonusRateBand1",
+        "bonusRateBand2",
+        "bonusRateBand3",
+        "bonusRateBand4",
+        "bonusRateBand5",
+        "bonusRate1Footnote",
+        "bonusRate2Footnote",
+        "bonusRate3Footnote",
+        "bonusRate4Footnote",
+        "bonusRate5Footnote",
+        "bufferModifier",
+        "bufferRate",
+        "capRate",
+        "companyID",
+        "companyName",
+        "defaultActuarialView",
+        "distributionChannelName",
+        "effectiveDate",
+        "effectiveYield",
+        "fixedRate",
+        "fundManager",
+        "guaranteeDuration",
+        "indexCreditingFrequency",
+        "indexingMethod",
+        "indexUsed",
+        "fundGroup",
+        "mgsvBaseRate",
+        "mgsvRate",
+        "mgsvRateUpperBound",
+        "minguaranteedsurrvalue",
+        "mva",
+        "netExpenseRatio",
+        "participationRate",
+        "performanceTriggeredRate",
+        "premiumBand",
+        "productID",
+        "productMarketStatus",
+        "productName",
+        "productNameSuffix",
+        "productTypeID",
+        "productTypeName",
+        "productGroup",
+        "ratesBand",
+        "rateType",
+        "rateID",
+        "rowNumber",
+        "shareClass",
+        "spreadRate",
+        "status",
+        "streetLevelComp",
+        "subaccountUsed",
+        "surrChargeDuration",
+        "createdDate",
+        "createdBy",
+        "deletedDate",
+        "deletedBy",
+        "modifiedDate",
+        "modifiedBy",
+        "rowVersion",
+        "greatest_date",
+        "date",
+        "effectiveannualrate",
+        "averageannualrate",
+        "othercreditingstrategyinformation",
+        "upcomingratecolumnid",
+        "upcomingratedirection",
+        "upcomingrateeffectivedate",
+        "upcomingratevalue",
+        "exp_dt"
+      ],
+      "checksum": "5234367847716595830"
+    },
+    "stage_3": {
+      "name": "filtered_flexguard_6y20",
+      "shape": [
+        95371,
+        133
+      ],
+      "file_size_mb": 10.425315856933594,
+      "retention_rate_pct": 3.38502448500216,
+      "checksum": "11096733333066476110"
+    },
+    "stage_4": {
+      "name": "cleaned_sales_with_processing_days",
+      "shape": [
+        93315,
+        134
+      ],
+      "file_size_mb": 10.29842472076416,
+      "records_removed": 2056,
+      "quality_pct": 97.8442084071678,
+      "checksum": "16002060728366961805"
+    },
+    "stage_5a": {
+      "name": "daily_sales_timeseries",
+      "shape": [
+        2063,
+        2
+      ],
+      "file_size_mb": 0.037078857421875,
+      "checksum": "10644428115446899766"
+    },
+    "stage_5b": {
+      "name": "contract_sales_timeseries",
+      "shape": [
+        2060,
+        2
+      ],
+      "file_size_mb": 0.03353309631347656,
+      "checksum": "6689321429779889064"
+    },
+    "stage_6": {
+      "name": "wink_competitive_rates_pivoted",
+      "shape": [
+        2766,
+        10
+      ],
+      "file_size_mb": 0.039519309997558594,
+      "reduction_pct": 0.25300222909049996,
+      "date_range": [
+        "2018-06-21 00:00:00",
+        "2026-01-15 00:00:00"
+      ],
+      "checksum": "2080507739659429500"
+    },
+    "stage_7": {
+      "name": "market_weighted_competitive_rates",
+      "shape": [
+        2766,
+        25
+      ],
+      "file_size_mb": 0.0661764144897461,
+      "new_columns_added": 15,
+      "weighted_features": [
+        "C_weighted_mean",
+        "C_core"
+      ],
+      "checksum": "12448567329220414952"
+    },
+    "market_weights": {
+      "name": "market_share_weights",
+      "shape": [
+        19,
+        11
+      ],
+      "file_size_mb": 0.008031845092773438
+    },
+    "stage_8": {
+      "name": "daily_integrated_dataset",
+      "shape": [
+        1841,
+        32
+      ],
+      "file_size_mb": 0.13953399658203125,
+      "date_range": [
+        "2021-01-01 00:00:00",
+        "2026-01-15 00:00:00"
+      ],
+      "checksum": "11435121277300295984"
+    },
+    "stage_9": {
+      "name": "competitive_features_engineered",
+      "shape": [
+        1841,
+        44
+      ],
+      "file_size_mb": 0.17839813232421875,
+      "new_features_added": 12,
+      "competitive_features": [
+        "C_core",
+        "C_first",
+        "C_median",
+        "C_second",
+        "C_third",
+        "C_top_3",
+        "C_top_5",
+        "C_weighted_mean"
+      ],
+      "checksum": "3387055529517926364"
+    },
+    "stage_10": {
+      "name": "final_weekly_dataset",
+      "shape": [
+        203,
+        598
+      ],
+      "file_size_mb": 1.0140399932861328,
+      "date_range": [
+        "2022-01-02 00:00:00",
+        "2025-11-16 00:00:00"
+      ],
+      "final_features_added": [
+        "Spread",
+        "sales_log",
+        "holiday",
+        "day_of_year"
+      ],
+      "checksum": "7603259651227652182"
+    }
+  },
+  "validation_results": {},
+  "comparison_results": null,
+  "economic_indicators": {
+    "dgs5": {
+      "shape": [
+        15870,
+        2
+      ]
+    },
+    "vixcls": {
+      "shape": [
+        8823,
+        2
+      ]
+    },
+    "cpi": {
+      "shape": [
+        6293,
+        3
+      ]
+    }
+  }
+}

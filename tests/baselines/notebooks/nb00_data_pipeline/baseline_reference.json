@@ -1,0 +1,18 @@
+{
+  "notebook": "nb00_data_pipeline",
+  "baseline_location": "../aws_mode/",
+  "note": "NB00 baselines are stored in tests/baselines/aws_mode/",
+  "stages": {
+    "stage_01": "01_filtered_products.parquet",
+    "stage_02": "02_cleaned_sales.parquet",
+    "stage_03a": "03a_application_time_series.parquet",
+    "stage_03b": "03b_contract_time_series.parquet",
+    "stage_04": "04_wink_processed.parquet",
+    "stage_05": "05_market_weighted.parquet",
+    "stage_06": "06_integrated_daily.parquet",
+    "stage_07": "07_competitive_features.parquet",
+    "stage_08": "08_weekly_aggregated.parquet",
+    "stage_09": "09_lag_features.parquet",
+    "stage_10": "10_final_dataset.parquet"
+  }
+}

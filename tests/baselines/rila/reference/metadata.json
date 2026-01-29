@@ -1,0 +1,20 @@
+{
+  "capture_timestamp": "2026-01-15T23:32:07.117341",
+  "purpose": "Pre-refactoring baseline for offline validation",
+  "precision_target": "1e-12",
+  "validation_mode": "automatic",
+  "notebooks": [
+    "00_data_pipeline_baseline.ipynb",
+    "01_price_elasticity_inference_refactored.ipynb",
+    "02_time_series_forecasting_refactored.ipynb"
+  ],
+  "git": {
+    "commit": "d0240479852f0a1455469f315251c4456dd22bc8",
+    "branch": "master"
+  },
+  "system": {
+    "platform": "Linux-6.1.158-180.294.amzn2023.x86_64-x86_64-with-glibc2.35",
+    "python_version": "3.12.9",
+    "machine": "x86_64"
+  }
+}

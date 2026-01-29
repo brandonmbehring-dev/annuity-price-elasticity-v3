@@ -1,0 +1,16 @@
+{
+    "capture_date": "2026-01-09",
+    "product_type": "fia",
+    "product_codes": ["FIA5YR"],
+    "source": "fixtures_from_aws_notebook_execution",
+    "pipeline_version": "v2_1",
+    "notes": "Baselines created from FIA notebook execution fixtures captured 2026-01-09",
+    "checksums": {
+        "01_filtered_sales.parquet": "from_df_PruSecure",
+        "02_daily_sales.parquet": "from_time_series_daily_app",
+        "03_competitive_rates.parquet": "from_df_rates",
+        "04_integrated_data.parquet": "from_df_ts",
+        "05_weekly_aggregated.parquet": "from_df_ts_weekly",
+        "06_final_dataset.parquet": "from_df_weekly"
+    }
+}

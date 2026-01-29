@@ -1,0 +1,16 @@
+{
+  "capture_date": "2026-01-15T20:51:27.849921",
+  "capture_type": "fixture_copy",
+  "note": "Baselines regenerated from optimized fixtures for column count alignment",
+  "source": "tests/fixtures/aws_complete/",
+  "files_copied": [
+    "filtered_flexguard_6y20.parquet",
+    "cleaned_sales_with_processing_days.parquet",
+    "daily_sales_timeseries.parquet",
+    "contract_sales_timeseries.parquet",
+    "wink_competitive_rates_pivoted.parquet",
+    "market_weighted_competitive_rates.parquet",
+    "daily_integrated_dataset.parquet",
+    "competitive_features_engineered.parquet"
+  ]
+}

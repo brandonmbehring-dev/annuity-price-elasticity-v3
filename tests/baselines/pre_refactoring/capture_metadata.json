@@ -1,0 +1,19 @@
+{
+  "capture_date": "2026-01-24T10:39:39.114008",
+  "capture_type": "pre_refactoring",
+  "python_version": "3.13.7 (main, Jan  8 2026, 12:15:45) [GCC 15.2.0]",
+  "data_shape": [
+    203,
+    598
+  ],
+  "target_column": "sales_target_current",
+  "files_captured": [
+    "feature_selection_results.json",
+    "inference_results.json",
+    "forecasting_results.json"
+  ],
+  "notes": [
+    "Baselines captured from current implementation",
+    "Use equivalence_guard.py to verify refactoring preserves outputs"
+  ]
+}

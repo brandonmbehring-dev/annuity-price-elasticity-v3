@@ -1,0 +1,14 @@
+{
+  "refresh_date": "2026-01-26T16:28:00",
+  "aws_config": {
+    "bucket_name": "example-bucket",
+    "role_arn": "arn:aws:iam::123456789:role/example"
+  },
+  "data_shape": {
+    "sales": [2817439, 11],
+    "rates": [1093271, 19],
+    "weights": [19, 11]
+  },
+  "files_created": 15,
+  "note": "This is a mock metadata file created during initial fixture setup. Run refresh_fixtures.py to update with actual AWS metadata."
+}

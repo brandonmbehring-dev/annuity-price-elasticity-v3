@@ -1,0 +1,54 @@
+{
+  "n_estimators": 100,
+  "random_state": 42,
+  "ridge_alpha": 1.0,
+  "weight_decay_factor": 0.99,
+  "features": [
+    "Allianz",
+    "Athene",
+    "Brighthouse",
+    "C_core",
+    "C_first",
+    "C_median",
+    "C_second",
+    "C_third",
+    "C_top_3",
+    "C_top_5",
+    "C_weighted_mean",
+    "DGS5",
+    "Equitable",
+    "Jackson",
+    "Lincoln",
+    "Prudential",
+    "Spread",
+    "Symetra",
+    "Trans",
+    "VIXCLS"
+  ],
+  "features_count": 50,
+  "target_variable": "sales",
+  "training_cutoff_date": "2025-11-16",
+  "data_start_date": "2022-01-02",
+  "data_end_date": "2025-11-16",
+  "rate_scenarios": [
+    -1.0,
+    -0.6,
+    -0.2,
+    0.2,
+    0.6,
+    1.0
+  ],
+  "df_shape": [
+    203,
+    598
+  ],
+  "df_rates_shape": [
+    2766,
+    10
+  ],
+  "sklearn_version": "1.7.2",
+  "pandas_version": "2.3.3",
+  "numpy_version": "1.26.4",
+  "capture_timestamp": "2026-01-16T15:40:51.651740",
+  "capture_environment": "AWS SageMaker"
+}

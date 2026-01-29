@@ -1,0 +1,35 @@
+{
+  "capture_date": "2026-01-24T16:30:00.000000",
+  "capture_type": "golden",
+  "python_version": "3.13.7 (main, Jan  8 2026, 12:15:45) [GCC 15.2.0]",
+  "data_shape": [
+    203,
+    598
+  ],
+  "target_column": "sales_target_current",
+  "files_captured": [
+    "feature_selection_results.json",
+    "inference_results.json",
+    "forecasting_results.json"
+  ],
+  "notes": [
+    "Golden baselines captured after V2 refactoring complete",
+    "Config-driven architecture (no hardcoded Prudential)",
+    "All interface methods wired to real implementations",
+    "MYGA fail-fast guardrails in place",
+    "Use equivalence_guard.py to verify no regressions"
+  ],
+  "refactoring_version": "V2-2026-01-24",
+  "phases_completed": [
+    "Phase 0: Verification tooling",
+    "Phase 1: Mathematical equivalence safety net",
+    "Phase 2: Fixture path standardization",
+    "Phase 3: Type unification + feature selection wiring",
+    "Phase 4: Inference wiring",
+    "Phase 5: Genericity fixes + guardrails",
+    "Phase 6: Forecasting wiring",
+    "Phase 7: Testing infrastructure + TD-05",
+    "Phase 8: Documentation updates",
+    "Phase 9: Extension guide + golden baselines"
+  ]
+}

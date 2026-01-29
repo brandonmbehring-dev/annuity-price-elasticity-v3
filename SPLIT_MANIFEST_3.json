@@ -1,0 +1,14 @@
+{
+  "archive_number": 3,
+  "total_archives": 3,
+  "compressed_size_mb": 45.36,
+  "file_count": 164,
+  "contents_summary": "RILA remaining fixtures, FIA data, baselines, docs, and notebooks",
+  "dependencies": [
+    1,
+    2
+  ],
+  "created": "2026-01-29T21:59:20.533963",
+  "created_by": "split_refactoring_package.py",
+  "minimum_setup": "Complete package: documentation images, notebooks, historical baselines (requires Archives 1+2)"
+}

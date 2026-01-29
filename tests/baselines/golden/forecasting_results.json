@@ -1,0 +1,9 @@
+{
+  "data_shape": [
+    203,
+    598
+  ],
+  "target_column": "sales_target_current",
+  "available": true,
+  "note": "Full forecasting baseline requires dedicated capture"
+}
