@@ -62,6 +62,24 @@ except ImportError:
     mlflow = None
 
 
+@pytest.fixture
+def clean_mlflow_state():
+    """Ensure MLflow has no active run before and after test.
+
+    This fixture handles test isolation when other tests may have
+    left MLflow in a dirty state (active run not ended).
+    """
+    if MLFLOW_AVAILABLE:
+        # End any lingering active run before test
+        while mlflow.active_run() is not None:
+            mlflow.end_run()
+    yield
+    if MLFLOW_AVAILABLE:
+        # Clean up after test
+        while mlflow.active_run() is not None:
+            mlflow.end_run()
+
+
 # =============================================================================
 # Category 1: Edge Cases & Precision (12 tests)
 # =============================================================================
@@ -303,9 +321,8 @@ def test_compare_single_column_categorical_different():
 def test_compare_single_column_string_objects():
     """Test _compare_single_column() with string (object) columns.
 
-    Note: The validator reports non-numeric columns as type mismatches because
-    it's designed for mathematical equivalence validation of numeric data.
-    String columns are flagged but don't affect overall numeric equivalence.
+    The validator correctly handles identical object/category columns by
+    using pandas .equals() comparison. Identical string columns pass validation.
     """
     df1 = pd.DataFrame({'A': ['foo', 'bar', 'baz']})
     df2 = pd.DataFrame({'A': ['foo', 'bar', 'baz']})
@@ -315,10 +332,28 @@ def test_compare_single_column_string_objects():
         df1, df2, "string_match", log_to_mlflow=False
     )
 
-    # Validator flags string columns as type mismatch since it expects numeric data
-    # This is expected behavior for a mathematical equivalence validator
+    # Identical string columns pass validation via .equals() comparison
+    assert result.validation_passed is True
+    assert 'A' in result.equivalent_columns
+
+
+def test_compare_single_column_string_objects_different():
+    """Test _compare_single_column() with different string (object) columns.
+
+    When object columns differ, the validator correctly identifies them
+    as non-equivalent with 'Categorical values differ' issue.
+    """
+    df1 = pd.DataFrame({'A': ['foo', 'bar', 'baz']})
+    df2 = pd.DataFrame({'A': ['foo', 'bar', 'DIFFERENT']})
+
+    validator = DataFrameEquivalenceValidator()
+    result = validator.validate_transformation_equivalence(
+        df1, df2, "string_mismatch", log_to_mlflow=False
+    )
+
+    # Different string values cause validation to fail
     assert result.validation_passed is False
-    assert any('Type mismatch' in str(col.get('issue', ''))
+    assert any('Categorical values differ' in str(col.get('issue', ''))
                for col in result.non_equivalent_columns)
 
 
@@ -370,9 +405,10 @@ def test_boolean_columns():
 def test_mixed_type_dataframe():
     """Test validation with mixed column types.
 
-    Note: The validator is designed for mathematical equivalence and reports
-    string/object columns as type mismatches. Only numeric columns are properly
-    validated. This is expected behavior.
+    The validator correctly handles mixed-type DataFrames:
+    - Numeric columns: compared with tolerance
+    - Object/category columns: compared with .equals()
+    When all columns match, validation passes.
     """
     df1 = pd.DataFrame({
         'num_int': [1, 2, 3],
@@ -387,11 +423,41 @@ def test_mixed_type_dataframe():
         df1, df2, "mixed_types", log_to_mlflow=False
     )
 
-    # String column causes validation to fail (expected for numeric equivalence validator)
-    # Numeric columns (num_int, num_float) and categorical should be equivalent
+    # All columns should be equivalent when DataFrames are identical
+    assert result.validation_passed is True
     assert 'num_int' in result.equivalent_columns
     assert 'num_float' in result.equivalent_columns
-    # String columns are flagged as type mismatches
+    assert 'category' in result.equivalent_columns
+    assert 'string' in result.equivalent_columns
+    assert len(result.non_equivalent_columns) == 0
+
+
+def test_mixed_type_dataframe_with_differences():
+    """Test validation with mixed column types where some differ.
+
+    When a string column differs, it should be flagged as non-equivalent.
+    """
+    df1 = pd.DataFrame({
+        'num_int': [1, 2, 3],
+        'num_float': [1.5, 2.5, 3.5],
+        'string': ['x', 'y', 'z']
+    })
+    df2 = pd.DataFrame({
+        'num_int': [1, 2, 3],
+        'num_float': [1.5, 2.5, 3.5],
+        'string': ['x', 'y', 'DIFFERENT']
+    })
+
+    validator = DataFrameEquivalenceValidator()
+    result = validator.validate_transformation_equivalence(
+        df1, df2, "mixed_types_diff", log_to_mlflow=False
+    )
+
+    # Numeric columns should be equivalent
+    assert 'num_int' in result.equivalent_columns
+    assert 'num_float' in result.equivalent_columns
+    # String column should be flagged as non-equivalent
+    assert result.validation_passed is False
     assert any('string' in str(col) for col in result.non_equivalent_columns)
 
 
@@ -655,7 +721,7 @@ def test_error_handling_empty_dataframe_comparison():
 
 
 @pytest.mark.skipif(not MLFLOW_AVAILABLE, reason="MLflow not available")
-def test_mlflow_integration_logging_enabled():
+def test_mlflow_integration_logging_enabled(clean_mlflow_state):
     """Test MLflow logging when enabled and available."""
     df1 = pd.DataFrame({'A': [1.0, 2.0]})
     df2 = df1.copy()
@@ -685,7 +751,7 @@ def test_mlflow_integration_logging_disabled():
 
 
 @pytest.mark.skipif(not MLFLOW_AVAILABLE, reason="MLflow not available")
-def test_mlflow_integration_logs_correct_metrics():
+def test_mlflow_integration_logs_correct_metrics(clean_mlflow_state):
     """Test that MLflow logs correct validation metrics."""
     df1 = pd.DataFrame({'A': [1.0, 2.0]})
     df2 = pd.DataFrame({'A': [1.0 + 1e-13, 2.0]})
@@ -718,7 +784,7 @@ def test_mlflow_integration_handles_missing_mlflow():
 
 
 @pytest.mark.skipif(not MLFLOW_AVAILABLE, reason="MLflow not available")
-def test_mlflow_integration_failed_validation_logged():
+def test_mlflow_integration_failed_validation_logged(clean_mlflow_state):
     """Test that failed validations are logged to MLflow."""
     df1 = pd.DataFrame({'A': [1.0]})
     df2 = pd.DataFrame({'A': [2.0]})
