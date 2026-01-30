@@ -997,3 +997,215 @@ class TestValidationModulesFlag:
 
         # Should not raise, but should indicate error
         assert 'error' in result
+
+
+# =============================================================================
+# MEANINGFUL VALUE VALIDATION TESTS
+# These tests validate actual content, not just structure
+# =============================================================================
+
+
+class TestMeaningfulValueValidation:
+    """Tests that validate actual values in generated documentation.
+
+    These tests go beyond structure checks to ensure generated content
+    is correct and useful, catching logic bugs that structure-only tests miss.
+    """
+
+    @pytest.mark.skipif(
+        not VALIDATION_MODULES_AVAILABLE,
+        reason="Validation modules not available"
+    )
+    def test_generated_json_roundtrip_preserves_content(
+        self, doc_generator: MLEngineerDocGenerator, sample_dataframe: pd.DataFrame
+    ):
+        """Generated JSON should survive roundtrip serialization."""
+        doc_path = doc_generator.generate_complete_documentation(sample_data=sample_dataframe)
+
+        # Read JSON back
+        with open(doc_path) as f:
+            data_round1 = json.load(f)
+
+        # Serialize and deserialize again
+        json_str = json.dumps(data_round1, default=str)
+        data_round2 = json.loads(json_str)
+
+        # Verify key content survives
+        handoff1 = data_round1['ml_engineer_handoff_documentation']
+        handoff2 = data_round2['ml_engineer_handoff_documentation']
+
+        assert handoff1['generated_at'] == handoff2['generated_at']
+        assert handoff1['overview']['purpose'] == handoff2['overview']['purpose']
+        assert handoff1['overview']['architecture'] == handoff2['overview']['architecture']
+
+    def test_markdown_column_count_matches_dataframe(
+        self, doc_generator: MLEngineerDocGenerator, temp_output_dir: Path
+    ):
+        """Markdown compatibility report should reflect actual DataFrame dimensions."""
+        # Create 50-column DataFrame
+        data = {f'col_{i}': [1, 2, 3] for i in range(50)}
+        df = pd.DataFrame(data)
+
+        result = doc_generator.generate_schema_compatibility_report(df, "wide_schema")
+
+        # Verify actual shape is captured
+        assert result['actual_data_shape'] == (3, 50)
+        assert len(result['actual_columns']) == 50
+
+    def test_compatibility_report_validates_actual_dataframe_shape(
+        self, doc_generator: MLEngineerDocGenerator, sample_dataframe: pd.DataFrame
+    ):
+        """Compatibility report should contain exact row/column counts."""
+        result = doc_generator.generate_schema_compatibility_report(
+            sample_dataframe, "sample_analysis"
+        )
+
+        # Verify exact counts match DataFrame
+        assert result['actual_data_shape'] == sample_dataframe.shape
+        assert result['actual_data_shape'][0] == 100  # rows
+        assert result['actual_data_shape'][1] == 3    # columns
+
+    def test_troubleshooting_guide_solutions_are_actionable(
+        self, doc_generator: MLEngineerDocGenerator
+    ):
+        """Each troubleshooting issue should have non-empty, actionable solutions."""
+        result = doc_generator._generate_troubleshooting_guide()
+
+        for issue_key, issue_data in result['common_issues'].items():
+            solutions = issue_data['solutions']
+
+            # Verify solutions exist and are non-empty
+            assert len(solutions) > 0, f"Issue {issue_key} has no solutions"
+
+            for solution in solutions:
+                assert len(solution) > 10, f"Solution '{solution}' is too vague"
+
+                # Solutions should contain actionable keywords
+                actionable_keywords = [
+                    'use', 'set', 'run', 'check', 'configure', 'initialize',
+                    'call', 'try', 'update', 'verify', 'ensure', 'install'
+                ]
+                solution_lower = solution.lower()
+                has_actionable = any(kw in solution_lower for kw in actionable_keywords)
+                # Allow descriptions that describe symptoms/causes too
+                is_descriptive = 'gracefully' in solution_lower or 'will' in solution_lower
+
+                assert has_actionable or is_descriptive, (
+                    f"Solution '{solution}' lacks actionable guidance"
+                )
+
+    def test_timestamp_consistency_across_methods(
+        self, doc_generator: MLEngineerDocGenerator, sample_dataframe: pd.DataFrame
+    ):
+        """Timestamps should be consistent across all generated content."""
+        generator_ts = doc_generator.generation_timestamp
+
+        # Check compatibility report
+        compat_result = doc_generator.generate_schema_compatibility_report(
+            sample_dataframe, "test"
+        )
+        assert compat_result['report_timestamp'] == generator_ts
+
+        # Check header
+        header = doc_generator._generate_md_header()
+        assert generator_ts in header
+
+    @pytest.mark.skipif(
+        not VALIDATION_MODULES_AVAILABLE,
+        reason="Validation modules not available"
+    )
+    def test_integration_guide_contains_code_examples(
+        self, doc_generator: MLEngineerDocGenerator
+    ):
+        """Integration guide should contain valid Python code examples."""
+        result = doc_generator.generate_integration_guide()
+
+        # Check MLflow patterns have code examples
+        mlflow_patterns = result['mlflow_integration']
+        for func_info in mlflow_patterns['key_functions']:
+            example = func_info.get('example', '')
+            assert len(example) > 0, f"Function {func_info['function']} lacks example"
+
+            # Verify it looks like Python code
+            assert 'import' in example or '=' in example or '(' in example
+
+        # Check DVC patterns have code examples
+        dvc_patterns = result['dvc_integration']
+        for func_info in dvc_patterns.get('key_functions', []):
+            example = func_info.get('example', '')
+            if example:  # Some may not have examples
+                assert '(' in example, "Example should contain function calls"
+
+    def test_schema_analysis_handles_none_values_in_dataframe(
+        self, doc_generator: MLEngineerDocGenerator
+    ):
+        """Schema compatibility should handle DataFrames with None values."""
+        df = pd.DataFrame({
+            'col_with_nulls': [1, None, 3, None, 5],
+            'col_without_nulls': [1, 2, 3, 4, 5],
+            'all_nulls': [None, None, None, None, None]
+        })
+
+        # Should not crash
+        result = doc_generator.generate_schema_compatibility_report(df, "null_test")
+
+        assert result['actual_data_shape'] == (5, 3)
+        assert 'col_with_nulls' in result['actual_columns']
+        assert 'all_nulls' in result['actual_columns']
+
+    def test_quick_start_guide_steps_are_ordered(
+        self, doc_generator: MLEngineerDocGenerator
+    ):
+        """Quick start guide should have properly ordered steps."""
+        result = doc_generator._generate_quick_start_guide()
+
+        immediate_usage = result['immediate_usage']
+        step_keys = list(immediate_usage.keys())
+
+        # Verify steps exist and are ordered
+        expected_order = ['step_1_setup', 'step_2_load_data']
+        for expected in expected_order:
+            assert expected in step_keys, f"Missing step: {expected}"
+
+        # Verify step_1 comes before step_2
+        step_1_idx = step_keys.index('step_1_setup')
+        step_2_idx = step_keys.index('step_2_load_data')
+        assert step_1_idx < step_2_idx, "Steps are not in correct order"
+
+    def test_files_created_section_lists_actual_paths(
+        self, doc_generator: MLEngineerDocGenerator
+    ):
+        """Files created section should list valid module paths."""
+        result = doc_generator._generate_md_files_created()
+
+        # Should mention actual module paths
+        assert 'src/' in result or 'validation' in result.lower()
+
+        # Should mention the key modules
+        expected_modules = ['mlflow_config', 'data_schemas', 'config_schemas']
+        modules_mentioned = sum(1 for m in expected_modules if m in result)
+        assert modules_mentioned >= 2, f"Only {modules_mentioned} of {len(expected_modules)} key modules mentioned"
+
+    @pytest.mark.skipif(
+        not VALIDATION_MODULES_AVAILABLE,
+        reason="Validation modules not available"
+    )
+    def test_schema_statistics_aggregate_correctly(
+        self, doc_generator: MLEngineerDocGenerator
+    ):
+        """Schema statistics should aggregate column counts correctly."""
+        result = doc_generator.analyze_current_schemas()
+
+        if 'error' not in result:
+            stats = result['schema_statistics']
+
+            # Total columns should equal sum of individual schema columns
+            total_from_stats = stats['total_columns_across_schemas']
+            total_computed = sum(
+                info.get('column_count', 0)
+                for info in result['schemas_discovered'].values()
+            )
+            assert total_from_stats == total_computed
+
+            # Total schemas should match discovered count
+            assert stats['total_schemas'] == len(result['schemas_discovered'])
