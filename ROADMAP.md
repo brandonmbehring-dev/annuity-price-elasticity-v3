@@ -10,12 +10,13 @@
 - [x] Fix 94 broken knowledge/ path references (symlinks created)
 - [x] Create docs/INDEX.md master navigation
 - [x] Fix QUICK_START.md hardcoded SageMaker path
+- [x] Documentation cleanup (emojis, v2→v3 drift, vestigial files)
 - [ ] Increase test coverage to uniform 60%
 
 ### P1 - Important
 - [x] Create ROADMAP.md (this document)
-- [ ] Update CURRENT_WORK.md to 4-section format
-- [ ] Create FIA_ECONOMICS.md stub documentation
+- [x] Update CURRENT_WORK.md to 4-section format
+- [x] Create FIA_ECONOMICS.md stub documentation
 - [ ] Create generate_status.py auto-status script
 
 ### P2 - Nice to Have
@@ -25,6 +26,20 @@
 ---
 
 ## Completed Milestones
+
+### 2026-01-30: Documentation Cleanup
+- Removed all emojis from markdown and Python files (85+ files)
+- Fixed version drift (v2→v3) in CLAUDE.md and CODING_STANDARDS.md
+- Deleted 13 vestigial root files (archive manifests, historical docs)
+- Created CLEANUP_TRACKING.md audit trail
+- Updated commit attribution format (removed robot emoji)
+
+### 2026-01-30: Comprehensive Repository Audit
+- 9-phase audit addressing P0-P2 items
+- Test coverage expanded to 2,941 tests (from 2,467)
+- Created 3-tier new developer documentation
+- Added anti-pattern test suite (lag-0, coefficient signs, future leakage)
+- Created benchmark tests for elasticity calculations
 
 ### 2026-01-29: Documentation Quality Overhaul
 - Created knowledge/ symlinks for backward compatibility
@@ -73,10 +88,13 @@
 
 | Metric | Current | Target | Status |
 |--------|---------|--------|--------|
-| Test Coverage | 42% | 60% uniform | In Progress |
-| Tests Passing | 99.3% | 100% | Good |
+| Test Coverage | 46% | 60% uniform | In Progress |
+| Tests Collected | 2,941 | - | Good |
+| Tests Passing | 99%+ | 100% | Good |
 | knowledge/ refs | Resolved (symlinks) | All valid | Done |
 | Documentation Index | Created | Maintained | Done |
+| Emoji cleanup | Complete | None in repo | Done |
+| Version drift | Fixed (v3) | Consistent | Done |
 
 ---
 
