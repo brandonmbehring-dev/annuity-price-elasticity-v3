@@ -8,17 +8,13 @@ Provides comparison tools for analyzing different feature selection approaches:
 """
 
 from src.features.selection.comparison.comparative_analysis import (
-    run_comparative_analysis,
-)
-from src.features.selection.comparison.comparison_metrics import (
-    calculate_comparison_metrics,
+    compare_methodologies,
 )
 from src.features.selection.comparison.comparison_business import (
-    analyze_business_impact,
+    _analyze_business_impact,
 )
 
 __all__ = [
-    "run_comparative_analysis",
-    "calculate_comparison_metrics",
-    "analyze_business_impact",
+    "compare_methodologies",
+    "_analyze_business_impact",
 ]
