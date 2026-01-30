@@ -6,7 +6,7 @@
 **Market:** Retirement Strategies
 **Report Generated:** 2026-01-28
 **Analysis Framework:** Bootstrap Ridge Ensemble with Economic Constraint Validation
-**Repository:** `annuity-price-elasticity-v2`
+**Repository:** `annuity-price-elasticity-v3`
 
 ---
 
@@ -1625,7 +1625,7 @@ Continue with Bootstrap Ridge for current RILA 6Y20B strategic pricing. Revisit 
 ---
 
 **Report Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
-**Repository:** `annuity-price-elasticity-v2`
+**Repository:** `annuity-price-elasticity-v3`
 **Contact:** Annuities Data Science Team
 **Status:** Production-Ready (Phase 2B)
 

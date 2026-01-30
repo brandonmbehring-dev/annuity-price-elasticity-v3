@@ -1,6 +1,6 @@
 
 
-Annuity Price Elasticity Model V2
+Annuity Price Elasticity Model V3
 ===================================
 
 A rigorously engineered, causal inference framework for estimating price elasticity of demand for annuity products (RILA, FIA, MYGA).
@@ -27,6 +27,16 @@ This repository replaces the legacy `annuity-price-elasticity` codebase (V1) wit
 **For business stakeholders:** [docs/business/executive_summary.md](docs/business/executive_summary.md)
 **For technical details:** [docs/business/methodology_report.md](docs/business/methodology_report.md)
 **For governance:** [docs/business/rai_governance.md](docs/business/rai_governance.md) (RAI000038)
+
+---
+
+## ⚠️ Critical Reading: 5 Traps to Avoid
+
+Before working with this codebase, **read the 5 critical traps** that have caused problems in annuity elasticity work:
+
+→ **[docs/integration/LESSONS_LEARNED.md](docs/integration/LESSONS_LEARNED.md)** ⚠️ **MANDATORY**
+
+Key insight: Cap rate is a **YIELD** (customer benefit), NOT a price. Expect a **positive** coefficient on own rate.
 
 ---
 
@@ -85,11 +95,11 @@ This system estimates how changes in annuity cap rates affect sales volume, prov
 ```bash
 # Clone repository
 git clone <repo-url>
-cd annuity-price-elasticity-v2
+cd annuity-price-elasticity-v3
 
 # Create environment
 conda env create -f environment.yml
-conda activate annuity-price-elasticity-v2
+conda activate annuity-price-elasticity-v3
 
 # Or with pip
 pip install -r requirements.txt
@@ -141,11 +151,11 @@ results = interface.run_inference(df)
 
 ### Overview
 
-The project includes **2,500+ tests** across multiple test types, all runnable **offline without AWS credentials** using fixtures. This enables fast development iteration, reproducible results, and testing in restricted environments.
+The project includes **2,467 tests** across multiple test types, all runnable **offline without AWS credentials** using fixtures. This enables fast development iteration, reproducible results, and testing in restricted environments.
 
 **Key Metrics:**
-- 2,500+ tests across 92 test files
-- ~80% code coverage (up from ~50%)
+- 2,467 tests across 96 test files
+- 44% code coverage (target: 60% for core modules)
 - 73 MB of fixture data (203 weeks × 598 features)
 - 1e-12 precision mathematical equivalence with AWS
 - < 10 minutes full test suite (with pytest-xdist)
@@ -416,7 +426,7 @@ if OFFLINE_MODE:
 ## Project Structure
 
 ```
-annuity-price-elasticity-v2/
+annuity-price-elasticity-v3/
 ├── src/
 │   ├── core/              # Protocols, types, registries
 │   ├── notebooks/         # UnifiedNotebookInterface

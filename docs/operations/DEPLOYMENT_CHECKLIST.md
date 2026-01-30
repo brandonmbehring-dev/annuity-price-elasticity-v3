@@ -315,7 +315,7 @@ DEPLOYMENT AUTHORIZED: [ ] YES  [ ] NO
 ```bash
 # Create timestamped backup
 BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/home/sagemaker-user/model_backups/rila_6y20b/${BACKUP_DATE}"
+BACKUP_DIR="${REPO_ROOT}/backups/rila_6y20b/${BACKUP_DATE}"
 
 mkdir -p ${BACKUP_DIR}
 
@@ -373,7 +373,7 @@ echo "✓ New model staged: ${NEW_VERSION}"
 ```python
 # Test staged model before production deployment
 import sys
-sys.path.insert(0, '/home/sagemaker-user/RILA_6Y20B_refactored')
+sys.path.insert(0, '${REPO_ROOT}')
 
 from src.models.inference import PriceElasticityInference
 
@@ -681,10 +681,10 @@ Coverage < 85% or > 98%:  WARNING (miscalibrated intervals)
 **Step 1: Identify Backup to Restore**
 ```bash
 # List available backups
-ls -lh /home/sagemaker-user/model_backups/rila_6y20b/
+ls -lh ${REPO_ROOT}/backups/rila_6y20b/
 
 # Identify most recent pre-deployment backup
-ROLLBACK_SOURCE="/home/sagemaker-user/model_backups/rila_6y20b/20260129_143000"
+ROLLBACK_SOURCE="${REPO_ROOT}/backups/rila_6y20b/20260129_143000"
 
 # Verify backup integrity
 python scripts/verify_backup.py --backup-dir ${ROLLBACK_SOURCE}

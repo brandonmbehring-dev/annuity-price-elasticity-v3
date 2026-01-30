@@ -24,6 +24,9 @@ from src.data.extraction import (
     # Buffer operations
     convert_dataframe_to_parquet_buffer,
     upload_parquet_buffer_to_s3,
+    # S3 operations with optional date suffix
+    download_s3_parquet_with_optional_date_suffix,
+    upload_parquet_to_s3_with_optional_date_suffix,
     # Error classes
     AWSConnectionError,
     DataLoadingError,
@@ -32,6 +35,16 @@ from src.data.extraction import (
     setup_aws_sts_client_with_validation,
     assume_iam_role_with_validation,
     setup_s3_resource_with_validation,
+    # Sales/WINK data discovery and loading
+    _discover_sales_parquet_files,
+    _load_sales_dataframes_from_keys,
+    _validate_sales_dataset_structure,
+    discover_and_load_sales_data,
+    _discover_wink_parquet_files,
+    _load_wink_dataframes_from_keys,
+    _validate_wink_dataset_structure,
+    discover_and_load_wink_data,
+    load_market_share_weights_from_s3,
 )
 
 
@@ -394,3 +407,492 @@ class TestValidationWrappers:
 
         with pytest.raises(AWSConnectionError, match="IAM role assumption failed"):
             assume_iam_role_with_validation(mock_sts, config)
+
+    @patch('src.data.extraction.create_s3_resource_with_credentials')
+    def test_setup_s3_resource_with_validation_success(self, mock_create):
+        """setup_s3_resource_with_validation should return resource and bucket on success."""
+        mock_resource = MagicMock()
+        mock_bucket = MagicMock()
+        mock_resource.Bucket.return_value = mock_bucket
+        mock_create.return_value = mock_resource
+
+        credentials = {'AccessKeyId': 'AKID', 'SecretAccessKey': 'SECRET', 'SessionToken': 'TOKEN'}
+        result = setup_s3_resource_with_validation(credentials, 'test-bucket')
+
+        assert result == (mock_resource, mock_bucket)
+        mock_resource.Bucket.assert_called_once_with('test-bucket')
+
+    @patch('src.data.extraction.create_s3_resource_with_credentials')
+    def test_setup_s3_resource_with_validation_failure(self, mock_create):
+        """setup_s3_resource_with_validation should raise AWSConnectionError on failure."""
+        mock_create.side_effect = Exception("S3 resource creation failed")
+
+        credentials = {'AccessKeyId': 'AKID', 'SecretAccessKey': 'SECRET', 'SessionToken': 'TOKEN'}
+
+        with pytest.raises(AWSConnectionError, match="S3 resource creation failed"):
+            setup_s3_resource_with_validation(credentials, 'test-bucket')
+
+
+class TestCreateS3ClientException:
+    """Tests for create_s3_client exception handling."""
+
+    @patch('src.data.extraction.boto3')
+    def test_create_s3_client_exception_raises_valueerror(self, mock_boto3):
+        """create_s3_client should raise ValueError when boto3.client fails."""
+        mock_boto3.client.side_effect = Exception("AWS connection failed")
+
+        with pytest.raises(ValueError, match="Failed to create S3 client"):
+            create_s3_client()
+
+
+class TestDownloadParquetException:
+    """Tests for download_parquet_from_s3_object exception handling."""
+
+    def test_download_parquet_failure_raises(self):
+        """download_parquet_from_s3_object should raise ValueError on S3 failure."""
+        mock_s3 = MagicMock()
+        mock_obj = MagicMock()
+        mock_obj.get.side_effect = Exception("S3 access denied")
+        mock_s3.Object.return_value = mock_obj
+
+        with pytest.raises(ValueError, match="Failed to download parquet"):
+            download_parquet_from_s3_object(mock_s3, 'bucket', 'key.parquet')
+
+
+class TestConcatenateDataframeListException:
+    """Tests for concatenate_dataframe_list exception handling."""
+
+    def test_concatenate_empty_result_raises(self):
+        """concatenate_dataframe_list should raise when result is empty."""
+        # This happens when all DataFrames have 0 rows
+        df1 = pd.DataFrame({'A': pd.Series([], dtype=int)})
+        df2 = pd.DataFrame({'A': pd.Series([], dtype=int)})
+
+        with pytest.raises(ValueError, match="Concatenated DataFrame is empty"):
+            concatenate_dataframe_list([df1, df2])
+
+    def test_concatenate_general_exception_raises(self):
+        """concatenate_dataframe_list should wrap general exceptions."""
+        # Pass incompatible types to force exception
+        with pytest.raises(ValueError, match="Failed to concatenate DataFrames"):
+            concatenate_dataframe_list([None])
+
+
+class TestDownloadS3ParquetWithOptionalDateSuffix:
+    """Tests for download_s3_parquet_with_optional_date_suffix function."""
+
+    @patch('src.data.extraction.boto3')
+    def test_download_with_date_suffix(self, mock_boto3, sample_sales_df):
+        """download_s3_parquet_with_optional_date_suffix should append date suffix to key."""
+        buffer = io.BytesIO()
+        sample_sales_df.to_parquet(buffer, engine='pyarrow')
+        buffer.seek(0)
+
+        mock_client = MagicMock()
+        mock_client.get_object.return_value = {'Body': MagicMock(read=lambda: buffer.getvalue())}
+        mock_boto3.client.return_value = mock_client
+
+        result = download_s3_parquet_with_optional_date_suffix(
+            'test-bucket', 'data/sales', '2023-01-01'
+        )
+
+        assert isinstance(result, pd.DataFrame)
+        mock_client.get_object.assert_called_once_with(
+            Bucket='test-bucket', Key='data/sales_2023-01-01.parquet'
+        )
+
+    @patch('src.data.extraction.boto3')
+    def test_download_without_date_suffix(self, mock_boto3, sample_sales_df):
+        """download_s3_parquet_with_optional_date_suffix should omit date suffix when None."""
+        buffer = io.BytesIO()
+        sample_sales_df.to_parquet(buffer, engine='pyarrow')
+        buffer.seek(0)
+
+        mock_client = MagicMock()
+        mock_client.get_object.return_value = {'Body': MagicMock(read=lambda: buffer.getvalue())}
+        mock_boto3.client.return_value = mock_client
+
+        result = download_s3_parquet_with_optional_date_suffix(
+            'test-bucket', 'data/sales', None
+        )
+
+        assert isinstance(result, pd.DataFrame)
+        mock_client.get_object.assert_called_once_with(
+            Bucket='test-bucket', Key='data/sales.parquet'
+        )
+
+    @patch('src.data.extraction.boto3')
+    def test_download_failure_raises(self, mock_boto3):
+        """download_s3_parquet_with_optional_date_suffix should raise on failure."""
+        mock_client = MagicMock()
+        mock_client.get_object.side_effect = Exception("S3 access denied")
+        mock_boto3.client.return_value = mock_client
+
+        with pytest.raises(ValueError, match="Failed to download S3 parquet"):
+            download_s3_parquet_with_optional_date_suffix(
+                'test-bucket', 'data/sales', '2023-01-01'
+            )
+
+
+class TestUploadParquetToS3WithOptionalDateSuffix:
+    """Tests for upload_parquet_to_s3_with_optional_date_suffix function."""
+
+    def test_upload_with_date_suffix(self, sample_sales_df):
+        """upload_parquet_to_s3_with_optional_date_suffix should append date suffix."""
+        mock_client = MagicMock()
+        buffer = convert_dataframe_to_parquet_buffer(sample_sales_df)
+
+        upload_parquet_to_s3_with_optional_date_suffix(
+            mock_client, buffer, 'test-bucket', 'data/sales', '2023-01-01'
+        )
+
+        mock_client.put_object.assert_called_once()
+        call_args = mock_client.put_object.call_args
+        assert call_args.kwargs['Key'] == 'data/sales_2023-01-01.parquet'
+
+    def test_upload_without_date_suffix(self, sample_sales_df):
+        """upload_parquet_to_s3_with_optional_date_suffix should omit date suffix when None."""
+        mock_client = MagicMock()
+        buffer = convert_dataframe_to_parquet_buffer(sample_sales_df)
+
+        upload_parquet_to_s3_with_optional_date_suffix(
+            mock_client, buffer, 'test-bucket', 'data/sales', None
+        )
+
+        mock_client.put_object.assert_called_once()
+        call_args = mock_client.put_object.call_args
+        assert call_args.kwargs['Key'] == 'data/sales.parquet'
+
+    def test_upload_failure_raises(self, sample_sales_df):
+        """upload_parquet_to_s3_with_optional_date_suffix should raise on failure."""
+        mock_client = MagicMock()
+        mock_client.put_object.side_effect = Exception("S3 upload denied")
+        buffer = convert_dataframe_to_parquet_buffer(sample_sales_df)
+
+        with pytest.raises(ValueError, match="Failed to upload parquet"):
+            upload_parquet_to_s3_with_optional_date_suffix(
+                mock_client, buffer, 'test-bucket', 'data/sales', '2023-01-01'
+            )
+
+
+class TestConvertDataframeToParquetBufferException:
+    """Tests for convert_dataframe_to_parquet_buffer exception handling."""
+
+    def test_convert_exception_raises(self):
+        """convert_dataframe_to_parquet_buffer should wrap parquet conversion errors."""
+        # Create DataFrame that will fail parquet conversion
+        df = pd.DataFrame({'A': [1, 2, 3]})
+
+        with patch('pandas.DataFrame.to_parquet', side_effect=Exception("Pyarrow error")):
+            with pytest.raises(ValueError, match="Failed to convert DataFrame to parquet"):
+                convert_dataframe_to_parquet_buffer(df)
+
+
+class TestUploadParquetBufferException:
+    """Tests for upload_parquet_buffer_to_s3 exception handling."""
+
+    def test_upload_exception_raises(self, sample_sales_df):
+        """upload_parquet_buffer_to_s3 should wrap upload errors."""
+        mock_client = MagicMock()
+        mock_client.upload_fileobj.side_effect = Exception("Network error")
+        buffer = convert_dataframe_to_parquet_buffer(sample_sales_df)
+
+        with pytest.raises(ValueError, match="Failed to upload to s3://"):
+            upload_parquet_buffer_to_s3(mock_client, buffer, 'bucket', 'key.parquet')
+
+
+class TestDiscoverSalesParquetFiles:
+    """Tests for _discover_sales_parquet_files function."""
+
+    @patch('src.data.extraction.list_parquet_objects_with_prefix')
+    def test_discover_sales_success(self, mock_list):
+        """_discover_sales_parquet_files should return parquet keys."""
+        mock_list.return_value = ['access/ierpt/tde_sales_by_product_by_fund/file1.parquet']
+        mock_bucket = MagicMock()
+
+        result = _discover_sales_parquet_files(mock_bucket)
+
+        assert len(result) == 1
+        mock_list.assert_called_once_with(mock_bucket, "access/ierpt/tde_sales_by_product_by_fund/")
+
+    @patch('src.data.extraction.list_parquet_objects_with_prefix')
+    def test_discover_sales_empty_raises(self, mock_list):
+        """_discover_sales_parquet_files should raise when no files found."""
+        mock_list.return_value = []
+        mock_bucket = MagicMock()
+
+        with pytest.raises(DataLoadingError, match="No sales data parquet files found"):
+            _discover_sales_parquet_files(mock_bucket)
+
+    @patch('src.data.extraction.list_parquet_objects_with_prefix')
+    def test_discover_sales_exception_raises(self, mock_list):
+        """_discover_sales_parquet_files should wrap exceptions."""
+        mock_list.side_effect = Exception("S3 bucket access denied")
+        mock_bucket = MagicMock()
+
+        with pytest.raises(DataLoadingError, match="Sales data discovery failed"):
+            _discover_sales_parquet_files(mock_bucket)
+
+
+class TestLoadSalesDataframesFromKeys:
+    """Tests for _load_sales_dataframes_from_keys function."""
+
+    @patch('src.data.extraction.download_parquet_from_s3_object')
+    @patch('src.data.extraction.concatenate_dataframe_list')
+    def test_load_sales_success(self, mock_concat, mock_download):
+        """_load_sales_dataframes_from_keys should load and concatenate DataFrames."""
+        df = pd.DataFrame({'A': [1, 2, 3]})
+        mock_download.return_value = df
+        mock_concat.return_value = df
+
+        mock_s3 = MagicMock()
+        result = _load_sales_dataframes_from_keys(mock_s3, 'bucket', ['key1.parquet'])
+
+        assert isinstance(result, pd.DataFrame)
+        mock_download.assert_called_once()
+        mock_concat.assert_called_once()
+
+    @patch('src.data.extraction.download_parquet_from_s3_object')
+    def test_load_sales_file_failure_raises(self, mock_download):
+        """_load_sales_dataframes_from_keys should raise on file load failure."""
+        mock_download.side_effect = Exception("File corrupted")
+        mock_s3 = MagicMock()
+
+        with pytest.raises(DataLoadingError, match="Failed to load parquet file"):
+            _load_sales_dataframes_from_keys(mock_s3, 'bucket', ['bad_file.parquet'])
+
+    @patch('src.data.extraction.download_parquet_from_s3_object')
+    def test_load_sales_all_empty_raises(self, mock_download):
+        """_load_sales_dataframes_from_keys should raise when all DataFrames are empty."""
+        mock_download.return_value = pd.DataFrame()
+        mock_s3 = MagicMock()
+
+        with pytest.raises(DataLoadingError, match="No valid sales data loaded"):
+            _load_sales_dataframes_from_keys(mock_s3, 'bucket', ['empty.parquet'])
+
+
+class TestValidateSalesDatasetStructure:
+    """Tests for _validate_sales_dataset_structure function."""
+
+    def test_validate_sales_empty_raises(self):
+        """_validate_sales_dataset_structure should raise for empty DataFrame."""
+        df = pd.DataFrame()
+
+        with pytest.raises(DataValidationError, match="Combined sales dataset is empty"):
+            _validate_sales_dataset_structure(df)
+
+    def test_validate_sales_missing_columns_raises(self):
+        """_validate_sales_dataset_structure should raise for missing columns."""
+        df = pd.DataFrame({'other_column': [1, 2, 3]})
+
+        with pytest.raises(DataValidationError, match="Missing required columns"):
+            _validate_sales_dataset_structure(df)
+
+    def test_validate_sales_valid_passes(self):
+        """_validate_sales_dataset_structure should pass for valid DataFrame."""
+        df = pd.DataFrame({
+            'application_signed_date': pd.date_range('2023-01-01', periods=3),
+            'contract_issue_date': pd.date_range('2023-01-01', periods=3),
+            'product_name': ['Product A'] * 3,
+        })
+
+        # Should not raise
+        _validate_sales_dataset_structure(df)
+
+
+class TestDiscoverWinkParquetFiles:
+    """Tests for _discover_wink_parquet_files function."""
+
+    @patch('src.data.extraction.list_parquet_objects_with_prefix')
+    def test_discover_wink_success(self, mock_list):
+        """_discover_wink_parquet_files should return parquet keys."""
+        mock_list.return_value = ['access/ierpt/wink_ann_product_rates/file1.parquet']
+        mock_bucket = MagicMock()
+
+        result = _discover_wink_parquet_files(mock_bucket)
+
+        assert len(result) == 1
+        mock_list.assert_called_once_with(mock_bucket, "access/ierpt/wink_ann_product_rates/")
+
+    @patch('src.data.extraction.list_parquet_objects_with_prefix')
+    def test_discover_wink_empty_raises(self, mock_list):
+        """_discover_wink_parquet_files should raise when no files found."""
+        mock_list.return_value = []
+        mock_bucket = MagicMock()
+
+        with pytest.raises(DataLoadingError, match="No WINK competitive rate files found"):
+            _discover_wink_parquet_files(mock_bucket)
+
+    @patch('src.data.extraction.list_parquet_objects_with_prefix')
+    def test_discover_wink_exception_raises(self, mock_list):
+        """_discover_wink_parquet_files should wrap exceptions."""
+        mock_list.side_effect = Exception("S3 bucket access denied")
+        mock_bucket = MagicMock()
+
+        with pytest.raises(DataLoadingError, match="WINK data discovery failed"):
+            _discover_wink_parquet_files(mock_bucket)
+
+
+class TestLoadWinkDataframesFromKeys:
+    """Tests for _load_wink_dataframes_from_keys function."""
+
+    @patch('src.data.extraction.download_parquet_from_s3_object')
+    @patch('src.data.extraction.concatenate_dataframe_list')
+    def test_load_wink_success(self, mock_concat, mock_download):
+        """_load_wink_dataframes_from_keys should load and concatenate DataFrames."""
+        df = pd.DataFrame({'date': ['2023-01-01'], 'rate_1': [5.0]})
+        mock_download.return_value = df
+        mock_concat.return_value = df
+
+        mock_s3 = MagicMock()
+        result = _load_wink_dataframes_from_keys(mock_s3, 'bucket', ['key1.parquet'])
+
+        assert isinstance(result, pd.DataFrame)
+        mock_download.assert_called_once()
+        mock_concat.assert_called_once()
+
+    @patch('src.data.extraction.download_parquet_from_s3_object')
+    def test_load_wink_file_failure_raises(self, mock_download):
+        """_load_wink_dataframes_from_keys should raise on file load failure."""
+        mock_download.side_effect = Exception("File corrupted")
+        mock_s3 = MagicMock()
+
+        with pytest.raises(DataLoadingError, match="Failed to load WINK parquet file"):
+            _load_wink_dataframes_from_keys(mock_s3, 'bucket', ['bad_file.parquet'])
+
+    @patch('src.data.extraction.download_parquet_from_s3_object')
+    def test_load_wink_all_empty_raises(self, mock_download):
+        """_load_wink_dataframes_from_keys should raise when all DataFrames are empty."""
+        mock_download.return_value = pd.DataFrame()
+        mock_s3 = MagicMock()
+
+        with pytest.raises(DataLoadingError, match="No valid WINK data loaded"):
+            _load_wink_dataframes_from_keys(mock_s3, 'bucket', ['empty.parquet'])
+
+
+class TestValidateWinkDatasetStructure:
+    """Tests for _validate_wink_dataset_structure function."""
+
+    def test_validate_wink_empty_raises(self):
+        """_validate_wink_dataset_structure should raise for empty DataFrame."""
+        df = pd.DataFrame()
+
+        with pytest.raises(DataValidationError, match="Combined WINK dataset is empty"):
+            _validate_wink_dataset_structure(df)
+
+    def test_validate_wink_insufficient_rate_columns_raises(self):
+        """_validate_wink_dataset_structure should raise for insufficient rate columns."""
+        df = pd.DataFrame({
+            'date': ['2023-01-01'],
+            'rate_1': [5.0],
+            'rate_2': [5.0],
+            # Only 2 rate columns, need at least 5
+        })
+
+        with pytest.raises(DataValidationError, match="Insufficient competitive rate columns"):
+            _validate_wink_dataset_structure(df)
+
+    def test_validate_wink_missing_date_column_raises(self):
+        """_validate_wink_dataset_structure should raise for missing date column."""
+        df = pd.DataFrame({
+            'rate_1': [5.0], 'rate_2': [5.0], 'rate_3': [5.0],
+            'rate_4': [5.0], 'rate_5': [5.0],
+        })
+
+        with pytest.raises(DataValidationError, match="No 'date' column found"):
+            _validate_wink_dataset_structure(df)
+
+    def test_validate_wink_valid_passes(self):
+        """_validate_wink_dataset_structure should pass for valid DataFrame."""
+        df = pd.DataFrame({
+            'date': ['2023-01-01'],
+            'rate_1': [5.0], 'rate_2': [5.0], 'rate_3': [5.0],
+            'rate_4': [5.0], 'rate_5': [5.0],
+        })
+
+        # Should not raise
+        _validate_wink_dataset_structure(df)
+
+
+class TestDiscoverAndLoadSalesData:
+    """Tests for discover_and_load_sales_data orchestration function."""
+
+    @patch('src.validation.pipeline_validation_helpers.validate_extraction_output')
+    @patch('src.data.extraction._validate_sales_dataset_structure')
+    @patch('src.data.extraction._load_sales_dataframes_from_keys')
+    @patch('src.data.extraction._discover_sales_parquet_files')
+    def test_discover_and_load_sales_success(self, mock_discover, mock_load, mock_validate, mock_prod_validate):
+        """discover_and_load_sales_data should orchestrate full pipeline."""
+        df = pd.DataFrame({
+            'application_signed_date': pd.date_range('2023-01-01', periods=3),
+            'contract_issue_date': pd.date_range('2023-01-01', periods=3),
+            'product_name': ['Product A'] * 3,
+        })
+        mock_discover.return_value = ['file1.parquet']
+        mock_load.return_value = df
+        mock_prod_validate.return_value = df
+
+        mock_bucket = MagicMock()
+        mock_s3 = MagicMock()
+
+        result = discover_and_load_sales_data(mock_bucket, mock_s3, 'test-bucket')
+
+        assert isinstance(result, pd.DataFrame)
+        mock_discover.assert_called_once()
+        mock_load.assert_called_once()
+        mock_validate.assert_called_once()
+        mock_prod_validate.assert_called_once()
+
+
+class TestDiscoverAndLoadWinkData:
+    """Tests for discover_and_load_wink_data orchestration function."""
+
+    @patch('src.validation.pipeline_validation_helpers.validate_extraction_output')
+    @patch('src.data.extraction._validate_wink_dataset_structure')
+    @patch('src.data.extraction._load_wink_dataframes_from_keys')
+    @patch('src.data.extraction._discover_wink_parquet_files')
+    def test_discover_and_load_wink_success(self, mock_discover, mock_load, mock_validate, mock_prod_validate):
+        """discover_and_load_wink_data should orchestrate full pipeline."""
+        df = pd.DataFrame({
+            'date': ['2023-01-01'],
+            'product_name': ['Product A'],
+            'rate_1': [5.0], 'rate_2': [5.0], 'rate_3': [5.0],
+            'rate_4': [5.0], 'rate_5': [5.0],
+        })
+        mock_discover.return_value = ['file1.parquet']
+        mock_load.return_value = df
+        mock_prod_validate.return_value = df
+
+        mock_bucket = MagicMock()
+        mock_s3 = MagicMock()
+
+        result = discover_and_load_wink_data(mock_bucket, mock_s3, 'test-bucket')
+
+        assert isinstance(result, pd.DataFrame)
+        mock_discover.assert_called_once()
+        mock_load.assert_called_once()
+        mock_validate.assert_called_once()
+        mock_prod_validate.assert_called_once()
+
+
+class TestLoadMarketShareWeightsFromS3:
+    """Tests for load_market_share_weights_from_s3 function."""
+
+    @patch('pandas.read_parquet')
+    def test_load_market_share_weights_success(self, mock_read):
+        """load_market_share_weights_from_s3 should return DataFrame."""
+        df = pd.DataFrame({'company': ['A', 'B'], 'weight': [0.6, 0.4]})
+        mock_read.return_value = df
+
+        result = load_market_share_weights_from_s3('s3://bucket/weights.parquet')
+
+        assert isinstance(result, pd.DataFrame)
+        mock_read.assert_called_once_with('s3://bucket/weights.parquet')
+
+    @patch('pandas.read_parquet')
+    def test_load_market_share_weights_failure_raises(self, mock_read):
+        """load_market_share_weights_from_s3 should raise on failure."""
+        mock_read.side_effect = Exception("S3 access denied")
+
+        with pytest.raises(ValueError, match="Failed to load market share weights"):
+            load_market_share_weights_from_s3('s3://bucket/weights.parquet')

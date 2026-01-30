@@ -2,6 +2,15 @@
 
 **Master navigation for the V3 Annuity Price Elasticity repository.**
 
+**Last Updated:** 2026-01-30
+
+---
+
+## ⚠️ First Time? Read This First
+
+Before working with this codebase, read the **5 critical traps**:
+→ [integration/LESSONS_LEARNED.md](integration/LESSONS_LEARNED.md) ⚠️ **MANDATORY**
+
 ---
 
 ## Quick Lookup ("I want to...")

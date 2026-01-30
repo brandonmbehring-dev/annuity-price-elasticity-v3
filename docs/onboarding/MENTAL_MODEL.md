@@ -208,7 +208,7 @@ Even if we later adjust based on sales, there's a lag:
 ## Directory Map
 
 ```
-annuity-price-elasticity-v2/
+annuity-price-elasticity-v3/
 │
 ├── src/                          # Source code
 │   ├── core/                     # Foundational abstractions

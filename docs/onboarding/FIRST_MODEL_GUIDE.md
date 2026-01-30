@@ -29,8 +29,8 @@ Follow these steps exactly. Each step includes verification.
 
 ```bash
 cd ~
-git clone https://github.com/your-org/RILA_6Y20B_refactored.git
-cd RILA_6Y20B_refactored
+git clone https://github.com/your-org/annuity-price-elasticity-v3.git
+cd annuity-price-elasticity-v3
 ```
 
 **Verify:**
@@ -49,22 +49,22 @@ This takes 2-5 minutes. You'll see packages being downloaded and installed.
 
 **Verify:**
 ```bash
-conda env list | grep rila-elasticity
-# Should show: rila-elasticity  /path/to/envs/rila-elasticity
+conda env list | grep annuity-price-elasticity-v3
+# Should show: annuity-price-elasticity-v3  /path/to/envs/annuity-price-elasticity-v3
 ```
 
 ### Step 3: Activate Environment
 
 ```bash
-conda activate rila-elasticity
+conda activate annuity-price-elasticity-v3
 ```
 
-Your terminal prompt should change to show `(rila-elasticity)`.
+Your terminal prompt should change to show `(annuity-price-elasticity-v3)`.
 
 **Verify:**
 ```bash
 python -c "import sys; print(sys.prefix)"
-# Should show path containing 'rila-elasticity'
+# Should show path containing 'annuity-price-elasticity-v3'
 ```
 
 ### Step 4: Install Package
@@ -182,7 +182,7 @@ Exporting results to Excel...
 
 **Fix:**
 ```bash
-cd /path/to/RILA_6Y20B_refactored
+cd /path/to/annuity-price-elasticity-v3
 pip install -e .
 ```
 
@@ -208,7 +208,7 @@ Or contact your team lead for access to fixture data.
 
 **Fix:**
 ```bash
-conda activate rila-elasticity
+conda activate annuity-price-elasticity-v3
 python -c "from src.notebooks import create_interface"
 ```
 
@@ -291,7 +291,7 @@ make coverage
 
 **Activate environment:**
 ```bash
-conda activate rila-elasticity
+conda activate annuity-price-elasticity-v3
 ```
 
 **Deactivate environment:**
@@ -303,5 +303,5 @@ conda deactivate
 
 - **Common errors:** See Troubleshooting section above
 - **API questions:** Check [docs/api/](../api/)
-- **Team Slack:** #rila-elasticity-support
-- **Bug reports:** [GitHub Issues](https://github.com/your-org/RILA_6Y20B_refactored/issues)
+- **Team Slack:** #annuity-price-elasticity-v3-support
+- **Bug reports:** [GitHub Issues](https://github.com/your-org/annuity-price-elasticity-v3/issues)

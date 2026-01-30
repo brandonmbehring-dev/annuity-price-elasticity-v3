@@ -1,13 +1,18 @@
 # Test Coverage Report
 
 **Generated**: 2026-01-29
-**Overall Coverage**: 33%
-**Total Tests**: 1,269 passing
-**Total Test Code**: 3,643 lines
+**Last Verified**: 2026-01-30
+**Overall Coverage**: 44%
+**Total Tests**: 2,467 passing
+**Total Test Code**: ~8,500 lines (estimated)
+
+> **Note**: This report was originally generated 2026-01-29 with 1,269 tests at 33% coverage.
+> As of 2026-01-30, the test suite has grown to 2,467 tests with 44% coverage.
+> Module-by-module breakdown below may be outdated; run `pytest --cov=src --cov-report=term-missing` for current state.
 
 ## Summary
 
-This report tracks the comprehensive testing initiative to increase test coverage from ~35% to 80% overall, with focus on critical modules having 0% coverage.
+This report tracks the comprehensive testing initiative to increase test coverage to 60% overall for core modules, with focus on critical modules having low coverage.
 
 ---
 

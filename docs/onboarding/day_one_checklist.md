@@ -14,14 +14,14 @@ Your interactive guide to a productive first day with the RILA Price Elasticity 
 
 - [ ] Clone repository
   ```bash
-  cd /home/sagemaker-user/RILA_6Y20B_refactored
-  # No longer needed - already at root
+  git clone <repo-url>
+  cd annuity-price-elasticity-v3
   ```
 
 - [ ] Create conda environment
   ```bash
   conda env create -f environment.yml
-  conda activate rila-elasticity
+  conda activate annuity-price-elasticity-v3
   ```
 
 - [ ] Verify installation

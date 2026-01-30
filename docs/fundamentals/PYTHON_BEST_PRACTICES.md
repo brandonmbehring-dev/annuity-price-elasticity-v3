@@ -15,7 +15,7 @@ This primer covers the practices we follow in this repository. Good habits here 
 ```bash
 # Create from environment file
 conda env create -f environment.yml
-conda activate annuity-price-elasticity-v2
+conda activate annuity-price-elasticity-v3
 
 # Or create fresh
 conda create -n myenv python=3.11

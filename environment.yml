@@ -1,4 +1,4 @@
-name: annuity-price-elasticity-v2
+name: annuity-price-elasticity-v3
 channels:
   - conda-forge
   - defaults
@@ -52,7 +52,7 @@ description: |
     AWS operations are mocked by src/testing/aws_mock_layer.py
 
   To activate:
-    conda activate annuity-price-elasticity-v2
+    conda activate annuity-price-elasticity-v3
 
   To install:
     conda env create -f environment.yml

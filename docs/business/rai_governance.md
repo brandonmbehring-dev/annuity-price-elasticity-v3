@@ -4,7 +4,7 @@
 **Version**: 3.0
 **Owner**: Brandon Behring
 **Generated**: 2025-11-25
-**Repository**: annuity-price-elasticity-v2 (refactored)
+**Repository**: annuity-price-elasticity-v3
 **Architecture Version**: v2
 
 ---

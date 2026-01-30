@@ -8,7 +8,7 @@
 |------------|--------|-------|
 | Exploration complete | DONE | Multi-product architecture validated |
 | Core functionality | DONE | DI patterns, adapters, strategies implemented |
-| Test coverage | 42% | 1284 tests; priority: core modules >60%, infrastructure can be lower |
+| Test coverage | 44% | 2,467 tests; priority: core modules >60%, infrastructure can be lower |
 | Leakage gate | PASSED | Critical tests now BLOCKING (see audit 2026-01-26) |
 | Production deployment | PENDING | Awaiting P0 fixes from audit |
 

@@ -93,7 +93,7 @@ Now let's make it concrete. Run the architecture walkthrough notebook.
 
 ```bash
 # Activate environment
-conda activate annuity-price-elasticity-v2
+conda activate annuity-price-elasticity-v3
 
 # Start Jupyter
 jupyter lab notebooks/onboarding/architecture_walkthrough.ipynb
@@ -187,11 +187,11 @@ Open `knowledge/analysis/CAUSAL_FRAMEWORK.md` and:
 ```bash
 # Clone repository
 git clone <repo-url>
-cd annuity-price-elasticity-v2
+cd annuity-price-elasticity-v3
 
 # Create environment
 conda env create -f environment.yml
-conda activate annuity-price-elasticity-v2
+conda activate annuity-price-elasticity-v3
 
 # Verify installation
 python -c "from src.notebooks import create_interface; print('OK')"

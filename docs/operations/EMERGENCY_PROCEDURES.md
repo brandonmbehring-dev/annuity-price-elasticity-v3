@@ -150,7 +150,7 @@ This document provides comprehensive emergency response procedures for critical 
 **Step 1: Confirm Incident**
 ```bash
 # Attempt to load production model
-cd /home/sagemaker-user/RILA_6Y20B_refactored
+cd ${REPO_ROOT}
 
 python -c "
 import sys
@@ -819,7 +819,7 @@ aws sagemaker start-notebook-instance \
 **Verify critical files not lost**:
 ```bash
 # After instance restarts, check for work loss
-cd /home/sagemaker-user/RILA_6Y20B_refactored
+cd ${REPO_ROOT}
 
 # Check git status (uncommitted work may be lost)
 git status

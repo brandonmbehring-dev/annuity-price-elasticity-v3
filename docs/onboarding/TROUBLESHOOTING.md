@@ -49,7 +49,7 @@ Or ensure you're running from the repository root.
 **Fix**:
 ```bash
 # Verify environment
-conda activate annuity-price-elasticity-v2
+conda activate annuity-price-elasticity-v3
 
 # Or reinstall dependencies
 pip install -r requirements.txt

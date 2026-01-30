@@ -17,7 +17,7 @@ cd annuity-price-elasticity-v3
 conda env create -f environment.yml
 
 # Activate environment
-conda activate rila-elasticity
+conda activate annuity-price-elasticity-v3
 
 # Install package in editable mode (REQUIRED)
 pip install -e .
@@ -65,8 +65,16 @@ Model R²: 0.7837
 ✓ Results exported to: output/rila_6y20b_inference_results.xlsx
 ```
 
+## ⚠️ Critical Traps - Read Before You Proceed
+
+Before diving deeper, **read the 5 critical traps** that have caused problems in annuity elasticity work:
+→ [docs/integration/LESSONS_LEARNED.md](docs/integration/LESSONS_LEARNED.md)
+
+Key trap: Cap rate is a **YIELD** (customer benefit), not a price. Expect a **positive** coefficient.
+
 ## Next Steps
 
+- **Critical traps:** [docs/integration/LESSONS_LEARNED.md](docs/integration/LESSONS_LEARNED.md) ⚠️ **READ FIRST**
 - **Full onboarding:** [docs/onboarding/GETTING_STARTED.md](docs/onboarding/GETTING_STARTED.md) (2 hours)
 - **Common tasks:** [docs/onboarding/COMMON_TASKS.md](docs/onboarding/COMMON_TASKS.md)
 - **Architecture overview:** [docs/onboarding/MENTAL_MODEL.md](docs/onboarding/MENTAL_MODEL.md)

@@ -77,7 +77,7 @@ knowledge/
 
 2. **Navigate to the repository**:
    ```bash
-   cd annuity-price-elasticity-v2
+   cd annuity-price-elasticity-v3
    ```
 
 3. **Start Claude Code**:

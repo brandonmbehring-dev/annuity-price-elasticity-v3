@@ -1,7 +1,7 @@
 # Executive Summary: RILA Price Elasticity Model
 
 **Status:** Production Ready (RILA 6Y20B)
-**Repository:** annuity-price-elasticity-v2
+**Repository:** annuity-price-elasticity-v3
 **Last Updated:** 2026-01-28
 
 ---
@@ -273,6 +273,6 @@ The model answers the critical business question: **"What will happen to sales i
 **Business Owner:** Annuity Rate Setting Team (annuity-rate-setting@prudential.com)
 **Model Risk:** Annuities Model Risk (annuities-model-risk@prudential.com)
 
-**Repository:** [annuity-price-elasticity-v2](https://github.com/prudential/annuity-price-elasticity-v2)
+**Repository:** [annuity-price-elasticity-v3](https://github.com/prudential/annuity-price-elasticity-v3)
 **Documentation:** `/docs/` directory with 17 subdirectories, 64+ markdown files
 **RAI Registration:** RAI000038 (Version 3.0)
