@@ -11,7 +11,7 @@ Get the RILA Price Elasticity model running in 5 minutes.
 
 ```bash
 # Clone repository
-cd /home/sagemaker-user/RILA_6Y20B_refactored
+cd annuity-price-elasticity-v3
 
 # Create environment
 conda env create -f environment.yml
