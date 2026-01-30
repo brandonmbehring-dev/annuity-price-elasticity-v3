@@ -376,7 +376,7 @@ E[Sales_t | do(P_t = p), C_{t-1}, DGS5_t, Season_t, Buffer]
 ### OLS Specification
 
 ```
-sales_logit_t = β₀ + β₁·P_lag_0 + β₂·C_weighted_lag_k + β₃·DGS5_lag_k
+sales_log1p_t = β₀ + β₁·P_lag_0 + β₂·C_weighted_lag_k + β₃·DGS5_lag_k
                    + γ·Season + δ·Buffer + ε
 
 Constraints:
@@ -384,12 +384,14 @@ Constraints:
   β₂ < 0  (competitor rate negative)
 ```
 
-### Logit Transform
+### Log Transform (log1p)
 
 ```python
-sales_scaled = 0.95 * sales / max(sales)
-sales_logit = log(sales_scaled / (1 - sales_scaled))
+sales_log1p = np.log1p(sales)  # log(1 + sales)
 ```
+
+> **Note**: Earlier docs used "logit scaling" terminology. The actual
+> implementation uses log1p, not the statistical logit function.
 
 ---
 

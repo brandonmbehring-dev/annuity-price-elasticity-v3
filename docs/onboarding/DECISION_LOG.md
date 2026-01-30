@@ -100,28 +100,27 @@ This log captures the reasoning behind important choices. When you wonder "why d
 
 ---
 
-### D5: Use Logit Transform for Sales
+### D5: Use Log Transform for Sales (log1p)
 
-**Date**: 2025 (inherited)
+**Date**: 2025 (inherited), terminology corrected 2026-01
 
-**Decision**: Transform sales via logit scaling before modeling.
+**Decision**: Transform sales via log1p before modeling.
 
-**Context**: Sales are bounded (can't be negative, have practical maximum).
+**Context**: Sales can have zeros and exhibit high skewness.
 
 **Formula**:
 ```python
-sales_scaled = 0.95 * sales / max(sales)
-sales_logit = logit(sales_scaled)
+sales_log1p = np.log1p(sales)  # log(1 + sales)
 ```
 
-**Rationale**:
-- Accounts for saturation effects (can't grow infinitely)
-- Produces approximately normal distribution
-- Standard in demand modeling
+> **Note**: Earlier versions used "logit scaling" terminology. The actual
+> implementation uses log(1+x) (log1p), not the statistical logit function.
 
-**Open Questions**:
-- 0.95 saturation parameter is somewhat arbitrary
-- Could test sensitivity to this parameter
+**Rationale**:
+- Handles zero values gracefully (log1p(0) = 0)
+- Reduces skewness in monetary/count data
+- Standard transformation for financial data
+- Coefficients interpretable as percentage effects
 
 **See**: `knowledge/analysis/CAUSAL_FRAMEWORK.md`, Section 5.1
 

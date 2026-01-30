@@ -213,7 +213,6 @@ Research and technical deep-dives.
 - **Project root**: [../README.md](../README.md)
 - **Quick start**: [../QUICK_START.md](../QUICK_START.md)
 - **CLAUDE.md**: [../CLAUDE.md](../CLAUDE.md)
-- **Changelog**: [../CHANGELOG_REFACTORING.md](../CHANGELOG_REFACTORING.md)
 - **Contributing**: [../CONTRIBUTING.md](../CONTRIBUTING.md)
 
 ---

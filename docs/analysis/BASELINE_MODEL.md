@@ -57,7 +57,7 @@ This document defines the baseline model used as a reference point for measuring
 - Weight decay: 0.98^(n-k) (recent data weighted higher)
 - Bootstrap samples: 1000 iterations
 - Features: 3 core features + interactions + squared terms = **598 total features**
-- Target: Log-transformed sales with logit scaling (0.95)
+- Target: Log-transformed sales (log1p transform)
 - Validation: Time-forward split (last 20%)
 
 ### Performance Metrics
@@ -82,10 +82,10 @@ Production model improves over baseline through:
    - 1000 bootstrap samples vs 100
    - Reduces variance through bagging
 
-3. **Logit Transformation** (+1-2% R²)
-   - 0.95 scaling factor
-   - Better handling of bounded sales values
-   - Smoother predictions at extremes
+3. **Log Transformation** (+1-2% R²)
+   - log1p transform: log(1 + sales)
+   - Handles zero values and reduces skewness
+   - Standard approach for monetary/count data
 
 **Total Improvement**: 0.6747 - 0.5492 = **+0.1255 R² points** (22.9%)
 

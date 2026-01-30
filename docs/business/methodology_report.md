@@ -114,7 +114,7 @@ Price elasticity measures the relationship between 'price' and sales volume for 
 
 We distinguish two different cases:
 1. **Local Approximations**: Linear models when exploring prices near equilibrium values (small rate changes around current market rates)
-2. **Global Approximations**: Sigmoid/Logit models when exploring prices from market entry or major product repositioning
+2. **Global Approximations**: Log-transformed or sigmoid models when exploring prices from market entry or major product repositioning
 
 **RILA-Specific Price Definition:**
 
@@ -1400,21 +1400,24 @@ Sales = β₀ + β₁(Prudential_Rate) + β₂(Competitor_Rate) + β₃(Sales_La
 
 **Reference:** PEA_RILA_v1_2.docx - Original methodology section
 
-### B. Global Logit Transformations (FIA v2.0 Approach)
+### B. Global Log Transformations (FIA v2.0 Approach)
 
 **FIA v2.0 Enhancement:**
 
-**Model Type:** Logit transformation for global approximations
+**Model Type:** Log transformation for global approximations
 
 **Core Concept:**
-Sigmoid/Logit models are appropriate when exploring prices from market entry cutoffs or major product repositioning. Useful for large market shifts or new product launches.
+Log-transformed models are appropriate when exploring prices from market entry cutoffs or major product repositioning. Useful for large market shifts or new product launches.
 
 **Mathematical Framework:**
 ```
-logit(Sales_Normalized) = β₀ + β₁(Prudential_Rate) + β₂(Competitor_Rate) + ...
+log1p(Sales) = β₀ + β₁(Prudential_Rate) + β₂(Competitor_Rate) + ...
 ```
 
-Where `Sales_Normalized` is scaled to [0, 1] range.
+Where `log1p(Sales) = log(1 + Sales)` - standard transformation for monetary data.
+
+> **Note**: Earlier documentation referred to "logit" transforms. The actual
+> implementation uses log1p, not the statistical logit function.
 
 **Key Innovations from FIA v2.0:**
 1. **application_signed_date**: Use application date instead of contract issue date to prevent time-ordering leakage

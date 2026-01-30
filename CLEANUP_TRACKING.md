@@ -8,7 +8,7 @@ Actionable items extracted from Codex and Gemini audit reports before deletion.
 |----------|-------|--------|
 | Version Drift | 5 | COMPLETE |
 | Broken Paths | 3 | COMPLETE |
-| Methodology Drift | 2 | PARTIAL |
+| Methodology Drift | 2 | COMPLETE |
 | Emoji Removal | ~85 files | COMPLETE |
 | Standards Loophole | 1 | NOT NEEDED (red circle exception retained) |
 | REMEDIATION | 2 files | COMPLETE |
@@ -41,21 +41,21 @@ Per Codex Audit Appendix:
 
 ---
 
-## Methodology Drift - PARTIAL
+## Methodology Drift - COMPLETE
 
 Per Codex Audit: "Multiple docs reference logit transforms, but code trains on log(1 + y)."
 
 | Issue | Files Affected | Action | Status |
 |-------|----------------|--------|--------|
-| logit vs log1p | Various methodology docs | Future: Update docs to match code (`log1p`) | DEFERRED |
+| logit vs log1p | 5 methodology docs | Updated terminology to match code (`log1p`) | DONE |
 | Docstring style | `CONTRIBUTING.md` | Updated from Google-style to NumPy-style | DONE |
 
-NOTE: The logit vs log1p terminology drift requires a comprehensive methodology documentation update
-that is beyond the scope of this cleanup. The discrepancy is documented here for future resolution.
-Key affected files:
-- `docs/business/methodology_report.md`
-- `docs/onboarding/DECISION_LOG.md`
-- `docs/onboarding/MENTAL_MODEL.md`
+**Logit → log1p terminology fixed (2026-01-30):**
+- `docs/analysis/BASELINE_MODEL.md` - Updated target description and transform section
+- `docs/analysis/CAUSAL_FRAMEWORK.md` - Updated Section 5.1 and OLS specification
+- `docs/onboarding/DECISION_LOG.md` - Updated D5 decision with clarification note
+- `docs/onboarding/MENTAL_MODEL.md` - Updated OLS specification and transform section
+- `docs/business/methodology_report.md` - Updated Appendix B terminology
 
 ---
 
@@ -125,7 +125,7 @@ The following recommendations from audits require separate implementation:
 3. **SPECIFICATION.md** - Freeze critical thresholds
 4. **Config Consolidation** - Reduce builder module duplication
 5. **Coverage Expansion** - Target forecasting and feature selection modules
-6. **logit vs log1p Terminology** - Update methodology docs to use `log1p`
+6. ~~**logit vs log1p Terminology**~~ - COMPLETE (updated 2026-01-30)
 
 These are tracked in `ROADMAP.md` and separate issues.
 

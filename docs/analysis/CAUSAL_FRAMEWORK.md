@@ -167,22 +167,25 @@ Competitor rates at t=0 are problematic:
 
 ## 5. Functional Form Assumptions
 
-### 5.1 Logit/Sigmoid Transform
+### 5.1 Log Transform (log1p)
 
-Sales are transformed via logit scaling:
+Sales are transformed via log1p:
 
 ```python
-sales_scaled = 0.95 * sales / max(sales)
-sales_logit = logit(sales_scaled)
+sales_log1p = np.log1p(sales)  # log(1 + sales)
 ```
+
+> **Note**: Earlier documentation used "logit scaling" terminology. The actual
+> implementation uses log(1+x) (log1p), not the statistical logit function.
+> log1p is standard for monetary/count data with zeros.
 
 **Assumptions embedded**:
 
 | Assumption | Value | Status |
 |------------|-------|--------|
-| Saturation parameter | 0.95 | **Arbitrary** - should test empirically |
-| Maximum sales | Global max | Uses full history |
-| Response shape | Sigmoid | Empirically observed in FIA data; validate for RILA |
+| Transform | log(1 + x) | Standard for count/monetary data |
+| Handles zeros | Yes | log1p(0) = 0 |
+| Response shape | Log-linear | Multiplicative effects in original scale |
 
 ### 5.2 Expected Response Shape for RILA
 
@@ -241,7 +244,7 @@ Based on FIA experience and RILA product characteristics:
 ### 8.1 Current Approach: OLS with Controls
 
 ```
-sales_logit_t = β₀ + β₁·P_lag_0 + β₂·C_weighted_lag_k + β₃·DGS5_lag_k + γ·Season + δ·Buffer + ε
+sales_log1p_t = β₀ + β₁·P_lag_0 + β₂·C_weighted_lag_k + β₃·DGS5_lag_k + γ·Season + δ·Buffer + ε
 ```
 
 **Why OLS is defensible**:
