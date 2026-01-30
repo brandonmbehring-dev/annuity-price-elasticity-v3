@@ -30,14 +30,14 @@ Comprehensive guide to testing practices in the RILA Price Elasticity project.
 
 ### What We Test
 
-✅ **DO Test**:
+[DONE] **DO Test**:
 - Business logic and calculations
 - Edge cases (NaN, empty DataFrames, boundary conditions)
 - Error handling and validation
 - Mathematical correctness
 - API contracts and interfaces
 
-❌ **DON'T Test**:
+[ERROR] **DON'T Test**:
 - External libraries (pandas, numpy already tested)
 - Trivial property getters
 - Private implementation details that may change
@@ -563,7 +563,7 @@ def test_production_bootstrap_simulation(
 
 ### Performance Optimization Guidelines
 
-#### ✅ GOOD: Use smallest fixture that validates behavior
+#### [DONE] GOOD: Use smallest fixture that validates behavior
 
 ```python
 def test_aic_formula(tiny_dataset, small_bootstrap_config):
@@ -572,7 +572,7 @@ def test_aic_formula(tiny_dataset, small_bootstrap_config):
     assert result > 0
 ```
 
-#### ❌ BAD: Using full production dataset for unit test
+#### [ERROR] BAD: Using full production dataset for unit test
 
 ```python
 def test_aic_formula(full_production_dataset, production_bootstrap_config):
@@ -581,7 +581,7 @@ def test_aic_formula(full_production_dataset, production_bootstrap_config):
     assert result > 0
 ```
 
-#### ✅ GOOD: Use MEDIUM for integration tests
+#### [DONE] GOOD: Use MEDIUM for integration tests
 
 ```python
 def test_competitive_features_integration(medium_dataset):
@@ -590,7 +590,7 @@ def test_competitive_features_integration(medium_dataset):
     assert len(lag_features.columns) == 20
 ```
 
-#### ❌ BAD: Using SMALL for integration test
+#### [ERROR] BAD: Using SMALL for integration test
 
 ```python
 def test_competitive_features_integration(tiny_dataset):
@@ -684,12 +684,12 @@ def test_calculation_scales_across_sizes(fixture_name, expected_min_size, reques
 
 ### Anti-Patterns to Avoid
 
-#### ❌ ANTIPATTERN 1: Using LARGE fixture for simple unit test
+#### [ERROR] ANTIPATTERN 1: Using LARGE fixture for simple unit test
 
 ```python
 @pytest.mark.skip(reason="Anti-pattern demonstration")
 def test_antipattern_large_for_unit(full_production_dataset):
-    """❌ BAD: Takes 1-3 seconds just to test simple calculation.
+    """[ERROR] BAD: Takes 1-3 seconds just to test simple calculation.
 
     Why bad:
     - Loads 167 weeks × 598 features (1-3s)
@@ -703,12 +703,12 @@ def test_antipattern_large_for_unit(full_production_dataset):
 
 **Fix:** Use `tiny_dataset` instead (< 0.1s)
 
-#### ❌ ANTIPATTERN 2: Using SMALL fixture for integration test
+#### [ERROR] ANTIPATTERN 2: Using SMALL fixture for integration test
 
 ```python
 @pytest.mark.skip(reason="Anti-pattern demonstration")
 def test_antipattern_small_for_integration(tiny_dataset):
-    """❌ BAD: Only 20 rows insufficient for integration testing.
+    """[ERROR] BAD: Only 20 rows insufficient for integration testing.
 
     Why bad:
     - Only 20 rows may not expose integration issues
@@ -1002,14 +1002,14 @@ Performance tests require:
 
 ### Best Practices
 
-✅ **DO:**
+[DONE] **DO:**
 - Use appropriate fixture size (SMALL for unit, MEDIUM for integration)
 - Mark slow tests (> 30s) with `@pytest.mark.slow`
 - Clean up memory before tests (`gc.collect()`)
 - Provide clear failure messages with actual vs threshold
 - Update baselines when code improvements are validated
 
-❌ **DON'T:**
+[ERROR] **DON'T:**
 - Use full production dataset for simple performance tests
 - Update baselines to hide regressions
 - Skip performance tests in CI (except slow ones)
@@ -1038,7 +1038,7 @@ class TestFeatureEngineeringPerformance:
             f"Feature engineering took {elapsed:.2f}s (max: 2.0s)"
         )
 
-        print(f"✓ Feature engineering: {elapsed:.2f}s")
+        print(f"[PASS] Feature engineering: {elapsed:.2f}s")
 
     def test_feature_engineering_memory(self, medium_dataset):
         """Feature engineering should use < 1 GB memory."""
@@ -1053,7 +1053,7 @@ class TestFeatureEngineeringPerformance:
             f"Feature engineering used {mem_delta:.1f} MB (max: 1000 MB)"
         )
 
-        print(f"✓ Feature engineering memory: {mem_delta:.1f} MB")
+        print(f"[PASS] Feature engineering memory: {mem_delta:.1f} MB")
 ```
 
 ### Performance Testing Checklist
@@ -1444,9 +1444,9 @@ python tests/fixtures/refresh_fixtures.py
 pytest tests/fixtures/test_fixture_validity.py -v
 
 # Should see:
-# ✓ Fixtures are X days old (< 90 days)
-# ✓ All required fixture files exist
-# ✓ Sales data quality: (2817439, 11)
+# [PASS] Fixtures are X days old (< 90 days)
+# [PASS] All required fixture files exist
+# [PASS] Sales data quality: (2817439, 11)
 ```
 
 #### 3. Validate AWS Equivalence
@@ -1484,10 +1484,10 @@ pytest tests/fixtures/test_fixture_validity.py -v
 
 **Example output:**
 ```
-✓ Fixtures are 3 days old (< 90 days)
-✓ All 8 required fixture files exist
-✓ Sales data quality: (2817439, 11), 0.000% missing premiums
-✓ Final weekly dataset quality: (203, 598), 0.234% NaN
+[PASS] Fixtures are 3 days old (< 90 days)
+[PASS] All 8 required fixture files exist
+[PASS] Sales data quality: (2817439, 11), 0.000% missing premiums
+[PASS] Final weekly dataset quality: (203, 598), 0.234% NaN
 ```
 
 ### Troubleshooting AWS Tests
@@ -1540,14 +1540,14 @@ pytest tests/integration/test_aws_fixture_equivalence.py::TestAWSFixtureEquivale
 
 ### AWS Integration Best Practices
 
-✅ **DO:**
+[DONE] **DO:**
 - Run AWS tests before production deployment
 - Refresh fixtures quarterly (every 90 days)
 - Validate fixture equivalence after refresh
 - Keep refresh_metadata.json up to date
 - Skip AWS tests in offline development (`-m "not aws"`)
 
-❌ **DON'T:**
+[ERROR] **DON'T:**
 - Run AWS tests in fast CI loops (expensive)
 - Commit AWS credentials to repository
 - Update fixtures without running equivalence tests
@@ -1563,9 +1563,9 @@ pytest tests/integration/test_aws_fixture_equivalence.py::TestAWSFixtureEquivale
 - When fixture validation tests fail (staleness)
 
 **Fixture Age Thresholds:**
-- < 60 days: ✅ Fresh
-- 60-90 days: ⚠️ Consider refreshing
-- > 90 days: ❌ Stale - must refresh
+- < 60 days: [DONE] Fresh
+- 60-90 days: [WARN] Consider refreshing
+- > 90 days: [ERROR] Stale - must refresh
 
 ### CI Integration
 
@@ -1596,15 +1596,15 @@ pytest tests/ -m "not aws" -v
 
 | Module | Target | Current | Status |
 |--------|--------|---------|--------|
-| features/competitive_features.py | 85% | 100% | ✅ |
-| features/engineering_timeseries.py | 85% | 100% | ✅ |
-| features/engineering_integration.py | 85% | 99% | ✅ |
-| features/engineering_temporal.py | 85% | 98% | ✅ |
-| features/aggregation/ | 85% | 95% | ✅ |
-| validation_support/ | 90% | 57% | ⚠️ In progress |
-| models/inference.py | 80% | 44% | 🔄 Planned |
-| products/rila_methodology.py | 80% | 25% | 🔄 Planned |
-| **Overall** | **80%** | **~50%** | 🔄 In progress |
+| features/competitive_features.py | 85% | 100% | [DONE] |
+| features/engineering_timeseries.py | 85% | 100% | [DONE] |
+| features/engineering_integration.py | 85% | 99% | [DONE] |
+| features/engineering_temporal.py | 85% | 98% | [DONE] |
+| features/aggregation/ | 85% | 95% | [DONE] |
+| validation_support/ | 90% | 57% | [WARN] In progress |
+| models/inference.py | 80% | 44% |  Planned |
+| products/rila_methodology.py | 80% | 25% |  Planned |
+| **Overall** | **80%** | **~50%** |  In progress |
 
 ### What to Prioritize
 
@@ -1738,7 +1738,7 @@ def test_with_cache(cache):
 
 ### Do's
 
-✅ **Write tests first for new code** (TDD)
+[DONE] **Write tests first for new code** (TDD)
 ```python
 # 1. Write failing test
 def test_new_feature():
@@ -1749,7 +1749,7 @@ def test_new_feature():
 # 3. Refactor
 ```
 
-✅ **Test one thing per test**
+[DONE] **Test one thing per test**
 ```python
 # Good
 def test_weighted_mean_basic():
@@ -1770,7 +1770,7 @@ def test_weighted_mean():  # Tests too many things
     assert not np.isnan(result3)
 ```
 
-✅ **Use descriptive test names**
+[DONE] **Use descriptive test names**
 ```python
 # Good
 def test_median_ranking_returns_middle_value()
@@ -1781,7 +1781,7 @@ def test_1()
 def test_func()
 ```
 
-✅ **Test edge cases explicitly**
+[DONE] **Test edge cases explicitly**
 ```python
 def test_division_by_zero_handled():
     result = safe_divide(1, 0)
@@ -1794,7 +1794,7 @@ def test_empty_list_handled():
 
 ### Don'ts
 
-❌ **Don't test implementation details**
+[ERROR] **Don't test implementation details**
 ```python
 # Bad: Testing private method
 def test_internal_helper():
@@ -1807,7 +1807,7 @@ def test_public_method():
     result = obj.public_method()  # Stable interface
 ```
 
-❌ **Don't use random data without seeds**
+[ERROR] **Don't use random data without seeds**
 ```python
 # Bad
 def test_with_random():
@@ -1823,7 +1823,7 @@ def test_with_random():
     assert np.isclose(result, 0.512, atol=0.01)
 ```
 
-❌ **Don't test external libraries**
+[ERROR] **Don't test external libraries**
 ```python
 # Bad: Testing pandas
 def test_pandas_merge():

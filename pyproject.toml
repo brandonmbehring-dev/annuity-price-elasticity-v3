@@ -1,6 +1,6 @@
 [project]
 name = "annuity-price-elasticity"
-version = "2.0.0"
+version = "3.0.0"
 description = "Multi-product annuity price elasticity analysis system (RILA, FIA, MYGA)"
 readme = "README.md"
 requires-python = ">=3.12"

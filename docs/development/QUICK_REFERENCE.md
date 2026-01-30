@@ -354,17 +354,17 @@ make verify-quick
 ## Success Indicators
 
 ### Task Completion (Green Lights)
-- ✅ `make quick-check`: Passes with 0 errors
-- ✅ `make test`: All tests passing
-- ✅ `make verify-quick`: Stub/type validation clean
-- ✅ Documentation: Updated and consistent
-- ✅ No rework required: Task completed on first attempt
+- [DONE] `make quick-check`: Passes with 0 errors
+- [DONE] `make test`: All tests passing
+- [DONE] `make verify-quick`: Stub/type validation clean
+- [DONE] Documentation: Updated and consistent
+- [DONE] No rework required: Task completed on first attempt
 
 ### Repository Health (Maintenance)
-- ✅ Regular `make quick-check`: Consistent clean results
-- ✅ Documentation currency: All guides reflect current state
-- ✅ Multi-product support: All products testable
-- ✅ Performance parity: Claude Code performs as expected
+- [DONE] Regular `make quick-check`: Consistent clean results
+- [DONE] Documentation currency: All guides reflect current state
+- [DONE] Multi-product support: All products testable
+- [DONE] Performance parity: Claude Code performs as expected
 
 ---
 

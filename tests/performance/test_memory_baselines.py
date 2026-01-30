@@ -199,7 +199,7 @@ class TestMemoryBaselines:
             f"Dataset: {medium_dataset.shape}, Memory before: {mem_before:.1f} MB, after: {mem_after:.1f} MB"
         )
 
-        print(f"✓ Medium dataset operations used {mem_delta:.1f} MB (baseline: < {max_mb} MB)")
+        print(f"[PASS] Medium dataset operations used {mem_delta:.1f} MB (baseline: < {max_mb} MB)")
 
     def test_full_dataset_memory(self, full_production_dataset, memory_baselines, memory_cleanup):
         """
@@ -251,7 +251,7 @@ class TestMemoryBaselines:
             f"Dataset: {full_production_dataset.shape}, Memory before: {mem_before:.1f} MB, after: {mem_after:.1f} MB"
         )
 
-        print(f"✓ Full dataset operations used {mem_delta:.1f} MB (baseline: < {max_mb} MB)")
+        print(f"[PASS] Full dataset operations used {mem_delta:.1f} MB (baseline: < {max_mb} MB)")
 
     def test_feature_engineering_memory(self, medium_dataset, memory_baselines, memory_cleanup):
         """
@@ -298,7 +298,7 @@ class TestMemoryBaselines:
             f"Memory before: {mem_before:.1f} MB, after: {mem_after:.1f} MB"
         )
 
-        print(f"✓ Feature engineering used {mem_delta:.1f} MB (baseline: < {max_mb} MB)")
+        print(f"[PASS] Feature engineering used {mem_delta:.1f} MB (baseline: < {max_mb} MB)")
 
     def test_feature_selection_memory(self, medium_dataset, memory_baselines, memory_cleanup):
         """
@@ -348,7 +348,7 @@ class TestMemoryBaselines:
             f"Memory before: {mem_before:.1f} MB, after: {mem_after:.1f} MB"
         )
 
-        print(f"✓ Feature selection used {mem_delta:.1f} MB (baseline: < {max_mb} MB)")
+        print(f"[PASS] Feature selection used {mem_delta:.1f} MB (baseline: < {max_mb} MB)")
 
     @pytest.mark.slow
     def test_bootstrap_10000_memory(self, full_production_dataset, production_bootstrap_config, memory_baselines, memory_cleanup):
@@ -405,7 +405,7 @@ class TestMemoryBaselines:
             f"Memory before: {mem_before:.1f} MB, after: {mem_after:.1f} MB"
         )
 
-        print(f"✓ Bootstrap (10000 samples) used {mem_delta:.1f} MB = {mem_delta/1024:.2f} GB (baseline: < {max_mb/1024:.1f} GB)")
+        print(f"[PASS] Bootstrap (10000 samples) used {mem_delta:.1f} MB = {mem_delta/1024:.2f} GB (baseline: < {max_mb/1024:.1f} GB)")
 
     @pytest.mark.slow
     def test_full_pipeline_memory(self, memory_baselines, memory_cleanup):
@@ -455,7 +455,7 @@ class TestMemoryBaselines:
             f"Output: {result.shape}, Memory before: {mem_before:.1f} MB, after: {mem_after:.1f} MB"
         )
 
-        print(f"✓ Full pipeline used {mem_delta:.1f} MB = {mem_delta/1024:.2f} GB (baseline: < {max_mb/1024:.1f} GB)")
+        print(f"[PASS] Full pipeline used {mem_delta:.1f} MB = {mem_delta/1024:.2f} GB (baseline: < {max_mb/1024:.1f} GB)")
 
 
 class TestMemoryLeakDetection:
@@ -508,7 +508,7 @@ class TestMemoryLeakDetection:
             f"Memory start: {mem_start:.1f} MB, end: {mem_end:.1f} MB"
         )
 
-        print(f"✓ Repeated operations (100 iterations) grew memory by {mem_growth:.1f} MB (baseline: < {max_growth} MB)")
+        print(f"[PASS] Repeated operations (100 iterations) grew memory by {mem_growth:.1f} MB (baseline: < {max_growth} MB)")
 
     def test_dataframe_copy_no_leak(self, medium_dataset, memory_cleanup):
         """
@@ -551,7 +551,7 @@ class TestMemoryLeakDetection:
             f"Memory start: {mem_start:.1f} MB, end: {mem_end:.1f} MB"
         )
 
-        print(f"✓ DataFrame copying (50 iterations) grew memory by {mem_growth:.1f} MB (baseline: < {max_growth} MB)")
+        print(f"[PASS] DataFrame copying (50 iterations) grew memory by {mem_growth:.1f} MB (baseline: < {max_growth} MB)")
 
 
 # Memory baseline configuration

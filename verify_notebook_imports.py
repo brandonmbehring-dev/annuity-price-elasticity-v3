@@ -88,8 +88,8 @@ def main():
     print("NOTEBOOK IMPORT VERIFICATION")
     print("="*80)
     print("\nVerifying that all notebooks load from REFACTORED codebase:")
-    print("  ✓ Expected: /home/sagemaker-user/RILA_6Y20B_refactored/src")
-    print("  ✗ Wrong:    /opt/conda/lib/python3.12/site-packages (system package)")
+    print("  [PASS] Expected: /home/sagemaker-user/RILA_6Y20B_refactored/src")
+    print("  [FAIL] Wrong:    /opt/conda/lib/python3.12/site-packages (system package)")
     print("="*80)
 
     base_path = Path("/home/sagemaker-user/RILA_6Y20B_refactored")
@@ -107,7 +107,7 @@ def main():
     results = []
     for name, nb_dir, test_module in test_cases:
         if not nb_dir.exists():
-            print(f"\n⚠️  SKIP: {name}")
+            print(f"\n[WARN]  SKIP: {name}")
             print(f"   Directory not found: {nb_dir}")
             continue
 
@@ -118,17 +118,17 @@ def main():
         results.append((name, success, uses_refactored))
 
         if success and uses_refactored:
-            print(f"\n✓✓ PASS: {name}")
+            print(f"\n[PASS][PASS] PASS: {name}")
             print(f"   Directory: {nb_dir.relative_to(base_path)}")
             print(f"   Project root: {project_root}")
             print(f"   Imports from: {detail}")
         elif success and not uses_refactored:
-            print(f"\n✗✗ FAIL: {name} - Using OLD code")
+            print(f"\n[FAIL][FAIL] FAIL: {name} - Using OLD code")
             print(f"   Directory: {nb_dir.relative_to(base_path)}")
             print(f"   Project root: {project_root}")
             print(f"   Imports from: {detail}")
         else:
-            print(f"\n✗✗ FAIL: {name} - Import error")
+            print(f"\n[FAIL][FAIL] FAIL: {name} - Import error")
             print(f"   Directory: {nb_dir.relative_to(base_path)}")
             print(f"   Error: {detail}")
 
@@ -142,16 +142,16 @@ def main():
     failed = total - passed
 
     for name, success, uses_refactored in results:
-        status = "✓" if (success and uses_refactored) else "✗"
+        status = "[PASS]" if (success and uses_refactored) else "[FAIL]"
         print(f"{status} {name}")
 
     print(f"\nTotal: {passed}/{total} notebooks passed")
 
     if passed == total:
-        print("\n✓✓ ALL NOTEBOOKS USE REFACTORED CODE ✓✓")
+        print("\n[PASS][PASS] ALL NOTEBOOKS USE REFACTORED CODE [PASS][PASS]")
         return 0
     else:
-        print(f"\n✗✗ {failed} NOTEBOOK(S) FAILED ✗✗")
+        print(f"\n[FAIL][FAIL] {failed} NOTEBOOK(S) FAILED [FAIL][FAIL]")
         return 1
 
 

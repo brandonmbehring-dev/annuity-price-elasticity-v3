@@ -34,15 +34,15 @@ Files ready for commit (see `git status`).
 
 | Phase | Items | Status |
 |-------|-------|--------|
-| Phase 1 (P0) | Env names, V2→V3, paths, INDEX | ✅ COMPLETE |
-| Phase 2 | Session infrastructure | ✅ COMPLETE |
-| Phase 3 | TEST_ARCHITECTURE.md | ✅ COMPLETE |
-| Phase 4 | FIA_ECONOMICS.md | ✅ COMPLETE |
-| Phase 5 | AI_COLLABORATION suite | ✅ COMPLETE |
-| Phase 6 | Anti-pattern tests | ✅ COMPLETE |
-| Phase 7 | Three-tier new dev docs | ✅ COMPLETE |
-| Phase 8 | Benchmarks + timestamps | ✅ COMPLETE |
-| Phase 9 | E2E test fixes | ✅ COMPLETE |
+| Phase 1 (P0) | Env names, V2→V3, paths, INDEX | COMPLETE |
+| Phase 2 | Session infrastructure | COMPLETE |
+| Phase 3 | TEST_ARCHITECTURE.md | COMPLETE |
+| Phase 4 | FIA_ECONOMICS.md | COMPLETE |
+| Phase 5 | AI_COLLABORATION suite | COMPLETE |
+| Phase 6 | Anti-pattern tests | COMPLETE |
+| Phase 7 | Three-tier new dev docs | COMPLETE |
+| Phase 8 | Benchmarks + timestamps | COMPLETE |
+| Phase 9 | E2E test fixes | COMPLETE |
 
 ---
 
@@ -50,7 +50,7 @@ Files ready for commit (see `git status`).
 
 | Session | Date | Focus | Status |
 |---------|------|-------|--------|
-| Audit Session 001 | 2026-01-30 | Comprehensive repo audit | ✅ COMPLETE |
+| Audit Session 001 | 2026-01-30 | Comprehensive repo audit | COMPLETE |
 
 See `sessions/` for detailed session logs.
 

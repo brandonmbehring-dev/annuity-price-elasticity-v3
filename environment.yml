@@ -49,7 +49,7 @@ description: |
   Supports RILA, FIA, and MYGA product types.
 
   For offline development:
-    AWS operations are mocked by src/testing/aws_mock_layer.py
+    AWS operations are mocked by src/validation_support/aws_mock_layer.py
 
   To activate:
     conda activate annuity-price-elasticity-v3

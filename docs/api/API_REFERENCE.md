@@ -582,9 +582,9 @@ validator = DataFrameEquivalenceValidator()
 result = validator.validate_equivalence(df_legacy, df_refactored)
 
 if result.is_equivalent:
-    print("✓ Refactoring preserved mathematical equivalence")
+    print("[PASS] Refactoring preserved mathematical equivalence")
 else:
-    print(f"✗ Differences found: {result.message}")
+    print(f"[FAIL] Differences found: {result.message}")
     print(f"  Max difference: {result.max_difference}")
     print(f"  Columns: {result.different_columns}")
 ```

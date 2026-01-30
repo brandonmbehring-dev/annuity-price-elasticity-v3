@@ -6,8 +6,8 @@ Annuity Price Elasticity Model V3
 A rigorously engineered, causal inference framework for estimating price elasticity of demand for annuity products (RILA, FIA, MYGA).
 
 **Status (Jan 2026):**
-*   **RILA (6Y20B):** 🟢 **Production Ready**. Fully refactored, mathematically equivalent to legacy baselines, and rigorously tested.
-*   **FIA/MYGA:** 🟡 **Alpha/Stub**. Architecture is generic, but specific product methodologies are partial or stubbed.
+*   **RILA (6Y20B):** [PRODUCTION] Fully refactored, mathematically equivalent to legacy baselines, and rigorously tested.
+*   **FIA/MYGA:** [ALPHA] Architecture is generic, but specific product methodologies are partial or stubbed.
 
 This repository replaces the legacy `annuity-price-elasticity` codebase (V1) with a modular, testable, and scientifically valid architecture.
 
@@ -30,11 +30,11 @@ This repository replaces the legacy `annuity-price-elasticity` codebase (V1) wit
 
 ---
 
-## ⚠️ Critical Reading: 5 Traps to Avoid
+## CRITICAL: 5 Traps to Avoid
 
 Before working with this codebase, **read the 5 critical traps** that have caused problems in annuity elasticity work:
 
-→ **[docs/integration/LESSONS_LEARNED.md](docs/integration/LESSONS_LEARNED.md)** ⚠️ **MANDATORY**
+> **[docs/integration/LESSONS_LEARNED.md](docs/integration/LESSONS_LEARNED.md)** (MANDATORY)
 
 Key insight: Cap rate is a **YIELD** (customer benefit), NOT a price. Expect a **positive** coefficient on own rate.
 
@@ -42,37 +42,39 @@ Key insight: Cap rate is a **YIELD** (customer benefit), NOT a price. Expect a *
 
 ## Quick Navigation by Role
 
-### 🚀 First Time Here? (5 minutes)
+### First Time Here? (5 minutes)
 → [QUICK_START.md](QUICK_START.md)
 
-### 👨‍💻 New Data Scientist? (2 hours)
+### New Data Scientist? (2 hours)
 → [Getting Started Guide](docs/onboarding/GETTING_STARTED.md)
 → [Day One Checklist](docs/onboarding/day_one_checklist.md)
 → [User Journeys Guide](docs/onboarding/USER_JOURNEYS.md)
 
-### 📊 Business Stakeholder?
+### Business Stakeholder?
 → [Executive Summary](docs/business/executive_summary.md) (5 min)
 → [Methodology Report](docs/business/methodology_report.md) (45 min)
 → [RAI Governance](docs/business/rai_governance.md) (15 min)
 
-### 🔍 Model Validator?
+### Model Validator?
 → [Validation Guidelines](docs/methodology/validation_guidelines.md)
-→ [Leakage Checklist](docs/practices/LEAKAGE_CHECKLIST.md) ⚠️ **MANDATORY**
+> [Leakage Checklist](docs/practices/LEAKAGE_CHECKLIST.md) (MANDATORY)
+→ [Model Card](docs/governance/MODEL_CARD.md) - Model documentation for governance
+→ [Specification Freeze](docs/governance/SPECIFICATION.md) - Critical thresholds
 → [Deployment Checklist](docs/operations/DEPLOYMENT_CHECKLIST.md)
 
-### 🔧 Model Developer?
+### Model Developer?
 → [Architecture Overview](docs/architecture/MULTI_PRODUCT_DESIGN.md)
 → [API Reference](docs/api/API_REFERENCE.md)
 → [Coding Standards](docs/development/CODING_STANDARDS.md)
 → [Testing Guide](docs/development/TESTING_GUIDE.md)
 
-### 🚨 Production Operations?
+### Production Operations?
 → [Deployment Checklist](docs/operations/DEPLOYMENT_CHECKLIST.md) - Manual deployment procedures
 → [Monitoring Guide](docs/operations/MONITORING_GUIDE.md) - AWS CloudWatch monitoring
 → [Emergency Procedures](docs/operations/EMERGENCY_PROCEDURES.md) - Incident response playbooks
 → [Performance Tuning](docs/operations/PERFORMANCE_TUNING.md) - Optimization strategies
 
-### 📚 Complete Documentation Index
+### Complete Documentation Index
 → [docs/README.md](docs/README.md) - Full navigation of all 64+ markdown files
 
 ---
@@ -210,11 +212,11 @@ interface.export_results(results, format="excel")
 ```
 
 **Benefits:**
-- ⚡ **10-100x faster** data loading (no S3 latency)
-- 🔒 **No credentials** required for development
-- 🔄 **Reproducible** results across machines
-- 🌐 **Works offline** (planes, trains, anywhere)
-- 💰 **Cost savings** (no S3 read costs)
+- **10-100x faster** data loading (no S3 latency)
+- **No credentials** required for development
+- **Reproducible** results across machines
+- **Works offline** (planes, trains, anywhere)
+- **Cost savings** (no S3 read costs)
 
 ### Fixture System
 
@@ -359,7 +361,7 @@ The codebase supports offline development using fixture data captured from AWS S
 
 ### Overview
 
-**Location**: `tests/fixtures/aws_complete/` (symlink to `tests/fixtures/rila/`)
+**Location**: `tests/fixtures/rila/`
 **Size**: 73MB of pre-captured data for FlexGuard 6Y20B product
 **Requirements**: No AWS credentials needed
 
@@ -387,7 +389,7 @@ results = interface.run_inference(df)
 from pathlib import Path
 from src.data.adapters import FixtureAdapter
 
-adapter = FixtureAdapter(Path("tests/fixtures/aws_complete"))
+adapter = FixtureAdapter(Path("tests/fixtures/rila"))
 sales = adapter.load_sales_data(product_filter=None)
 rates = adapter.load_competitive_rates(start_date="2020-01-01")
 weights = adapter.load_market_weights()
@@ -402,7 +404,7 @@ OFFLINE_MODE = True  # Toggle for fixture vs AWS
 
 if OFFLINE_MODE:
     from src.validation_support.aws_mock_layer import setup_offline_environment
-    setup_offline_environment(fixture_path=Path("tests/fixtures/aws_complete"))
+    setup_offline_environment(fixture_path=Path("tests/fixtures/rila"))
 ```
 
 ### Important Notes
@@ -415,11 +417,11 @@ if OFFLINE_MODE:
 
 | Product Code | Type | Buffer Level | Term | R² | MAPE | Status |
 |--------------|------|--------------|------|-----|------|--------|
-| 6Y20B | RILA | 20% | 6 years | 78.37% | 12.74% | 🟢 Production |
-| 6Y10B | RILA | 10% | 6 years | TBD | TBD | 🟢 Production |
-| 10Y20B | RILA | 20% | 10 years | TBD | TBD | 🟢 Production |
-| FIA | FIA | N/A | Varies | - | - | 🟡 Alpha/Stub |
-| MYGA | MYGA | N/A | Varies | - | - | 🟡 Alpha/Stub |
+| 6Y20B | RILA | 20% | 6 years | 78.37% | 12.74% | Production |
+| 6Y10B | RILA | 10% | 6 years | TBD | TBD | Production |
+| 10Y20B | RILA | 20% | 10 years | TBD | TBD | Production |
+| FIA | FIA | N/A | Varies | - | - | Alpha/Stub |
+| MYGA | MYGA | N/A | Varies | - | - | Alpha/Stub |
 
 **Reference:** [docs/business/methodology_report.md](docs/business/methodology_report.md) for complete performance metrics
 

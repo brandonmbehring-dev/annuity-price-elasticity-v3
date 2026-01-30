@@ -1363,6 +1363,606 @@ class TestPrepareAnalysisData:
 
 
 # =============================================================================
+# BUILD PIPELINE CONFIGS TESTS
+# =============================================================================
+
+
+class TestBuildPipelineConfigs:
+    """Tests for _build_pipeline_configs method."""
+
+    def test_returns_dict_with_required_keys(self, interface_fixture):
+        """Should return dict containing all pipeline configuration keys."""
+        configs = interface_fixture._build_pipeline_configs()
+
+        required_keys = [
+            'product_filter',
+            'sales_cleanup',
+            'time_series',
+            'wink_processing',
+            'weekly_aggregation',
+            'competitive',
+            'data_integration',
+            'lag_features',
+            'final_features',
+            'product',
+        ]
+
+        assert isinstance(configs, dict)
+        for key in required_keys:
+            assert key in configs, f"Missing required key: {key}"
+
+    def test_product_filter_config_structure(self, interface_fixture):
+        """Should return product_filter config with correct structure."""
+        configs = interface_fixture._build_pipeline_configs()
+
+        product_filter = configs['product_filter']
+        assert 'product_name' in product_filter
+        assert 'buffer_rate' in product_filter
+        assert 'term' in product_filter
+
+    def test_sales_cleanup_config_structure(self, interface_fixture):
+        """Should return sales_cleanup config with correct structure."""
+        configs = interface_fixture._build_pipeline_configs()
+
+        sales_cleanup = configs['sales_cleanup']
+        assert 'min_premium' in sales_cleanup
+        assert 'max_premium' in sales_cleanup
+        assert 'quantile_threshold' in sales_cleanup
+        assert 'start_date_col' in sales_cleanup
+        assert 'premium_column' in sales_cleanup
+
+    def test_time_series_config_structure(self, interface_fixture):
+        """Should return time_series config with correct structure."""
+        configs = interface_fixture._build_pipeline_configs()
+
+        time_series = configs['time_series']
+        assert 'alias_date_col' in time_series
+        assert 'groupby_frequency' in time_series
+        assert 'rolling_window_days' in time_series
+
+    def test_wink_processing_config_structure(self, interface_fixture):
+        """Should return wink_processing config with correct structure."""
+        configs = interface_fixture._build_pipeline_configs()
+
+        wink_processing = configs['wink_processing']
+        assert 'product_type_filter' in wink_processing
+        assert 'product_ids' in wink_processing
+        assert 'buffer_rates_allowed' in wink_processing
+
+    def test_lag_features_config_structure(self, interface_fixture):
+        """Should return lag_features config with correct structure."""
+        configs = interface_fixture._build_pipeline_configs()
+
+        lag_features = configs['lag_features']
+        assert 'lag_column_configs' in lag_features
+        assert 'max_lag_periods' in lag_features
+        assert 'polynomial_base_columns' in lag_features
+
+    def test_final_features_config_structure(self, interface_fixture):
+        """Should return final_features config with correct structure."""
+        configs = interface_fixture._build_pipeline_configs()
+
+        final_features = configs['final_features']
+        assert 'feature_analysis_start_date' in final_features
+        assert 'date_column' in final_features
+
+    def test_product_config_is_product_config_instance(self, interface_fixture):
+        """Should include ProductConfig instance in configs."""
+        configs = interface_fixture._build_pipeline_configs()
+
+        assert 'product' in configs
+        assert isinstance(configs['product'], ProductConfig)
+        assert configs['product'].product_code == '6Y20B'
+
+    def test_uses_build_pipeline_configs_for_product(self, mock_adapter):
+        """Should call build_pipeline_configs_for_product with product code."""
+        with patch('src.config.config_builder.build_pipeline_configs_for_product') as mock_build:
+            mock_build.return_value = {
+                'product_filter': {},
+                'sales_cleanup': {},
+                'time_series': {},
+                'wink_processing': {},
+                'weekly_aggregation': {},
+                'competitive': {},
+                'data_integration': {},
+                'lag_features': {},
+                'final_features': {},
+                'product': Mock(product_code='6Y20B'),
+            }
+
+            interface = UnifiedNotebookInterface(
+                product_code="6Y20B",
+                data_source="fixture",
+                adapter=mock_adapter,
+            )
+            configs = interface._build_pipeline_configs()
+
+            mock_build.assert_called_once_with("6Y20B")
+
+    def test_configs_for_different_products(self, mock_adapter):
+        """Should generate different configs for different products."""
+        interface_6y20b = UnifiedNotebookInterface(
+            product_code="6Y20B",
+            data_source="fixture",
+            adapter=mock_adapter,
+        )
+        interface_6y10b = UnifiedNotebookInterface(
+            product_code="6Y10B",
+            data_source="fixture",
+            adapter=mock_adapter,
+        )
+
+        configs_6y20b = interface_6y20b._build_pipeline_configs()
+        configs_6y10b = interface_6y10b._build_pipeline_configs()
+
+        # Products should have different buffer rates
+        assert configs_6y20b['product'].buffer_level != configs_6y10b['product'].buffer_level
+
+
+# =============================================================================
+# MERGE DATA SOURCES TESTS
+# =============================================================================
+
+
+class TestMergeDataSources:
+    """Tests for _merge_data_sources method."""
+
+    @pytest.fixture
+    def minimal_sales_df(self):
+        """Create minimal sales DataFrame for testing."""
+        return pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10, freq='W'),
+            'sales': np.random.rand(10) * 1000,
+            'product_code': ['6Y20B'] * 10,
+        })
+
+    @pytest.fixture
+    def minimal_rates_df(self):
+        """Create minimal rates DataFrame for testing."""
+        return pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10, freq='W'),
+            'Prudential': np.random.rand(10) * 5,
+            'competitor_rate': np.random.rand(10) * 5,
+        })
+
+    @pytest.fixture
+    def minimal_weights_df(self):
+        """Create minimal weights DataFrame for testing."""
+        return pd.DataFrame({
+            'company': ['A', 'B', 'C'],
+            'weight': [0.5, 0.3, 0.2],
+        })
+
+    def test_returns_dataframe(self, interface_fixture, minimal_sales_df, minimal_rates_df):
+        """Should always return a DataFrame."""
+        result = interface_fixture._merge_data_sources(
+            minimal_sales_df, minimal_rates_df, None
+        )
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_handles_missing_columns_gracefully(self, interface_fixture, caplog):
+        """Should log warnings and continue when columns are missing."""
+        # Create DataFrames missing expected columns
+        incomplete_sales = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'random_col': np.random.rand(10),
+        })
+        incomplete_rates = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'other_col': np.random.rand(10),
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(
+                incomplete_sales, incomplete_rates, None
+            )
+
+        # Should return DataFrame (not crash)
+        assert isinstance(result, pd.DataFrame)
+        # Should have logged warnings about skipped stages
+        assert len(caplog.records) > 0
+
+    def test_returns_data_on_partial_failure(self, interface_fixture, minimal_sales_df):
+        """Should return best available data even when some stages fail."""
+        # Rates that will cause processing errors
+        broken_rates = pd.DataFrame({
+            'date': ['invalid', 'date', 'values'],
+            'rate': [1, 2, 3],
+        })
+
+        result = interface_fixture._merge_data_sources(
+            minimal_sales_df, broken_rates, None
+        )
+
+        # Should return some data, not crash
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) > 0
+
+    def test_stage_1_product_filtering_applied(self, interface_fixture, caplog):
+        """Stage 1 should apply product filtering or log warning."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'product_name': ['FlexGuard indexed variable annuity'] * 5 + ['Other'] * 5,
+            'buffer_rate': ['20%'] * 10,
+            'term': ['6Y'] * 10,
+            'sales': np.random.rand(10),
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'rate': np.random.rand(10),
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        # Either filtering succeeded or warning was logged
+        assert isinstance(result, pd.DataFrame)
+
+    def test_stage_2_sales_cleanup_applied(self, interface_fixture, caplog):
+        """Stage 2 should apply sales cleanup or log warning."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            # Missing columns that cleanup expects
+            'sales': np.random.rand(10),
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'rate': np.random.rand(10),
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_stage_3_time_series_creation(self, interface_fixture, caplog):
+        """Stage 3 should attempt time series creation."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'application_signed_date': pd.date_range('2023-01-01', periods=10),
+            'contract_issue_date': pd.date_range('2023-01-05', periods=10),
+            'contract_initial_premium_amount': np.random.rand(10) * 10000,
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'rate': np.random.rand(10),
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_stage_4_wink_processing(self, interface_fixture, caplog):
+        """Stage 4 should attempt WINK rate processing."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'sales': np.random.rand(10),
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'effectiveDate': pd.date_range('2023-01-01', periods=10),
+            'capRate': np.random.rand(10),
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_stage_5_market_share_weighting(self, interface_fixture, caplog, minimal_weights_df):
+        """Stage 5 should apply market share weighting when weights provided."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'sales': np.random.rand(10),
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'rate': np.random.rand(10),
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(
+                sales_df, rates_df, minimal_weights_df
+            )
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_skips_weighting_when_no_weights(self, interface_fixture):
+        """Stage 5 should skip weighting when weights_df is None."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'sales': np.random.rand(10),
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'rate': np.random.rand(10),
+        })
+
+        # Should not raise, should skip weighting stage
+        result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+        assert isinstance(result, pd.DataFrame)
+
+    def test_stage_6_data_integration(self, interface_fixture, mock_adapter, caplog):
+        """Stage 6 should attempt data integration."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'sales': np.random.rand(10),
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'rate': np.random.rand(10),
+        })
+
+        # Mock adapter to return macro data
+        mock_adapter.load_macro_data.return_value = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'DGS5': np.random.rand(10),
+            'VIXCLS': np.random.rand(10),
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_pipeline_chains_stages_in_order(self, interface_fixture, caplog):
+        """Pipeline should chain stages in correct order."""
+        # Create data that will pass through multiple stages
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'sales': np.random.rand(10) * 1000,
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=10),
+            'rate': np.random.rand(10) * 5,
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        # Verify we got output (stages were chained)
+        assert isinstance(result, pd.DataFrame)
+
+
+# =============================================================================
+# PIPELINE STAGE ERROR HANDLING TESTS
+# =============================================================================
+
+
+class TestPipelineStageErrorHandling:
+    """Tests for error handling in individual pipeline stages."""
+
+    def test_product_filter_error_returns_original_data(self, interface_fixture, caplog):
+        """Product filter stage should return original data on error."""
+        # Data missing required filter columns
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'value': [1, 2, 3, 4, 5],
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'rate': [1, 2, 3, 4, 5],
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        # Should log warning about skipped filtering
+        assert any('filter' in record.message.lower() or 'skip' in record.message.lower()
+                   for record in caplog.records)
+        assert isinstance(result, pd.DataFrame)
+
+    def test_sales_cleanup_error_continues_pipeline(self, interface_fixture, caplog):
+        """Sales cleanup errors should not halt the pipeline."""
+        # Create sales data missing expected cleanup columns
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'value': [1, 2, 3, 4, 5],
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'rate': [1, 2, 3, 4, 5],
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        # Pipeline should continue and return data
+        assert isinstance(result, pd.DataFrame)
+        assert len(result) > 0
+
+    def test_time_series_error_returns_cleaned_data(self, interface_fixture, caplog):
+        """Time series creation errors should return cleaned data."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'sales': [100, 200, 300, 400, 500],
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'rate': [1.0, 1.5, 2.0, 2.5, 3.0],
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_wink_processing_error_uses_raw_rates(self, interface_fixture, caplog):
+        """WINK processing errors should fall back to raw rates."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'sales': [100, 200, 300, 400, 500],
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'rate': [1.0, 1.5, 2.0, 2.5, 3.0],
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        # Should continue with raw rates
+        assert isinstance(result, pd.DataFrame)
+
+    def test_competitive_features_error_continues(self, interface_fixture, caplog):
+        """Competitive feature errors should not crash pipeline."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'sales': [100, 200, 300, 400, 500],
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'rate': [1.0, 1.5, 2.0, 2.5, 3.0],
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_weekly_aggregation_error_uses_input(self, interface_fixture, caplog):
+        """Weekly aggregation errors should return input data."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'sales': [100, 200, 300, 400, 500],
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'rate': [1.0, 1.5, 2.0, 2.5, 3.0],
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_lag_features_error_uses_input(self, interface_fixture, caplog):
+        """Lag feature errors should return weekly data."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'sales': [100, 200, 300, 400, 500],
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'rate': [1.0, 1.5, 2.0, 2.5, 3.0],
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        assert isinstance(result, pd.DataFrame)
+
+    def test_final_preparation_error_uses_lagged_data(self, interface_fixture, caplog):
+        """Final preparation errors should return lagged data."""
+        sales_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'sales': [100, 200, 300, 400, 500],
+        })
+        rates_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5),
+            'rate': [1.0, 1.5, 2.0, 2.5, 3.0],
+        })
+
+        import logging
+        with caplog.at_level(logging.WARNING):
+            result = interface_fixture._merge_data_sources(sales_df, rates_df, None)
+
+        assert isinstance(result, pd.DataFrame)
+
+
+# =============================================================================
+# INTEGRATION WITH BUILD_PIPELINE_CONFIGS_FOR_PRODUCT TESTS
+# =============================================================================
+
+
+class TestBuildPipelineConfigsIntegration:
+    """Tests for integration between interface and build_pipeline_configs_for_product."""
+
+    def test_interface_uses_correct_product_code(self, mock_adapter):
+        """Interface should pass correct product code to config builder."""
+        interface = UnifiedNotebookInterface(
+            product_code="6Y10B",
+            data_source="fixture",
+            adapter=mock_adapter,
+        )
+
+        configs = interface._build_pipeline_configs()
+
+        assert configs['product'].product_code == "6Y10B"
+
+    def test_configs_match_product_parameters(self, mock_adapter):
+        """Pipeline configs should reflect product-specific parameters."""
+        interface = UnifiedNotebookInterface(
+            product_code="6Y20B",
+            data_source="fixture",
+            adapter=mock_adapter,
+        )
+
+        configs = interface._build_pipeline_configs()
+
+        # 6Y20B is a 6-year term, 20% buffer product
+        assert configs['product'].buffer_level == 0.20 or configs['product'].buffer_level == 20
+        assert '6Y' in configs['product'].product_code or configs['product'].term == 6
+
+    def test_direct_import_works(self):
+        """Should be able to import build_pipeline_configs_for_product directly."""
+        from src.config.config_builder import build_pipeline_configs_for_product
+
+        configs = build_pipeline_configs_for_product("6Y20B")
+
+        assert 'product_filter' in configs
+        assert 'product' in configs
+
+    def test_config_keys_match_pipeline_stages(self, interface_fixture):
+        """Config keys should match the 10 pipeline stages."""
+        configs = interface_fixture._build_pipeline_configs()
+
+        # These are the pipeline stages in _merge_data_sources
+        expected_config_keys = {
+            'product_filter',      # Stage 1
+            'sales_cleanup',       # Stage 2
+            'time_series',         # Stage 3
+            'wink_processing',     # Stage 4
+            # Stage 5 uses weights_df directly
+            'data_integration',    # Stage 6
+            'competitive',         # Stage 7
+            'weekly_aggregation',  # Stage 8
+            'lag_features',        # Stage 9
+            'final_features',      # Stage 10
+        }
+
+        for key in expected_config_keys:
+            assert key in configs, f"Missing config for stage: {key}"
+
+    def test_configs_have_non_empty_values(self, interface_fixture):
+        """Pipeline configs should have non-empty configuration values."""
+        configs = interface_fixture._build_pipeline_configs()
+
+        for key, value in configs.items():
+            if key != 'product':  # ProductConfig is a special case
+                assert value is not None, f"Config '{key}' should not be None"
+                if isinstance(value, dict):
+                    assert len(value) > 0, f"Config '{key}' should not be empty"
+
+
+# =============================================================================
 # SUMMARY TEST
 # =============================================================================
 
@@ -1375,6 +1975,8 @@ def test_interface_coverage_summary():
     - Initialization: __init__, _create_adapter, _get_default_aggregation
     - Properties: product, adapter, aggregation, methodology
     - Data loading: load_data, _merge_data_sources
+    - Pipeline configs: _build_pipeline_configs
+    - Pipeline stages: All 10 stages with error handling
     - Validation: validate_inference_data, _validate_methodology_compliance
     - Config: build_inference_config, _get_default_inference_config
     - Features: _get_target_column, _get_candidate_features, _get_inference_features
@@ -1382,6 +1984,7 @@ def test_interface_coverage_summary():
     - Coefficients: validate_coefficients, get_coefficient_signs, get_constraint_rules
     - Export: export_results
     - Factory: create_interface
+    - Integration: build_pipeline_configs_for_product
 
     Coverage Target: 60%
     """

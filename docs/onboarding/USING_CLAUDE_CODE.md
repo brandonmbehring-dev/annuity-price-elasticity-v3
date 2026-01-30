@@ -25,7 +25,7 @@ Claude Code is an AI assistant that:
 The root `CLAUDE.md` file contains:
 
 ```
-📂 Repository Root
+ Repository Root
 └── CLAUDE.md           ← Claude's primary guidance document
     ├── Project phase (DEVELOPMENT)
     ├── Core principles (fail fast, DI, DRY, zero regression)

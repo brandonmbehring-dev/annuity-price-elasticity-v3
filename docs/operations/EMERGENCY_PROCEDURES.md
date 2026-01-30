@@ -159,9 +159,9 @@ from src.models.inference import PriceElasticityInference
 
 try:
     model = PriceElasticityInference.load('rila_6y20b')
-    print('✓ Model loads successfully')
+    print('[PASS] Model loads successfully')
 except Exception as e:
-    print(f'✗ Model load FAILED: {e}')
+    print(f'[FAIL] Model load FAILED: {e}')
     sys.exit(1)
 "
 ```
@@ -198,7 +198,7 @@ test_features = pd.read_csv('data/processed/latest_features.csv').iloc[-1:]
 
 prediction = rolled_back_model.predict(test_features)
 
-print(f"✓ Rollback successful: Prediction = {prediction['mean'].iloc[0]:.0f}")
+print(f"[PASS] Rollback successful: Prediction = {prediction['mean'].iloc[0]:.0f}")
 print(f"Restored version: {rolled_back_model.metadata['version']}")
 ```
 
@@ -242,7 +242,7 @@ print(f"Sample size: {len(actuals)} weeks")
 
 # Check if data quality issue (e.g., incomplete actuals)
 if len(actuals) < 2:
-    print("⚠️  WARNING: Insufficient data for MAPE calculation")
+    print("[WARN]  WARNING: Insufficient data for MAPE calculation")
 ```
 
 **Step 2: Determine Root Cause**
@@ -261,10 +261,10 @@ latest_date = actuals['date'].max()
 days_old = (datetime.now() - latest_date).days
 
 if days_old > 14:
-    print(f'✗ Data stale ({days_old} days old)')
+    print(f'[FAIL] Data stale ({days_old} days old)')
     print('Action: Refresh TDE data before rollback decision')
 else:
-    print(f'✓ Data fresh ({days_old} days old)')
+    print(f'[PASS] Data fresh ({days_old} days old)')
 "
 ```
 
@@ -286,7 +286,7 @@ for feat in current_model.feature_names_:
     pct_change = (current_coef - historical_mean) / historical_mean
 
     if abs(pct_change) > 0.50:
-        print(f"⚠️  {feat}: {pct_change:.1%} change from historical mean")
+        print(f"[WARN]  {feat}: {pct_change:.1%} change from historical mean")
 ```
 
 **Step 3: Decision Tree**
@@ -366,11 +366,11 @@ for feat in comp_features:
         violations.append(f"Competitor rate positive: {feat} = {coefs[feat]:.4f}")
 
 if violations:
-    print("✗ CRITICAL: Economic constraints violated!")
+    print("[FAIL] CRITICAL: Economic constraints violated!")
     for v in violations:
         print(f"  - {v}")
 else:
-    print("✓ Economic constraints satisfied (false alarm)")
+    print("[PASS] Economic constraints satisfied (false alarm)")
 ```
 
 **Step 2: IMMEDIATE Rollback** (No Investigation First)
@@ -459,10 +459,10 @@ invalid_predictions = predictions[
 ]
 
 if len(invalid_predictions) > 0:
-    print(f"✗ CRITICAL: {len(invalid_predictions)} invalid predictions detected")
+    print(f"[FAIL] CRITICAL: {len(invalid_predictions)} invalid predictions detected")
     print(invalid_predictions[['date', 'mean', 'lower', 'upper']])
 else:
-    print("✓ All predictions within valid range")
+    print("[PASS] All predictions within valid range")
 ```
 
 **Step 2: IMMEDIATE Rollback**
@@ -609,11 +609,11 @@ recent = wink_data[wink_data['rate_effective_date'] >= datetime.now() - timedelt
 for carrier in carriers:
     count = len(recent[recent['carrier'] == carrier])
     if count == 0:
-        print(f"✗ MISSING: {carrier} (no data in last 30 days)")
+        print(f"[FAIL] MISSING: {carrier} (no data in last 30 days)")
     elif count < 5:
-        print(f"⚠️  SPARSE: {carrier} ({count} records)")
+        print(f"[WARN]  SPARSE: {carrier} ({count} records)")
     else:
-        print(f"✓ OK: {carrier} ({count} records)")
+        print(f"[PASS] OK: {carrier} ({count} records)")
 ```
 
 **Step 2: Manual Competitor Rate Entry**
@@ -750,7 +750,7 @@ ls -lh data/processed/
 python -c "
 from src.models.inference import PriceElasticityInference
 model = PriceElasticityInference.load_from_local('models/production/rila_6y20b/')
-print('✓ Model loaded from local storage')
+print('[PASS] Model loaded from local storage')
 "
 ```
 

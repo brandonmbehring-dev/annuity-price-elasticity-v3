@@ -269,10 +269,10 @@ def create_model_selection_summary(
 
     # Selection criteria
     summary_lines.append("Selection Methodology:")
-    summary_lines.append("  ✓ AIC-based model quality assessment")
-    summary_lines.append("  ✓ Economic constraint validation")
-    summary_lines.append("  ✓ Bootstrap stability quantification")
-    summary_lines.append("  ✓ Multi-criteria robustness evaluation")
+    summary_lines.append("  [PASS] AIC-based model quality assessment")
+    summary_lines.append("  [PASS] Economic constraint validation")
+    summary_lines.append("  [PASS] Bootstrap stability quantification")
+    summary_lines.append("  [PASS] Multi-criteria robustness evaluation")
     summary_lines.append("")
 
     summary_lines.append("Recommendation: Proceed with integrated selection approach")

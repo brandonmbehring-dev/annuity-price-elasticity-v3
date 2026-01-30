@@ -297,9 +297,9 @@ for coef, value in results['coefficients'].items():
 R-squared: 62.3%
 
 Key Coefficients:
-  prudential_rate_t0: 8,500.00   # Positive ✓ (higher rate → more sales)
-  prudential_rate_t1: 4,200.00   # Positive ✓
-  competitor_weighted_t2: -6,300.00  # Negative ✓ (higher competitor → less sales)
+  prudential_rate_t0: 8,500.00   # Positive [PASS] (higher rate → more sales)
+  prudential_rate_t1: 4,200.00   # Positive [PASS]
+  competitor_weighted_t2: -6,300.00  # Negative [PASS] (higher competitor → less sales)
 ```
 
 **What the coefficients mean**:

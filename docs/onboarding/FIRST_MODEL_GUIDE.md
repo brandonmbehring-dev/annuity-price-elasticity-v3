@@ -77,8 +77,8 @@ The `-e` flag installs in "editable" mode so code changes are immediately availa
 
 **Verify:**
 ```bash
-python -c "from src.notebooks import create_interface; print('✓ Installation verified')"
-# Should output: ✓ Installation verified
+python -c "from src.notebooks import create_interface; print('[PASS] Installation verified')"
+# Should output: [PASS] Installation verified
 ```
 
 If you see `ModuleNotFoundError`, you skipped the `pip install -e .` step!
@@ -97,22 +97,22 @@ interface = create_interface("6Y20B", environment="fixture")
 
 # Load data
 df = interface.load_data()
-print(f"✓ Loaded {len(df)} rows of data")
+print(f"[PASS] Loaded {len(df)} rows of data")
 
 # Run inference
 results = interface.run_inference(df)
-print(f"✓ Inference completed")
-print(f"✓ Model R²: {results['metrics']['r_squared']:.4f}")
+print(f"[PASS] Inference completed")
+print(f"[PASS] Model R²: {results['metrics']['r_squared']:.4f}")
 ```
 
 **Expected Output:**
 ```
 Loading data for RILA 6Y20B (fixture environment)...
-✓ Loaded 1248 rows of data
+[PASS] Loaded 1248 rows of data
 Running inference pipeline...
 Bootstrap iterations: 10000/10000 [100%]
-✓ Inference completed
-✓ Model R²: 0.7837
+[PASS] Inference completed
+[PASS] Model R²: 0.7837
 ```
 
 **What This Does:** Runs the full inference pipeline on pre-processed test data stored locally. No AWS credentials needed.
@@ -158,7 +158,7 @@ results = interface.run_inference(df)
 
 # Export to Excel
 output_path = interface.export_results(results, format="excel")
-print(f"✓ Results saved to: {output_path}")
+print(f"[PASS] Results saved to: {output_path}")
 ```
 
 **Expected Output:**
@@ -167,7 +167,7 @@ Loading data for RILA 6Y20B (fixture environment)...
 Running inference pipeline...
 Bootstrap iterations: 10000/10000 [100%]
 Exporting results to Excel...
-✓ Results saved to: output/rila_6y20b_inference_2026-01-28.xlsx
+[PASS] Results saved to: output/rila_6y20b_inference_2026-01-28.xlsx
 ```
 
 **What This Does:** Runs inference and exports results to a timestamped Excel workbook with multiple sheets (predictions, metrics, diagnostics).

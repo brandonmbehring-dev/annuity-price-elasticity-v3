@@ -22,11 +22,11 @@ Offline development allows you to build, test, and validate the entire RILA Pric
 ### Why Use Fixtures vs AWS?
 
 **Fixtures Provide**:
-- ⚡ **Speed**: 10-100x faster data loading (no S3 latency)
-- 🔒 **No Credentials**: Work without AWS access or VPN
-- 🔄 **Reproducibility**: Identical results across machines
-- 🌐 **Offline Work**: Develop on planes, trains, anywhere
-- 💰 **Cost Savings**: No S3 read costs during development
+-  **Speed**: 10-100x faster data loading (no S3 latency)
+-  **No Credentials**: Work without AWS access or VPN
+-  **Reproducibility**: Identical results across machines
+-  **Offline Work**: Develop on planes, trains, anywhere
+-  **Cost Savings**: No S3 read costs during development
 
 **AWS Required For**:
 - Pre-production deployment validation
@@ -848,12 +848,12 @@ python tests/fixtures/refresh_fixtures.py
 **Output**:
 ```
 Refreshing fixtures from AWS...
-Loading sales data...          ✓ (2.8M rows, 11 columns)
-Loading competitive rates...   ✓ (1.1M rows, 19 columns)
-Loading market weights...      ✓ (19 rows, 11 columns)
-Loading macro data...          ✓ (5 indicators)
-Running full pipeline...       ✓ (10 stages captured)
-Running inference...           ✓ (baseline saved)
+Loading sales data...          [PASS] (2.8M rows, 11 columns)
+Loading competitive rates...   [PASS] (1.1M rows, 19 columns)
+Loading market weights...      [PASS] (19 rows, 11 columns)
+Loading macro data...          [PASS] (5 indicators)
+Running full pipeline...       [PASS] (10 stages captured)
+Running inference...           [PASS] (baseline saved)
 Fixtures refreshed successfully! Output: tests/fixtures/rila/
 ```
 
@@ -1031,8 +1031,8 @@ python tests/fixtures/refresh_fixtures.py
 **3. Check Random Seeds**:
 ```python
 # Ensure random_state is set in all stochastic operations
-model = BootstrapInference({'random_state': 42})  # ✓ Deterministic
-model = BootstrapInference()                       # ✗ Non-deterministic
+model = BootstrapInference({'random_state': 42})  # [PASS] Deterministic
+model = BootstrapInference()                       # [FAIL] Non-deterministic
 ```
 
 **4. Isolate Failing Stage**:
@@ -1173,11 +1173,11 @@ done
 
 **2. Fix Random Seeds**:
 ```python
-# ✓ Deterministic
+# [PASS] Deterministic
 np.random.seed(42)
 model = BootstrapInference({'random_state': 42})
 
-# ✗ Non-deterministic
+# [FAIL] Non-deterministic
 model = BootstrapInference()  # Missing random_state
 ```
 
@@ -1198,43 +1198,43 @@ from hypothesis.stateful import RuleBasedStateMachine
 
 ## Best Practices
 
-### DO ✓
+### DO [PASS]
 
 1. **Use Fixtures for All Development**
    ```python
-   # ✓ GOOD: Offline development
+   # [PASS] GOOD: Offline development
    interface = create_interface("6Y20B", environment="fixture")
 
-   # ✗ BAD: Unnecessary AWS dependency
+   # [FAIL] BAD: Unnecessary AWS dependency
    interface = create_interface("6Y20B", environment="aws")
    ```
 
 2. **Run AWS Tests Before Deployment**
    ```bash
-   # ✓ GOOD: Validate against production before release
+   # [PASS] GOOD: Validate against production before release
    pytest -m aws -v
 
-   # ✗ BAD: Deploy without AWS validation
+   # [FAIL] BAD: Deploy without AWS validation
    git push origin main  # Without AWS tests
    ```
 
 3. **Refresh Fixtures Quarterly**
    ```bash
-   # ✓ GOOD: Regular refresh schedule
+   # [PASS] GOOD: Regular refresh schedule
    python tests/fixtures/refresh_fixtures.py  # Q1, Q2, Q3, Q4
 
-   # ✗ BAD: Let fixtures become stale (> 90 days)
+   # [FAIL] BAD: Let fixtures become stale (> 90 days)
    # Stale fixtures → divergence from production
    ```
 
 4. **Use Smallest Fixture for Each Test**
    ```python
-   # ✓ GOOD: Fast unit test with tiny fixture
+   # [PASS] GOOD: Fast unit test with tiny fixture
    def test_aic_formula(tiny_dataset, small_bootstrap_config):
        aic = calculate_aic(tiny_dataset, small_bootstrap_config)
        assert aic > 0
 
-   # ✗ BAD: Slow unit test with full production data
+   # [FAIL] BAD: Slow unit test with full production data
    def test_aic_formula(full_production_dataset, production_bootstrap_config):
        aic = calculate_aic(full_production_dataset, production_bootstrap_config)
        assert aic > 0  # Same assertion, but 100x slower
@@ -1242,53 +1242,53 @@ from hypothesis.stateful import RuleBasedStateMachine
 
 5. **Skip Slow Tests in Fast CI**
    ```bash
-   # ✓ GOOD: Fast CI loop (< 5 minutes)
+   # [PASS] GOOD: Fast CI loop (< 5 minutes)
    pytest -m "not slow and not aws"
 
-   # ✗ BAD: Slow CI loop (> 15 minutes)
+   # [FAIL] BAD: Slow CI loop (> 15 minutes)
    pytest  # Runs all tests including slow ones
    ```
 
 6. **Set Random Seeds for Determinism**
    ```python
-   # ✓ GOOD: Reproducible results
+   # [PASS] GOOD: Reproducible results
    model = BootstrapInference({'random_state': 42})
 
-   # ✗ BAD: Non-reproducible results
+   # [FAIL] BAD: Non-reproducible results
    model = BootstrapInference()  # Results vary across runs
    ```
 
 7. **Use Hierarchical Fixtures**
    ```python
-   # ✓ GOOD: Appropriate fixture size
+   # [PASS] GOOD: Appropriate fixture size
    def test_unit(tiny_dataset):           # Unit test
    def test_integration(medium_dataset):  # Integration test
    def test_e2e(full_production_dataset): # E2E test
 
-   # ✗ BAD: Always using largest fixture
+   # [FAIL] BAD: Always using largest fixture
    def test_unit(full_production_dataset):  # Unnecessary
    ```
 
 8. **Validate Mathematical Equivalence**
    ```python
-   # ✓ GOOD: Validate against baseline
+   # [PASS] GOOD: Validate against baseline
    np.testing.assert_allclose(result, baseline, rtol=1e-12)
 
-   # ✗ BAD: No validation
+   # [FAIL] BAD: No validation
    # Changes might break equivalence unnoticed
    ```
 
-### DON'T ✗
+### DON'T [FAIL]
 
 1. **Don't Commit AWS Credentials**
    ```bash
-   # ✗ BAD: Credentials in code
+   # [FAIL] BAD: Credentials in code
    aws_config = {
        'role_arn': 'arn:aws:iam::123456789012:role/MyRole',
        'xid': 'my-secret-id'  # ← Security risk!
    }
 
-   # ✓ GOOD: Use environment variables
+   # [PASS] GOOD: Use environment variables
    aws_config = {
        'role_arn': os.environ['ROLE_ARN'],
        'xid': os.environ['XID']
@@ -1297,41 +1297,41 @@ from hypothesis.stateful import RuleBasedStateMachine
 
 2. **Don't Edit Fixtures Manually**
    ```bash
-   # ✗ BAD: Manually edit fixture
+   # [FAIL] BAD: Manually edit fixture
    vim tests/fixtures/rila/final_weekly_dataset.parquet
 
-   # ✓ GOOD: Refresh from AWS
+   # [PASS] GOOD: Refresh from AWS
    python tests/fixtures/refresh_fixtures.py
    ```
 
 3. **Don't Use Stale Fixtures**
    ```bash
-   # ✗ BAD: Ignore fixture freshness warnings
+   # [FAIL] BAD: Ignore fixture freshness warnings
    # WARNING: Fixtures are 120 days old
 
-   # ✓ GOOD: Refresh when warned
+   # [PASS] GOOD: Refresh when warned
    python tests/fixtures/refresh_fixtures.py
    ```
 
 4. **Don't Run AWS Tests in Fast CI Loops**
    ```yaml
-   # ✗ BAD: CI runs AWS tests on every commit
+   # [FAIL] BAD: CI runs AWS tests on every commit
    script:
      - pytest  # Includes AWS tests → slow + expensive
 
-   # ✓ GOOD: CI skips AWS tests (pre-deploy only)
+   # [PASS] GOOD: CI skips AWS tests (pre-deploy only)
    script:
      - pytest -m "not aws and not slow"  # Fast CI
    ```
 
 5. **Don't Use Large Fixtures for Unit Tests**
    ```python
-   # ✗ BAD: Unit test with full production data
+   # [FAIL] BAD: Unit test with full production data
    def test_simple_calculation(full_production_dataset):
        result = calculate_average(full_production_dataset)
        assert result > 0  # Takes 5s instead of 0.01s
 
-   # ✓ GOOD: Unit test with tiny fixture
+   # [PASS] GOOD: Unit test with tiny fixture
    def test_simple_calculation(tiny_dataset):
        result = calculate_average(tiny_dataset)
        assert result > 0  # Fast!
@@ -1339,29 +1339,29 @@ from hypothesis.stateful import RuleBasedStateMachine
 
 6. **Don't Ignore Performance Regressions**
    ```bash
-   # ✗ BAD: Ignore performance test failure
+   # [FAIL] BAD: Ignore performance test failure
    # FAILED: Feature engineering took 5.2s (max: 2.0s)
    # "It's probably fine..." ← No!
 
-   # ✓ GOOD: Investigate and fix
+   # [PASS] GOOD: Investigate and fix
    # Profile code, identify bottleneck, optimize
    ```
 
 7. **Don't Break Determinism**
    ```python
-   # ✗ BAD: Non-deterministic operation
+   # [FAIL] BAD: Non-deterministic operation
    shuffled = df.sample(frac=1.0)  # Different order each run
 
-   # ✓ GOOD: Deterministic operation
+   # [PASS] GOOD: Deterministic operation
    shuffled = df.sample(frac=1.0, random_state=42)  # Same order
    ```
 
 8. **Don't Skip Documentation Updates**
    ```bash
-   # ✗ BAD: Code changes without doc updates
+   # [FAIL] BAD: Code changes without doc updates
    git commit -m "Add new feature"  # No README update
 
-   # ✓ GOOD: Update docs with code
+   # [PASS] GOOD: Update docs with code
    git add README.md
    git commit -m "Add new feature (with docs)"
    ```

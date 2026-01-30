@@ -186,7 +186,7 @@ This document provides curated documentation journeys for different roles and us
 - Out-of-sample validation
 - Complete sign-off form
 
-⚠️ **CRITICAL**: Any failure = BLOCK deployment. Do not skip checks.
+[WARN] **CRITICAL**: Any failure = BLOCK deployment. Do not skip checks.
 
 ### Step 3: Run Validation Tests (1 hour)
 **Execute**:
@@ -484,7 +484,7 @@ If issues arise:
 
 ### Model Validator
 **Core Reading**:
-1. [../practices/LEAKAGE_CHECKLIST.md](../practices/LEAKAGE_CHECKLIST.md) ⚠️ MANDATORY
+1. [../practices/LEAKAGE_CHECKLIST.md](../practices/LEAKAGE_CHECKLIST.md) [WARN] MANDATORY
 2. [../methodology/validation_guidelines.md](../methodology/validation_guidelines.md)
 3. [../operations/DEPLOYMENT_CHECKLIST.md](../operations/DEPLOYMENT_CHECKLIST.md)
 

@@ -97,7 +97,7 @@ RILA, FIA, and MYGA product types with shared pipeline code.
 **Bad Examples**:
 ```
 Update code  (too vague)
-🎉 Add new feature  (no emojis in commits)
+[emoji] Add new feature  (no emojis in commits)
 WIP  (work-in-progress commits should be squashed before PR)
 ```
 
@@ -126,20 +126,27 @@ WIP  (work-in-progress commits should be squashed before PR)
        ...
    ```
 
-3. **Docstrings**: Use Google-style docstrings
+3. **Docstrings**: Use NumPy-style docstrings
    ```python
    def train_model(X: pd.DataFrame, y: pd.Series) -> BootstrapModel:
        """Train bootstrap ridge regression ensemble.
 
-       Args:
-           X: Feature matrix (n_samples, n_features)
-           y: Target variable (n_samples,)
+       Parameters
+       ----------
+       X : pd.DataFrame
+           Feature matrix (n_samples, n_features)
+       y : pd.Series
+           Target variable (n_samples,)
 
-       Returns:
+       Returns
+       -------
+       BootstrapModel
            Trained bootstrap ensemble model with 10K estimators
 
-       Raises:
-           ValueError: If X and y have different lengths
+       Raises
+       ------
+       ValueError
+           If X and y have different lengths
        """
        ...
    ```

@@ -788,9 +788,9 @@ WINK data only shows entries when cap rates change. We create a complete time in
    - 6Y20B context: Enhanced signaling via 20% buffer and 6-year term
 
 **Economic Constraint Validation:**
-- ✓ All coefficients have theoretically expected signs
-- ✓ 100% sign consistency across bootstrap samples
-- ✓ All coefficients statistically significant at α = 0.05
+- [PASS] All coefficients have theoretically expected signs
+- [PASS] 100% sign consistency across bootstrap samples
+- [PASS] All coefficients statistically significant at α = 0.05
 
 **Reference:** README.md lines 300-310 - Current optimal model structure
 
@@ -966,10 +966,10 @@ This consistency demonstrates the Bootstrap Ridge model maintains stable predict
 
 **Economic Validity:**
 All selected features satisfy theoretical expectations:
-- ✓ Own rate effect (β > 0): Quality signaling validated
-- ✓ Competitive effect (β < 0): Competitive pressure validated
-- ✓ Persistence effect (β > 0): Contract processing momentum validated
-- ✓ Statistical significance: All coefficients significant at α = 0.05
+- [PASS] Own rate effect (β > 0): Quality signaling validated
+- [PASS] Competitive effect (β < 0): Competitive pressure validated
+- [PASS] Persistence effect (β > 0): Contract processing momentum validated
+- [PASS] Statistical significance: All coefficients significant at α = 0.05
 
 **Stability Analysis:**
 - All bootstrap samples yield correct coefficient signs (validated across 10,000 estimators for inference)
@@ -1011,19 +1011,19 @@ All selected features satisfy theoretical expectations:
 **1. Own Rate Coefficient (Quality Signaling):**
 - **Constraint**: β > 0
 - **Feature**: `prudential_rate_current`
-- **Status**: ✓ Validated across all bootstrap samples
+- **Status**: [PASS] Validated across all bootstrap samples
 - **Interpretation**: Higher Prudential rates increase sales (quality signal)
 
 **2. Competitive Rate Coefficient (Competitive Pressure):**
 - **Constraint**: β < 0
 - **Feature**: `competitor_top5_t2`
-- **Status**: ✓ Validated across all bootstrap samples
+- **Status**: [PASS] Validated across all bootstrap samples
 - **Interpretation**: Higher competitor rates reduce our sales (competitive disadvantage)
 
 **3. Sales Persistence Coefficient (Contract Processing):**
 - **Constraint**: β > 0
 - **Feature**: `sales_target_contract_t5`
-- **Status**: ✓ Validated across all bootstrap samples
+- **Status**: [PASS] Validated across all bootstrap samples
 - **Interpretation**: Recent sales momentum continues due to processing lags
 
 **4. Statistical Significance:**
@@ -1505,16 +1505,16 @@ These methods are appropriate for **pure forecasting tasks** where predictive ac
 | **Pipeline Stages** | 4-stage | Similar to v1.2 | 2-stage optimized |
 
 **Best Practices Adopted:**
-- ✓ **application_signed_date** from FIA v2.0 (prevents time-ordering leakage)
-- ✓ **Bootstrap ensemble** enhancement (robust uncertainty quantification)
-- ✓ **Automated economic constraints** (prevents spurious correlations)
-- ✓ **L2 regularization** (optimal bias-variance trade-off)
-- ✓ **DVC pipeline automation** (operational resilience)
+- [PASS] **application_signed_date** from FIA v2.0 (prevents time-ordering leakage)
+- [PASS] **Bootstrap ensemble** enhancement (robust uncertainty quantification)
+- [PASS] **Automated economic constraints** (prevents spurious correlations)
+- [PASS] **L2 regularization** (optimal bias-variance trade-off)
+- [PASS] **DVC pipeline automation** (operational resilience)
 
 **Best Practices NOT Adopted (with rationale):**
-- ✗ **Logit transformation**: Unnecessary for established product strategic adjustments
-- ✗ **Decay weighting**: Bootstrap ensemble provides better temporal weighting
-- ✗ **Explicit holiday indicators**: Business day adjustment simpler and effective
+- [FAIL] **Logit transformation**: Unnecessary for established product strategic adjustments
+- [FAIL] **Decay weighting**: Bootstrap ensemble provides better temporal weighting
+- [FAIL] **Explicit holiday indicators**: Business day adjustment simpler and effective
 
 ### E. Comparative Performance Analysis
 
@@ -1522,11 +1522,11 @@ These methods are appropriate for **pure forecasting tasks** where predictive ac
 
 | Approach | R² | MAPE | Interpretability | Training Time | Uncertainty |
 |----------|-----|------|------------------|---------------|-------------|
-| **RILA v1.2 (Bagged Linear)** | ~55% | ~17% | ★★★★★ | Fast (< 5 min) | Standard errors |
-| **FIA v2.0 (Logit)** | ~58% | ~16% | ★★★★☆ | Medium (~10 min) | Standard errors |
-| **Bootstrap Ridge (Current)** | 78.37% | 12.74% | ★★★★★ | Medium (~30-45 min) | Bootstrap 95% CI |
-| **XGBoost (hypothetical)** | ~80%? | ~12%? | ★★☆☆☆ | Slow (~60 min) | Quantile regression |
-| **Neural Network (hypothetical)** | ~82%? | ~11%? | ★☆☆☆☆ | Very slow (>2 hrs) | Dropout uncertainty |
+| **RILA v1.2 (Bagged Linear)** | ~55% | ~17% | 5/5 | Fast (< 5 min) | Standard errors |
+| **FIA v2.0 (Logit)** | ~58% | ~16% | 4/5 | Medium (~10 min) | Standard errors |
+| **Bootstrap Ridge (Current)** | 78.37% | 12.74% | 5/5 | Medium (~30-45 min) | Bootstrap 95% CI |
+| **XGBoost (hypothetical)** | ~80%? | ~12%? | 2/5 | Slow (~60 min) | Quantile regression |
+| **Neural Network (hypothetical)** | ~82%? | ~11%? | 1/5 | Very slow (>2 hrs) | Dropout uncertainty |
 
 **Key Takeaway:**
 Bootstrap Ridge achieves strong performance (78.37% R²) while maintaining full interpretability (5-star rating). Non-linear alternatives might offer marginal accuracy gains but sacrifice the interpretability essential for business decision-making and regulatory compliance.

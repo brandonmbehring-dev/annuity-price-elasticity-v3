@@ -106,22 +106,22 @@ RILA sales exhibit extremely strong week-to-week persistence. This is a **legiti
 
 ### Evidence of No Data Leakage
 
-1. ✅ **No lag-0 competitor features**
+1. [DONE] **No lag-0 competitor features**
    - All competitor features properly lagged (t-2, t-3)
    - Proper temporal ordering maintained
    - Causal identification preserved
 
-2. ✅ **Correct coefficient signs**
+2. [DONE] **Correct coefficient signs**
    - Own rate (Prudential): +0.2573 (positive, as expected for yield economics)
    - Competitor rates: -0.2068, -0.0637 (negative, substitution effect)
    - Economic constraints satisfied
 
-3. ✅ **Improvement over sophisticated baseline**
+3. [DONE] **Improvement over sophisticated baseline**
    - Baseline R²=0.55 (not naive mean/persistence model)
    - Production improvement marginal (22.9%), not suspicious (>50%)
    - Explained by feature engineering, not leakage
 
-4. ✅ **Comprehensive validation performed**
+4. [DONE] **Comprehensive validation performed**
    - 8 production gates tested
    - Shuffled target test recommended (should fail on randomized data)
    - Temporal boundaries verified
@@ -156,10 +156,10 @@ RILA sales exhibit extremely strong week-to-week persistence. This is a **legiti
 
 | Validation Gate | Old Threshold | New Threshold | Status |
 |----------------|---------------|---------------|--------|
-| R² HALT | > 0.30 | > 0.80 | ✅ PASS (0.67 < 0.80) |
-| R² WARN | > 0.20 | > 0.70 | ✅ PASS (0.67 < 0.70) |
-| Improvement HALT | > 20% | > 30% | ✅ PASS (22.9% < 30%) |
-| Improvement WARN | > 10% | > 20% | ⚠️ WARN (22.9% > 20%) |
+| R² HALT | > 0.30 | > 0.80 | [DONE] PASS (0.67 < 0.80) |
+| R² WARN | > 0.20 | > 0.70 | [DONE] PASS (0.67 < 0.70) |
+| Improvement HALT | > 20% | > 30% | [DONE] PASS (22.9% < 30%) |
+| Improvement WARN | > 10% | > 20% | [WARN] WARN (22.9% > 20%) |
 
 **Note**: Thresholds updated 2026-01-26 to account for time series autocorrelation. See MODEL_INTERPRETATION.md for details.
 

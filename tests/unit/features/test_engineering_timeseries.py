@@ -705,29 +705,29 @@ def test_coverage_summary():
     - Tests Created: 28+ tests
 
     Functions Tested:
-    ✅ cpi_adjustment (lines 100-141)
-    ✅ _merge_economic_data (lines 37-72)
-    ✅ _apply_cpi_transformations (lines 75-97)
-    ✅ time_series_week_agg_smoothed (lines 210-244)
-    ✅ _create_aggregation_dict (lines 148-164)
-    ✅ _add_semantic_features (lines 167-190)
-    ✅ _add_temporal_features (lines 193-207)
-    ✅ create_lag_features (lines 329-390)
-    ✅ _create_lag_features_impl (lines 285-326) - tested via create_lag_features
-    ✅ _add_rate_features (lines 252-262) - tested via create_lag_features
-    ✅ _add_derived_features (lines 265-282) - tested via create_lag_features
+    [DONE] cpi_adjustment (lines 100-141)
+    [DONE] _merge_economic_data (lines 37-72)
+    [DONE] _apply_cpi_transformations (lines 75-97)
+    [DONE] time_series_week_agg_smoothed (lines 210-244)
+    [DONE] _create_aggregation_dict (lines 148-164)
+    [DONE] _add_semantic_features (lines 167-190)
+    [DONE] _add_temporal_features (lines 193-207)
+    [DONE] create_lag_features (lines 329-390)
+    [DONE] _create_lag_features_impl (lines 285-326) - tested via create_lag_features
+    [DONE] _add_rate_features (lines 252-262) - tested via create_lag_features
+    [DONE] _add_derived_features (lines 265-282) - tested via create_lag_features
 
     Edge Cases Covered:
-    ✅ Forward fill handling
-    ✅ Date boundary handling
-    ✅ NaN values in economic data
-    ✅ All-NaN economic indicators
-    ✅ Single week aggregation
-    ✅ Short time series
-    ✅ Split awareness (train/test separation)
-    ✅ Empty cutoff date rejection
-    ✅ Rolling smoothing
-    ✅ Seasonal indicators
+    [DONE] Forward fill handling
+    [DONE] Date boundary handling
+    [DONE] NaN values in economic data
+    [DONE] All-NaN economic indicators
+    [DONE] Single week aggregation
+    [DONE] Short time series
+    [DONE] Split awareness (train/test separation)
+    [DONE] Empty cutoff date rejection
+    [DONE] Rolling smoothing
+    [DONE] Seasonal indicators
 
     Estimated Coverage: ~85% (target achieved)
     """

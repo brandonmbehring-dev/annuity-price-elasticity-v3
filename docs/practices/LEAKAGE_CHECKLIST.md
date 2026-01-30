@@ -252,8 +252,8 @@ def test_out_of_sample_performance():
 
 | Check | Result | Action |
 |-------|--------|--------|
-| All PASS | ✅ | Proceed to deployment |
-| Any FAIL | ❌ | BLOCK deployment, investigate |
+| All PASS | [DONE] | Proceed to deployment |
+| Any FAIL | [ERROR] | BLOCK deployment, investigate |
 
 ---
 
@@ -322,17 +322,17 @@ Signature: _______________
 **Performance:** 78.37% R², 12.74% MAPE, 94.4% Coverage
 
 **Key Leakage Protections:**
-- ✓ Competitor rates: Minimum 2-week lag enforced (`competitor_top5_t2`)
-- ✓ Sales momentum: 5-week backward lag only (`sales_target_contract_t5`)
-- ✓ Own rate: Lag-0 allowed (we control our rate during rate-setting)
-- ✓ 50-day mature data cutoff prevents incomplete data contamination
-- ✓ application_signed_date used (not contract_issue_date)
+- [PASS] Competitor rates: Minimum 2-week lag enforced (`competitor_top5_t2`)
+- [PASS] Sales momentum: 5-week backward lag only (`sales_target_contract_t5`)
+- [PASS] Own rate: Lag-0 allowed (we control our rate during rate-setting)
+- [PASS] 50-day mature data cutoff prevents incomplete data contamination
+- [PASS] application_signed_date used (not contract_issue_date)
 
 **Economic Constraints Validated:**
-- ✓ Own rate (prudential_rate_current): β > 0 (quality signaling)
-- ✓ Competitor rate (competitor_top5_t2): β < 0 (competitive pressure)
-- ✓ Sales persistence (sales_target_contract_t5): β > 0 (momentum)
-- ✓ 100% coefficient sign consistency across 10,000 bootstrap samples
+- [PASS] Own rate (prudential_rate_current): β > 0 (quality signaling)
+- [PASS] Competitor rate (competitor_top5_t2): β < 0 (competitive pressure)
+- [PASS] Sales persistence (sales_target_contract_t5): β > 0 (momentum)
+- [PASS] 100% coefficient sign consistency across 10,000 bootstrap samples
 
 **Reference:** [../business/methodology_report.md](../business/methodology_report.md)
 

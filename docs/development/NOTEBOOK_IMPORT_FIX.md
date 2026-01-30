@@ -1,7 +1,7 @@
 # Notebook Import Fix - EDA Notebooks 01-03
 
 **Date:** 2026-01-29
-**Status:** ✅ COMPLETED
+**Status:** [DONE] COMPLETED
 **Files Modified:** 3 notebooks
 
 ---
@@ -34,15 +34,15 @@ The 3 EDA notebooks checked for `'notebooks/rila/eda'` in the current directory 
 ```python
 cwd = os.getcwd()
 if 'notebooks/rila/production' in cwd or 'notebooks/rila/eda' in cwd:
-    # ❌ Never matches - wrong pattern
+    # [ERROR] Never matches - wrong pattern
     project_root = Path(cwd).parents[3]
 elif 'notebooks/rila' in cwd:
-    # ❌ Never matches
+    # [ERROR] Never matches
     project_root = Path(cwd).parents[2]
 elif os.path.basename(cwd) == 'notebooks':
     project_root = os.path.dirname(cwd)
 else:
-    # ❌ Falls here, sets wrong path!
+    # [ERROR] Falls here, sets wrong path!
     project_root = cwd
 ```
 
@@ -56,7 +56,7 @@ if 'notebooks/production/rila' in cwd:
 elif 'notebooks/production/fia' in cwd:
     project_root = Path(cwd).parents[2]
 elif 'notebooks/eda/rila' in cwd:
-    # ✅ Matches! Correctly goes up 2 parent directories
+    # [DONE] Matches! Correctly goes up 2 parent directories
     project_root = Path(cwd).parents[2]
 elif 'notebooks/archive' in cwd:
     project_root = Path(cwd).parents[2]
@@ -113,7 +113,7 @@ EDA 01, 02, 03:
   project_root: /notebooks/eda/rila_6y20b  ← WRONG!
   Has src/: False  ← No src/ in notebook directory
   Imports from: /home/sagemaker-user/RILA_6Y20B/src  ← OLD CODE via system fallback
-  Status: ✗✗ FAIL
+  Status: [FAIL][FAIL] FAIL
 ```
 
 ### After Fix
@@ -123,20 +123,20 @@ EDA 01, 02, 03:
   project_root: /home/sagemaker-user/RILA_6Y20B_refactored  ← CORRECT!
   Has src/: True  ← src/ exists at project root
   Imports from: /home/sagemaker-user/RILA_6Y20B_refactored/src  ← REFACTORED CODE
-  Status: ✓✓ PASS
+  Status: [PASS][PASS] PASS
 ```
 
 ### Test Results
 ```
-✓ Production RILA 6Y20B
-✓ Production RILA 1Y10B
-✓ EDA 01 Sales
-✓ EDA 02 Rates
-✓ EDA 03 Features
-✓ Onboarding
+[PASS] Production RILA 6Y20B
+[PASS] Production RILA 1Y10B
+[PASS] EDA 01 Sales
+[PASS] EDA 02 Rates
+[PASS] EDA 03 Features
+[PASS] Onboarding
 
 Total: 6/6 notebooks passed
-✓✓ ALL NOTEBOOKS USE REFACTORED CODE ✓✓
+[PASS][PASS] ALL NOTEBOOKS USE REFACTORED CODE [PASS][PASS]
 ```
 
 ---
@@ -153,18 +153,18 @@ The following notebooks were **NOT** modified (already working correctly):
 - `notebooks/production/rila_1y10b/01_price_elasticity_inference.ipynb`
 - `notebooks/production/rila_1y10b/02_time_series_forecasting.ipynb`
 
-**Status:** ✓ Already using correct pattern
+**Status:** [PASS] Already using correct pattern
 
 ### EDA Notebooks 04-05 (2)
 - `notebooks/eda/rila_6y20b/04_RILA_feature_selection.ipynb`
 - `notebooks/eda/rila_6y20b/05_RILA_Time_Forward_Cross_Validation.ipynb`
 
-**Status:** ✓ Working correctly (different logic, correct result)
+**Status:** [PASS] Working correctly (different logic, correct result)
 
 ### Onboarding (1)
 - `notebooks/onboarding/architecture_walkthrough.ipynb`
 
-**Status:** ✓ Using different pattern, works correctly
+**Status:** [PASS] Using different pattern, works correctly
 
 ---
 
@@ -192,7 +192,7 @@ python3 verify_notebook_imports.py
 
 Expected output:
 ```
-✓✓ ALL NOTEBOOKS USE REFACTORED CODE ✓✓
+[PASS][PASS] ALL NOTEBOOKS USE REFACTORED CODE [PASS][PASS]
 ```
 
 ---

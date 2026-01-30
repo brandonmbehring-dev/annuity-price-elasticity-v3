@@ -399,9 +399,9 @@ AIC = 2k - 2ln(L)
 **Current Optimal Model: 3 Features**
 | Feature | AIC Contribution | Economic Constraint |
 |---------|------------------|---------------------|
-| sales_target_contract_t5 | Largest reduction | β > 0 ✓ |
-| competitor_top5_t2 | Medium reduction | β < 0 ✓ |
-| prudential_rate_current | Small reduction | β > 0 ✓ |
+| sales_target_contract_t5 | Largest reduction | β > 0 [PASS] |
+| competitor_top5_t2 | Medium reduction | β < 0 [PASS] |
+| prudential_rate_current | Small reduction | β > 0 [PASS] |
 
 **Final AIC:** 5358.129
 

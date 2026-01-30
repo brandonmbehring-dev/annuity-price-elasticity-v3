@@ -317,10 +317,10 @@ historical_mape = rolling_metrics['rolling_mape'].iloc[:-4].mean()
 drift = (recent_mape - historical_mape) / historical_mape
 
 if drift > 0.15:
-    print(f"⚠️  WARNING: MAPE drift detected ({drift:.1%} increase)")
+    print(f"[WARN]  WARNING: MAPE drift detected ({drift:.1%} increase)")
     print("   Investigate data quality or consider model retraining")
 else:
-    print(f"✓ Model performance stable (drift: {drift:.1%})")
+    print(f"[PASS] Model performance stable (drift: {drift:.1%})")
 ```
 
 ### Coefficient Stability Monitoring
@@ -357,7 +357,7 @@ assert coefs['prudential_rate_current'] > 0, "Own rate coefficient flipped sign!
 assert coefs['competitor_top5_t2'] < 0, "Competitor coefficient flipped sign!"
 assert coefs['sales_target_contract_t5'] > 0, "Sales momentum coefficient flipped sign!"
 
-print("✓ All coefficient signs consistent with economic theory")
+print("[PASS] All coefficient signs consistent with economic theory")
 ```
 
 **Alert Triggers**:
@@ -393,7 +393,7 @@ performance_log.to_csv(
 assert validation_metrics['r2'] > 0.50, f"R² below threshold: {validation_metrics['r2']:.2%}"
 assert validation_metrics['mape'] < 0.20, f"MAPE above threshold: {validation_metrics['mape']:.2%}"
 
-print(f"✓ Model performance acceptable (R²={validation_metrics['r2']:.2%}, MAPE={validation_metrics['mape']:.2%})")
+print(f"[PASS] Model performance acceptable (R²={validation_metrics['r2']:.2%}, MAPE={validation_metrics['mape']:.2%})")
 ```
 
 ---
@@ -416,13 +416,13 @@ days_old = (datetime.now() - latest_date).days
 
 # Alert thresholds
 if days_old > 14:
-    print(f"✗ CRITICAL: Sales data {days_old} days old (expected ≤ 14 days)")
+    print(f"[FAIL] CRITICAL: Sales data {days_old} days old (expected ≤ 14 days)")
     print("  Action: Check TDE data pipeline")
 elif days_old > 7:
-    print(f"⚠️  WARNING: Sales data {days_old} days old (expected ≤ 7 days)")
+    print(f"[WARN]  WARNING: Sales data {days_old} days old (expected ≤ 7 days)")
     print("  Action: Verify data refresh schedule")
 else:
-    print(f"✓ Sales data fresh ({days_old} days old)")
+    print(f"[PASS] Sales data fresh ({days_old} days old)")
 ```
 
 **WINK Competitive Rates Freshness**:
@@ -433,12 +433,12 @@ latest_date = wink_data['rate_effective_date'].max()
 days_old = (datetime.now() - latest_date).days
 
 if days_old > 14:
-    print(f"✗ CRITICAL: WINK data {days_old} days old (expected ≤ 14 days)")
+    print(f"[FAIL] CRITICAL: WINK data {days_old} days old (expected ≤ 14 days)")
     print("  Action: Check WINK data pipeline")
 elif days_old > 7:
-    print(f"⚠️  WARNING: WINK data {days_old} days old (expected ≤ 7 days)")
+    print(f"[WARN]  WARNING: WINK data {days_old} days old (expected ≤ 7 days)")
 else:
-    print(f"✓ WINK data fresh ({days_old} days old)")
+    print(f"[PASS] WINK data fresh ({days_old} days old)")
 ```
 
 **Economic Indicators Freshness** (FRED):
@@ -453,12 +453,12 @@ try:
     days_old = (datetime.now() - latest_treasury).days
 
     if days_old > 3:
-        print(f"⚠️  WARNING: Treasury data {days_old} days old")
+        print(f"[WARN]  WARNING: Treasury data {days_old} days old")
     else:
-        print(f"✓ Economic data fresh ({days_old} days old)")
+        print(f"[PASS] Economic data fresh ({days_old} days old)")
 
 except Exception as e:
-    print(f"✗ CRITICAL: Cannot fetch economic data: {e}")
+    print(f"[FAIL] CRITICAL: Cannot fetch economic data: {e}")
 ```
 
 ### Data Completeness Checks
@@ -487,11 +487,11 @@ for feat in critical_features:
     missing_pct = completeness[feat]['missing_pct']
 
     if missing_pct > 0.05:
-        print(f"✗ CRITICAL: {feat} has {missing_pct:.1%} missing data")
+        print(f"[FAIL] CRITICAL: {feat} has {missing_pct:.1%} missing data")
     elif missing_pct > 0.01:
-        print(f"⚠️  WARNING: {feat} has {missing_pct:.1%} missing data")
+        print(f"[WARN]  WARNING: {feat} has {missing_pct:.1%} missing data")
     else:
-        print(f"✓ {feat} complete ({missing_pct:.1%} missing)")
+        print(f"[PASS] {feat} complete ({missing_pct:.1%} missing)")
 ```
 
 **Carrier Coverage Check** (RILA-specific):
@@ -508,11 +508,11 @@ for carrier in carriers:
     carrier_data = recent_data[recent_data['carrier'] == carrier]
 
     if len(carrier_data) == 0:
-        print(f"✗ CRITICAL: No recent data for {carrier} (last 30 days)")
+        print(f"[FAIL] CRITICAL: No recent data for {carrier} (last 30 days)")
     elif len(carrier_data) < 10:
-        print(f"⚠️  WARNING: Sparse data for {carrier} ({len(carrier_data)} records)")
+        print(f"[WARN]  WARNING: Sparse data for {carrier} ({len(carrier_data)} records)")
     else:
-        print(f"✓ {carrier} coverage adequate ({len(carrier_data)} records)")
+        print(f"[PASS] {carrier} coverage adequate ({len(carrier_data)} records)")
 ```
 
 ### Feature Distribution Monitoring
@@ -544,12 +544,12 @@ anomalies = {
 }
 
 if anomalies:
-    print("⚠️  WARNING: Anomalous feature distributions detected:")
+    print("[WARN]  WARNING: Anomalous feature distributions detected:")
     for feat, shift in anomalies.items():
         print(f"  - {feat}: {shift:.2f}σ shift")
     print("  Action: Review recent data for quality issues")
 else:
-    print("✓ All feature distributions normal")
+    print("[PASS] All feature distributions normal")
 ```
 
 **Rate Range Validation**:
@@ -564,7 +564,7 @@ assert prudential_rates.max() <= 0.045, f"Prudential rate too high: {prudential_
 assert competitor_rates.min() >= 0.005, f"Competitor rate too low: {competitor_rates.min():.2%}"
 assert competitor_rates.max() <= 0.045, f"Competitor rate too high: {competitor_rates.max():.2%}"
 
-print("✓ Rate ranges within expected bounds")
+print("[PASS] Rate ranges within expected bounds")
 ```
 
 ---

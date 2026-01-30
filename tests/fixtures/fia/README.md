@@ -6,7 +6,7 @@
 
 ---
 
-## 📦 Fixture Inventory
+## Fixture Inventory
 
 ### Core Data Fixtures (Phase 1.1-1.4)
 
@@ -68,7 +68,7 @@
 
 ---
 
-## 🎯 Testing Use Cases
+## Testing Use Cases
 
 ### 1. Unit Testing
 Test individual functions with realistic data:
@@ -146,7 +146,7 @@ assert new_stats['contract_count'] == stats['contract_count']
 
 ---
 
-## 🔍 Data Characteristics
+## Data Characteristics
 
 ### TDE Sales Sample
 - **Stratification**: Top 5 firms (200 each) + 200 random
@@ -179,7 +179,7 @@ assert new_stats['contract_count'] == stats['contract_count']
 
 ---
 
-## ⚠️ Important Notes
+## Important Notes
 
 ### Data Quality Flags
 1. **Premium Reconciliation**: Only 44.63% match between summed and reported premiums
@@ -203,7 +203,7 @@ These fixtures are **completely portable** - no AWS access required for testing.
 
 ---
 
-## 📊 Fixture Validation Checklist
+## Fixture Validation Checklist
 
 Before using fixtures, verify:
 
@@ -239,7 +239,7 @@ with open('test_fixtures/test_model_baseline.pkl', 'rb') as f:
 
 ---
 
-## 🚀 Next Steps
+## Next Steps
 
 1. **Transfer**: Package fixtures for transfer to non-AWS environment
 2. **Setup Tests**: Create pytest suite using these fixtures

@@ -27,7 +27,7 @@ Your interactive guide to a productive first day with the RILA Price Elasticity 
 - [ ] Verify installation
   ```bash
   make test  # Should see tests pass
-  python -c "import src; print('✓ Import successful')"
+  python -c "import src; print('[PASS] Import successful')"
   ```
 
 - [ ] Open QUICK_START.md
@@ -180,7 +180,7 @@ results = {
 df = pd.DataFrame(results)
 output_path = 'notebooks/outputs/rila_6y20b/bi_team/day_one_results.xlsx'
 df.to_excel(output_path, index=False)
-print(f"✓ Results saved to {output_path}")
+print(f"[PASS] Results saved to {output_path}")
 ```
 
 - [ ] Export results to Excel
@@ -236,17 +236,17 @@ Answer these questions (write in notebook or scratch file):
 ## End of Day Review
 
 ### What You Should Have
-- [ ] ✓ Running conda environment with passing tests
-- [ ] ✓ Inference results for 3 products (6Y20B, 6Y10B, 10Y20B)
-- [ ] ✓ Excel export with predictions and confidence intervals
-- [ ] ✓ Notes on questions or confusing topics
+- [ ] [PASS] Running conda environment with passing tests
+- [ ] [PASS] Inference results for 3 products (6Y20B, 6Y10B, 10Y20B)
+- [ ] [PASS] Excel export with predictions and confidence intervals
+- [ ] [PASS] Notes on questions or confusing topics
 
 ### What You Should Understand
-- [ ] ✓ What RILAs are and why cap rates matter
-- [ ] ✓ Basic price elasticity concepts
-- [ ] ✓ Why we prevent data leakage (no lag-0 competitor features)
-- [ ] ✓ How to run inference on fixture data
-- [ ] ✓ Where to find documentation
+- [ ] [PASS] What RILAs are and why cap rates matter
+- [ ] [PASS] Basic price elasticity concepts
+- [ ] [PASS] Why we prevent data leakage (no lag-0 competitor features)
+- [ ] [PASS] How to run inference on fixture data
+- [ ] [PASS] Where to find documentation
 
 ### Questions to Ask Tomorrow
 Write down any questions from today:
@@ -292,6 +292,6 @@ Write down any questions from today:
 
 ---
 
-**Congratulations on completing Day One! 🎉**
+**Congratulations on completing Day One! **
 
 You now have a working environment and foundational understanding of RILA price elasticity modeling. Tomorrow you'll dive deeper into feature engineering and data pipelines.

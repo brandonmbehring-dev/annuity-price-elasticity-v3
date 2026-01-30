@@ -21,7 +21,7 @@ This system estimates **price elasticity** for Prudential's RILA products - answ
 
 ### Current Status
 
-- **RILA 6Y20B**: Production ready ✅
+- **RILA 6Y20B**: Production ready [DONE]
 - **RILA 6Y10B, 10Y20B**: In validation
 - **FIA Products**: Alpha stage
 
@@ -76,10 +76,10 @@ We use **causal econometric methods** that:
 
 | Validation | Purpose | Status |
 |------------|---------|--------|
-| **Coefficient Signs** | Match economic theory | ✅ Pass |
-| **Leakage Detection** | No future data in features | ✅ Pass |
-| **Shuffled Target Test** | Model fails on random targets | ✅ Pass |
-| **Out-of-Sample Performance** | Generalizes to new data | ✅ Pass |
+| **Coefficient Signs** | Match economic theory | [DONE] Pass |
+| **Leakage Detection** | No future data in features | [DONE] Pass |
+| **Shuffled Target Test** | Model fails on random targets | [DONE] Pass |
+| **Out-of-Sample Performance** | Generalizes to new data | [DONE] Pass |
 
 ### What "Leakage" Means
 
@@ -95,15 +95,15 @@ Example: If we used competitor rates from the same week to predict our sales, th
 
 ### When to Use
 
-✅ **Strategic pricing decisions**: "Should we increase rates?"
-✅ **Competitive response**: "How will our sales change if competitor X raises rates?"
-✅ **Scenario planning**: "What's the best/worst case for different rate strategies?"
+[DONE] **Strategic pricing decisions**: "Should we increase rates?"
+[DONE] **Competitive response**: "How will our sales change if competitor X raises rates?"
+[DONE] **Scenario planning**: "What's the best/worst case for different rate strategies?"
 
 ### When NOT to Use
 
-❌ **Individual customer predictions**: Model estimates aggregate effects
-❌ **Short-term timing**: Model captures weekly patterns, not daily
-❌ **Non-RILA products**: Each product type needs separate validation
+[ERROR] **Individual customer predictions**: Model estimates aggregate effects
+[ERROR] **Short-term timing**: Model captures weekly patterns, not daily
+[ERROR] **Non-RILA products**: Each product type needs separate validation
 
 ---
 

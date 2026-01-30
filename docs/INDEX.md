@@ -6,10 +6,10 @@
 
 ---
 
-## ⚠️ First Time? Read This First
+## [WARN] First Time? Read This First
 
 Before working with this codebase, read the **5 critical traps**:
-→ [integration/LESSONS_LEARNED.md](integration/LESSONS_LEARNED.md) ⚠️ **MANDATORY**
+→ [integration/LESSONS_LEARNED.md](integration/LESSONS_LEARNED.md) [WARN] **MANDATORY**
 
 ---
 

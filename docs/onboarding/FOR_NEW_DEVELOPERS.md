@@ -80,7 +80,7 @@ src/
 
 ---
 
-## Critical Traps ⚠️
+## Critical Traps [WARN]
 
 **READ THIS BEFORE WRITING CODE**
 
@@ -220,8 +220,8 @@ make coverage
 
 ## Next Steps
 
-1. ✅ Environment setup
-2. ✅ Run first inference
+1. [DONE] Environment setup
+2. [DONE] Run first inference
 3. [ ] Read `knowledge/domain/RILA_ECONOMICS.md`
 4. [ ] Review `knowledge/practices/LEAKAGE_CHECKLIST.md`
 5. [ ] Run `make test` and understand test structure

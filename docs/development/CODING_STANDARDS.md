@@ -1,13 +1,13 @@
-# Unified Coding & Notebook Standards for Multi-Product Annuity Price Elasticity Analysis (v2)
+# Unified Coding & Notebook Standards for Multi-Product Annuity Price Elasticity Analysis (v3)
 
 **Document Version**: 2.0 (Multi-Product Architecture)
 **Last Updated**: 2025-01-24
 **Status**: Authoritative - Single Source of Truth
-**Based On**: RILA Price Elasticity template (3.0) adapted for v2 architecture
+**Based On**: RILA Price Elasticity template (3.0) adapted for v3 architecture
 
 ## Executive Summary
 
-This document consolidates and unifies all coding standards for the Multi-Product Annuity Price Elasticity Analysis v2 project. It establishes clear guidelines for all development work and provides a single authoritative reference for coding practices across RILA, FIA, and MYGA products.
+This document consolidates and unifies all coding standards for the Multi-Product Annuity Price Elasticity Analysis v3 project. It establishes clear guidelines for all development work and provides a single authoritative reference for coding practices across RILA, FIA, and MYGA products.
 
 **Key Features:**
 - Unified function design standards with evidence-based metrics
@@ -15,7 +15,7 @@ This document consolidates and unifies all coding standards for the Multi-Produc
 - Fail-fast error handling requirements (critical priority)
 - Multi-product architecture patterns with dependency injection
 - Comprehensive documentation and testing frameworks
-- v2 architecture entry points for adapter, aggregation, and strategy patterns
+- v3 architecture entry points for adapter, aggregation, and strategy patterns
 
 ## Table of Contents
 
@@ -142,7 +142,7 @@ except ImportError:
 
 ### 2.1 Dependency Injection Pattern (V2 Architecture)
 
-The v2 architecture uses explicit dependency injection for clean testing and multi-product support:
+The v3 architecture uses explicit dependency injection for clean testing and multi-product support:
 
 ```python
 from src.notebooks.interface import UnifiedNotebookInterface
@@ -412,7 +412,7 @@ def run_elasticity_analysis(
     target_variable: str = "sales_target_current"
 ) -> ElasticityResults:
     """
-    Multi-product elasticity analysis following v2 interface pattern.
+    Multi-product elasticity analysis following v3 interface pattern.
 
     Args:
         data: Dataset for analysis
@@ -932,7 +932,7 @@ pytest tests/ --cov=src --cov-report=term-missing --cov-report=html
 
 **Strict No-Emoji Policy:**
 - **PROHIBITED**: All emojis in code, comments, docstrings, markdown, **and git commit messages**
-- **ONLY EXCEPTION**: Red circle character (🔴) for error status indicators when errors actually occur
+- **ONLY EXCEPTION**: Red circle character () for error status indicators when errors actually occur
 - **Rationale**: Professional presentation, cross-platform compatibility, and commit message parseability
 
 **Git Commit Message Standards:**
@@ -945,18 +945,18 @@ pytest tests/ --cov=src --cov-report=term-missing --cov-report=html
 ### 8.2 Error Communication
 
 ```python
-# Correct error reporting with 🔴 (only when error occurs)
+# Correct error reporting with  (only when error occurs)
 try:
     result = elasticity_analysis(data)
 except Exception as e:
-    logger.error(f"🔴 Elasticity analysis failed: {e}")
+    logger.error(f" Elasticity analysis failed: {e}")
     raise
 
 # Correct success communication (no emojis)
 print(f"Analysis completed successfully. Processed {len(df)} annuity records.")
 
 # INCORRECT: Decorative emojis (never use)
-# print(f"✨ Data processed successfully! 🎉")  # NEVER DO THIS
+# print(f"[sparkle emoji] Data processed successfully! ")  # NEVER DO THIS
 ```
 
 ### 8.3 Professional Communication
@@ -1056,7 +1056,7 @@ Closes #456
 
 **Visual Standards:**
 - [ ] Remove all emojis from code, comments, docstrings, markdown
-- [ ] Keep ONLY 🔴 for error status when errors occur
+- [ ] Keep ONLY  for error status when errors occur
 - [ ] Update all existing notebooks to remove emojis
 
 **Configuration:**
@@ -1108,13 +1108,13 @@ Closes #456
 
 **Document Provenance:**
 - **Based On**: RILA Price Elasticity CODING_STANDARDS.md (v3.0)
-- **Adapted For**: Multi-Product Annuity Price Elasticity v2
+- **Adapted For**: Multi-Product Annuity Price Elasticity v3
 - **Key Adaptations**:
-  - Entry points updated to v2 architecture
+  - Entry points updated to v3 architecture
   - Product-specific configuration examples added
   - Dependency injection patterns emphasized
   - Multi-product testing scenarios included
-  - Audit compliance updated to 92/100 v2 baseline
-- **Status**: Authoritative single source of truth for v2 development
+  - Audit compliance updated to 92/100 v3 baseline
+- **Status**: Authoritative single source of truth for v3 development
 
-This document provides crystal-clear, conflict-free guidelines that maintain all RILA standards while establishing v2 architecture principles for multi-product support with dependency injection and comprehensive testing.
+This document provides crystal-clear, conflict-free guidelines that maintain all RILA standards while establishing v3 architecture principles for multi-product support with dependency injection and comprehensive testing.

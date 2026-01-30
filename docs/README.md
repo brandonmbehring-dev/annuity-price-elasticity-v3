@@ -185,7 +185,7 @@ Step-by-step guides for new team members with curated learning paths.
 - `MENTAL_MODEL.md` - System architecture overview
 - `TROUBLESHOOTING.md` - Common issues and solutions
 
-### `/docs/operations/` - Production Operations ⚠️ **CRITICAL**
+### `/docs/operations/` - Production Operations [WARN] **CRITICAL**
 Production deployment, monitoring, and incident response procedures.
 
 - `DEPLOYMENT_CHECKLIST.md` - **Complete manual deployment procedures** (920 lines)

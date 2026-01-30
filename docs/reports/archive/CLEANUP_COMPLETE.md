@@ -102,20 +102,20 @@ RILA_6Y20B_refactored/
 | Root Scripts | 9 | ~55KB | Archived |
 | Root Tests | 3 | ~76KB | Archived |
 | Root Docs | 1 | ~27KB | Archived |
-| **Total Archived** | **28+** | **~378KB** | ✅ |
+| **Total Archived** | **28+** | **~378KB** | [DONE] |
 
 ---
 
 ## Verification
 
-- ✅ All vestigial files moved to archive
-- ✅ Archive organized into logical categories
-- ✅ Directory structure flattened (main project at root)
-- ✅ No nested `annuity-price-elasticity-v2--main/` directory
-- ✅ All hardcoded paths fixed (14 references updated)
-- ✅ Git history preserved
-- ✅ No files deleted (safe archival and move operations)
-- ✅ Safety backup created before changes
+- [DONE] All vestigial files moved to archive
+- [DONE] Archive organized into logical categories
+- [DONE] Directory structure flattened (main project at root)
+- [DONE] No nested `annuity-price-elasticity-v2--main/` directory
+- [DONE] All hardcoded paths fixed (14 references updated)
+- [DONE] Git history preserved
+- [DONE] No files deleted (safe archival and move operations)
+- [DONE] Safety backup created before changes
 
 ---
 

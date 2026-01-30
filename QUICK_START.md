@@ -23,7 +23,7 @@ conda activate annuity-price-elasticity-v3
 pip install -e .
 
 # Verify installation
-python -c "from src.notebooks import create_interface; print('✓ Installation verified - Ready to run models')"
+python -c "from src.notebooks import create_interface; print('[PASS] Installation verified - Ready to run models')"
 ```
 
 ## Run Your First Model
@@ -43,8 +43,8 @@ results = interface.run_inference(df)
 # Export results
 interface.export_results(results, format="excel")
 
-print(f"✓ Model completed successfully")
-print(f"✓ Results exported to: {results.get('output_path', 'output/')}")
+print(f"[PASS] Model completed successfully")
+print(f"[PASS] Results exported to: {results.get('output_path', 'output/')}")
 ```
 
 ## What Just Happened?
@@ -61,11 +61,11 @@ Loading data for RILA 6Y20B (fixture environment)...
 Running inference pipeline...
 Bootstrap iterations: 10000/10000 [100%]
 Model R²: 0.7837
-✓ Model completed successfully
-✓ Results exported to: output/rila_6y20b_inference_results.xlsx
+[PASS] Model completed successfully
+[PASS] Results exported to: output/rila_6y20b_inference_results.xlsx
 ```
 
-## ⚠️ Critical Traps - Read Before You Proceed
+## CRITICAL: Traps - Read Before You Proceed
 
 Before diving deeper, **read the 5 critical traps** that have caused problems in annuity elasticity work:
 → [docs/integration/LESSONS_LEARNED.md](docs/integration/LESSONS_LEARNED.md)
@@ -74,7 +74,7 @@ Key trap: Cap rate is a **YIELD** (customer benefit), not a price. Expect a **po
 
 ## Next Steps
 
-- **Critical traps:** [docs/integration/LESSONS_LEARNED.md](docs/integration/LESSONS_LEARNED.md) ⚠️ **READ FIRST**
+- **Critical traps:** [docs/integration/LESSONS_LEARNED.md](docs/integration/LESSONS_LEARNED.md) (READ FIRST)
 - **Full onboarding:** [docs/onboarding/GETTING_STARTED.md](docs/onboarding/GETTING_STARTED.md) (2 hours)
 - **Common tasks:** [docs/onboarding/COMMON_TASKS.md](docs/onboarding/COMMON_TASKS.md)
 - **Architecture overview:** [docs/onboarding/MENTAL_MODEL.md](docs/onboarding/MENTAL_MODEL.md)

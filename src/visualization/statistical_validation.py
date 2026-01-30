@@ -691,7 +691,7 @@ class StatisticalValidationPlots:
 
         validation_text = "VALIDATION STATUS\n" + "─" * 80 + "\n"
         for item, status, description in validation_items:
-            status_symbol = '✓' if status in ['VALIDATED', 'SATISFIED', 'CONFIRMED', 'ROBUST', 'COMPLETE'] else '⚠'
+            status_symbol = '[PASS]' if status in ['VALIDATED', 'SATISFIED', 'CONFIRMED', 'ROBUST', 'COMPLETE'] else '[WARN]'
             validation_text += f"{status_symbol} {item:<25} {status:<15} {description}\n"
 
         ax.text(0.02, 0.95, validation_text, transform=ax.transAxes,

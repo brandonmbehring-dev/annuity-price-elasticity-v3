@@ -181,7 +181,7 @@ Result: ~2-3% annual option budget
 
 ## What Transfers Between Projects
 
-### ✅ TRANSFERS (Use Directly):
+### [DONE] TRANSFERS (Use Directly):
 - WINK data extraction patterns
 - TDE sales cleanup pipeline (with product filter changes)
 - Seasonal patterns (Q4 high, Q2 low)
@@ -190,13 +190,13 @@ Result: ~2-3% annual option budget
 - Holiday mask approach (Dec/Jan exclusion)
 - Mathematical equivalence validation framework
 
-### ⚠️ TRANSFERS WITH MODIFICATION:
+### [WARN] TRANSFERS WITH MODIFICATION:
 - Cap rate = yield insight (applies to FIA and RILA, not MYGA)
 - Competitor aggregation (FIA uses top-N mean; RILA uses market-share weighted)
 - Feature names (different naming conventions per repo)
 - Product filtering criteria (surrender period, buffer level)
 
-### ❌ DOES NOT TRANSFER:
+### [ERROR] DOES NOT TRANSFER:
 - MYGA firm-level analysis (FIA/RILA use aggregate)
 - MYGA elasticity magnitude (FIA/RILA have smoother response)
 - MYGA threshold detection (not applicable to FIA/RILA)

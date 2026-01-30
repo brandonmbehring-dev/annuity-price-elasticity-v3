@@ -194,9 +194,9 @@ The model answers the critical business question: **"What will happen to sales i
 | Prudential rate (current) | 0 weeks | β > 0 | 10% | Quality signaling effect |
 
 **Economic Validation:**
-- ✓ All coefficients have theoretically expected signs
-- ✓ 100% sign consistency across 10,000 bootstrap samples
-- ✓ All coefficients statistically significant at α = 0.05
+- [PASS] All coefficients have theoretically expected signs
+- [PASS] 100% sign consistency across 10,000 bootstrap samples
+- [PASS] All coefficients statistically significant at α = 0.05
 
 ---
 

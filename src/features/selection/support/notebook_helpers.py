@@ -217,10 +217,10 @@ def _format_coefficients_summary(coefficients: Dict[str, float]) -> str:
         if feature == 'Intercept':
             summary += f"  {feature}: {coef:.4f} (baseline level)\n"
         elif 'competitor_' in feature:
-            status = "✓" if coef < 0 else "⚠"
+            status = "[PASS]" if coef < 0 else "[WARN]"
             summary += f"  {feature}: {coef:.4f} {status} (competitive advantage)\n"
         elif 'prudential_rate' in feature:
-            status = "✓" if coef > 0 else "⚠"
+            status = "[PASS]" if coef > 0 else "[WARN]"
             summary += f"  {feature}: {coef:.4f} {status} (pricing power)\n"
         else:
             summary += f"  {feature}: {coef:.4f}\n"

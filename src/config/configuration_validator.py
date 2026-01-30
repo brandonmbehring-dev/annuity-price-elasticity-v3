@@ -202,7 +202,7 @@ def generate_error_report(func_name: str, provided_params: Dict[str, Any], error
     if warnings_list:
         report.append("COMMON PARAMETER ISSUES:")
         for warning in warnings_list:
-            report.append(f"  ⚠ {warning}")
+            report.append(f"  [WARN] {warning}")
         report.append("")
 
     # Suggest correct configuration

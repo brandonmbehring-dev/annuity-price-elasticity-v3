@@ -989,17 +989,17 @@ def test_coverage_summary_stability_analysis():
     8. Private Helpers (6 tests) - Classification thresholds, validation
 
     Functions Tested:
-    ✅ calculate_win_rates() - Competition logic, sorting
-    ✅ analyze_information_ratios() - IR calculations, benchmark
-    ✅ evaluate_feature_consistency() - Usage patterns, stability classes
-    ✅ generate_stability_metrics() - AIC/R² statistics
-    ✅ validate_bootstrap_results() - Comprehensive validation
-    ✅ aggregate_stability_insights() - Insights, recommendations
-    ✅ format_stability_outputs() - Report formatting
-    ✅ _classify_information_ratio() - Threshold classification
-    ✅ _calculate_benchmark_aic() - Population median
-    ✅ _classify_overall_stability() - Distribution-based classification
-    ✅ _validate_bootstrap_results_input() - Input validation
+    [DONE] calculate_win_rates() - Competition logic, sorting
+    [DONE] analyze_information_ratios() - IR calculations, benchmark
+    [DONE] evaluate_feature_consistency() - Usage patterns, stability classes
+    [DONE] generate_stability_metrics() - AIC/R² statistics
+    [DONE] validate_bootstrap_results() - Comprehensive validation
+    [DONE] aggregate_stability_insights() - Insights, recommendations
+    [DONE] format_stability_outputs() - Report formatting
+    [DONE] _classify_information_ratio() - Threshold classification
+    [DONE] _calculate_benchmark_aic() - Population median
+    [DONE] _classify_overall_stability() - Distribution-based classification
+    [DONE] _validate_bootstrap_results_input() - Input validation
 
     Estimated Coverage: 95% (target achieved)
     """

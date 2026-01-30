@@ -24,11 +24,11 @@ Key Features:
 - Fails on unexpected null rate increases
 
 Requirements per User Decision:
-- ✅ Allow: Day-to-day data changes (WINK rates, sales)
-- ✅ Allow: Data increases (more rows, newer dates)
-- ❌ Fail: Decreasing datasets (fewer rows than previous)
-- ❌ Fail: Schema violations (missing columns, wrong types)
-- ❌ Fail: Unexpected null rate increases (>threshold)
+- [DONE] Allow: Day-to-day data changes (WINK rates, sales)
+- [DONE] Allow: Data increases (more rows, newer dates)
+- [ERROR] Fail: Decreasing datasets (fewer rows than previous)
+- [ERROR] Fail: Schema violations (missing columns, wrong types)
+- [ERROR] Fail: Unexpected null rate increases (>threshold)
 
 Error Message Pattern:
     CRITICAL: [WHAT happened].

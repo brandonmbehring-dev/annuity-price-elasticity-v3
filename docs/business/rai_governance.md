@@ -595,10 +595,10 @@ The FlexGuard 6Y20B cap rate applies equally to all customers who purchase the p
 
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
-| R² | > 50% | 78.37% | ✓ Exceeds |
-| MAPE | < 20% | 12.74% | ✓ Exceeds |
-| Coverage | 90-97% | 94.4% | ✓ Within Range |
-| Coefficient Consistency | 100% | 100% | ✓ Meets |
+| R² | > 50% | 78.37% | [PASS] Exceeds |
+| MAPE | < 20% | 12.74% | [PASS] Exceeds |
+| Coverage | 90-97% | 94.4% | [PASS] Within Range |
+| Coefficient Consistency | 100% | 100% | [PASS] Meets |
 
 **Monitoring Thresholds**:
 - Warning: MAPE > 15% (triggers review)

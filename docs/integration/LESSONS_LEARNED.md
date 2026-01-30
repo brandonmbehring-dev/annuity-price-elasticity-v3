@@ -100,9 +100,9 @@ using C_t to predict Sales_t creates spurious correlation.
 
 | Aggregation | FIA | RILA |
 |-------------|-----|------|
-| Top-5 mean | ✓ Used | ✗ Not recommended |
-| Top-7 mean | ✓ Primary | ✗ Not recommended |
-| **Market-share weighted** | ✗ Not used | **✓ Primary** |
+| Top-5 mean | [PASS] Used | [FAIL] Not recommended |
+| Top-7 mean | [PASS] Primary | [FAIL] Not recommended |
+| **Market-share weighted** | [FAIL] Not used | **[PASS] Primary** |
 
 **The solution**: Use market-share weighted competitor means.
 

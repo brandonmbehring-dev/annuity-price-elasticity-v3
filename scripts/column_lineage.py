@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Column Lineage Tracker for Annuity Price Elasticity v2.
+Column Lineage Tracker for Annuity Price Elasticity v3.
 
 Analyzes how columns flow through the pipeline:
 - Source columns from data files

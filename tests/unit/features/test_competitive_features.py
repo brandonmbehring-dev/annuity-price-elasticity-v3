@@ -717,32 +717,32 @@ def test_coverage_summary():
     - Tests Created: 35+ tests
 
     Functions Tested:
-    ✅ _validate_company_columns_config (lines 31-58)
-    ✅ _get_available_companies (lines 61-98)
-    ✅ calculate_median_competitor_rankings (lines 106-139)
-    ✅ _compute_top_n_averages (lines 147-177)
-    ✅ calculate_top_competitor_rankings (lines 180-218)
-    ✅ _extract_positional_rankings (lines 226-243)
-    ✅ calculate_position_competitor_rankings (lines 246-284)
-    ✅ _get_semantic_mappings (lines 292-307)
-    ✅ _validate_ranking_columns (lines 310-338)
-    ✅ apply_competitive_semantic_mappings (lines 341-371)
-    ✅ create_competitive_compatibility_shortcuts (lines 379-429)
-    ⚠️  wink_weighted_mean (lines 437-481) - Partially tested (deprecation)
-    ✅ WINK_weighted_mean (lines 485-493) - Deprecation warning tested
-    ✅ calculate_competitive_spread (lines 501-549)
+    [DONE] _validate_company_columns_config (lines 31-58)
+    [DONE] _get_available_companies (lines 61-98)
+    [DONE] calculate_median_competitor_rankings (lines 106-139)
+    [DONE] _compute_top_n_averages (lines 147-177)
+    [DONE] calculate_top_competitor_rankings (lines 180-218)
+    [DONE] _extract_positional_rankings (lines 226-243)
+    [DONE] calculate_position_competitor_rankings (lines 246-284)
+    [DONE] _get_semantic_mappings (lines 292-307)
+    [DONE] _validate_ranking_columns (lines 310-338)
+    [DONE] apply_competitive_semantic_mappings (lines 341-371)
+    [DONE] create_competitive_compatibility_shortcuts (lines 379-429)
+    [WARN]  wink_weighted_mean (lines 437-481) - Partially tested (deprecation)
+    [DONE] WINK_weighted_mean (lines 485-493) - Deprecation warning tested
+    [DONE] calculate_competitive_spread (lines 501-549)
 
     Edge Cases Covered:
-    ✅ NaN handling (fillna with 0)
-    ✅ Zero weights
-    ✅ Missing companies
-    ✅ Insufficient data
-    ✅ Edge case fallbacks (1-2 companies)
-    ✅ All-zero rates
-    ✅ Identical rates
-    ✅ Extreme differences
-    ✅ Single row DataFrames
-    ✅ Large number of companies
+    [DONE] NaN handling (fillna with 0)
+    [DONE] Zero weights
+    [DONE] Missing companies
+    [DONE] Insufficient data
+    [DONE] Edge case fallbacks (1-2 companies)
+    [DONE] All-zero rates
+    [DONE] Identical rates
+    [DONE] Extreme differences
+    [DONE] Single row DataFrames
+    [DONE] Large number of companies
 
     Estimated Coverage: ~85% (target achieved)
     """

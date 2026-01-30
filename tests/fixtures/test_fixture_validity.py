@@ -52,7 +52,7 @@ class TestFixtureFreshness:
             f"Run fixture refresh script: python tests/fixtures/refresh_fixtures.py"
         )
 
-        print(f"✓ Fixture metadata exists: {metadata_path}")
+        print(f"[PASS] Fixture metadata exists: {metadata_path}")
 
     def test_metadata_is_valid_json(self):
         """Verify metadata file is valid JSON."""
@@ -66,7 +66,7 @@ class TestFixtureFreshness:
                 metadata = json.load(f)
 
             assert isinstance(metadata, dict), "Metadata must be a dictionary"
-            print(f"✓ Metadata is valid JSON")
+            print(f"[PASS] Metadata is valid JSON")
 
         except json.JSONDecodeError as e:
             pytest.fail(f"Metadata is not valid JSON: {e}")
@@ -103,14 +103,14 @@ class TestFixtureFreshness:
 
         # Warn if > 60 days, fail if > 90 days
         if days_old > 60:
-            print(f"⚠ Fixtures are {days_old} days old (consider refreshing)")
+            print(f"[WARN] Fixtures are {days_old} days old (consider refreshing)")
 
         assert days_old < 90, (
             f"Fixtures are {days_old} days old (max: 90 days). "
             f"Refresh fixtures with: python tests/fixtures/refresh_fixtures.py"
         )
 
-        print(f"✓ Fixtures are {days_old} days old (< 90 days)")
+        print(f"[PASS] Fixtures are {days_old} days old (< 90 days)")
 
     def test_metadata_has_required_fields(self):
         """Verify metadata contains all required fields."""
@@ -130,7 +130,7 @@ class TestFixtureFreshness:
             f"Re-run fixture refresh script."
         )
 
-        print(f"✓ Metadata has all required fields: {required_fields}")
+        print(f"[PASS] Metadata has all required fields: {required_fields}")
 
 
 class TestFixtureCompleteness:
@@ -168,7 +168,7 @@ class TestFixtureCompleteness:
             f"Run fixture refresh: python tests/fixtures/refresh_fixtures.py"
         )
 
-        print(f"✓ All {len(required_files)} required fixture files exist")
+        print(f"[PASS] All {len(required_files)} required fixture files exist")
 
     def test_economic_indicators_directory_exists(self):
         """Verify economic indicators directory exists."""
@@ -183,7 +183,7 @@ class TestFixtureCompleteness:
             f"Economic indicators path exists but is not a directory: {econ_dir}"
         )
 
-        print(f"✓ Economic indicators directory exists: {econ_dir}")
+        print(f"[PASS] Economic indicators directory exists: {econ_dir}")
 
     def test_economic_indicators_not_empty(self):
         """Verify economic indicators directory has files."""
@@ -200,7 +200,7 @@ class TestFixtureCompleteness:
             f"Run fixture refresh."
         )
 
-        print(f"✓ Economic indicators: {len(indicator_files)} files")
+        print(f"[PASS] Economic indicators: {len(indicator_files)} files")
 
     def test_fixture_files_not_empty(self, required_files):
         """Verify fixture files are not empty (> 0 bytes)."""
@@ -216,7 +216,7 @@ class TestFixtureCompleteness:
             f"Re-run fixture refresh."
         )
 
-        print(f"✓ All fixture files have data (> 0 bytes)")
+        print(f"[PASS] All fixture files have data (> 0 bytes)")
 
 
 class TestFixtureDataQuality:
@@ -268,7 +268,7 @@ class TestFixtureDataQuality:
         else:
             missing_premium_pct = 0.0
 
-        print(f"✓ Sales data quality: {sales.shape}, {missing_premium_pct:.3f}% missing premiums")
+        print(f"[PASS] Sales data quality: {sales.shape}, {missing_premium_pct:.3f}% missing premiums")
 
     def test_wink_data_quality(self):
         """Validate WINK competitive rates data quality."""
@@ -293,7 +293,7 @@ class TestFixtureDataQuality:
             "WINK data has no numeric columns. Schema may be corrupted."
         )
 
-        print(f"✓ WINK data quality: {wink.shape}, {len(numeric_cols)} numeric columns")
+        print(f"[PASS] WINK data quality: {wink.shape}, {len(numeric_cols)} numeric columns")
 
     def test_final_weekly_dataset_quality(self):
         """Validate final weekly dataset quality."""
@@ -331,7 +331,7 @@ class TestFixtureDataQuality:
             f"Data quality issue detected."
         )
 
-        print(f"✓ Final weekly dataset quality: {final_df.shape}, {nan_pct:.3f}% NaN")
+        print(f"[PASS] Final weekly dataset quality: {final_df.shape}, {nan_pct:.3f}% NaN")
 
     def test_market_weights_quality(self):
         """Validate market weights data quality."""
@@ -359,7 +359,7 @@ class TestFixtureDataQuality:
                     f"Market weight column '{col}' has values > 1"
                 )
 
-        print(f"✓ Market weights quality: {weights.shape}")
+        print(f"[PASS] Market weights quality: {weights.shape}")
 
 
 class TestFixtureMetadataIntegrity:
@@ -414,7 +414,7 @@ class TestFixtureMetadataIntegrity:
                     f"Re-run fixture refresh."
                 )
 
-        print(f"✓ Metadata data_shape matches actual fixture files")
+        print(f"[PASS] Metadata data_shape matches actual fixture files")
 
 
 # Summary test for CI
@@ -465,4 +465,4 @@ def test_fixtures_ci_ready():
             f"\n\nRun fixture refresh: python tests/fixtures/refresh_fixtures.py"
         )
 
-    print(f"✓ Fixtures CI-ready: All validation checks passed")
+    print(f"[PASS] Fixtures CI-ready: All validation checks passed")

@@ -150,31 +150,31 @@ Sales
 
 These patterns apply across products.
 
-### Lag Structure Approach ✓
+### Lag Structure Approach [PASS]
 - **Concept**: Use lagged features (t-k) rather than contemporaneous
 - **Why transfers**: Causal identification requires temporal separation
 - **Implementation**: Same `P_lag_k`, `C_lag_k` notation
 
-### Weight Decay Methodology ✓
+### Weight Decay Methodology [PASS]
 - **Concept**: Exponentially downweight older observations
 - **Why transfers**: Recent market conditions more relevant
 - **Implementation**: Same `weight = decay^(n-k)` formula
 
-### AIC Selection with Sign Constraints ✓
+### AIC Selection with Sign Constraints [PASS]
 - **Concept**: Use AIC for feature selection with economic sign constraints
 - **Why transfers**: Both need parsimonious, interpretable models
 - **Implementation**: Same best-subset enumeration
 
-### Leakage Prevention Patterns ✓
+### Leakage Prevention Patterns [PASS]
 - **Concept**: Prevent future information from contaminating features
 - **Why transfers**: All are time-series models with same leakage risks
 - **Implementation**: Time-forward CV, data maturity thresholds
 
-### Logit/Sigmoid Transformation ✓
+### Logit/Sigmoid Transformation [PASS]
 - **Concept**: Transform sales to unbounded scale for linear modeling
 - **Why transfers**: All have bounded outcomes with saturation behavior
 
-### Cap Rate = Yield Insight ✓
+### Cap Rate = Yield Insight [PASS]
 - **Concept**: Cap rate is customer benefit (yield), not cost (price)
 - **Why transfers**: Both FIA and RILA have same yield economics
 - **Coefficient sign**: **Positive** for both FIA and RILA

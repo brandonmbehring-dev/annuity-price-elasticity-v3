@@ -3,7 +3,7 @@
 **Date**: 2026-01-29
 **Issue**: Production notebooks failing with `ModuleNotFoundError: No module named 'src'`
 **Root Cause**: sys.path detection logic checked for vestigial directory structure from pre-refactor architecture
-**Status**: ✅ Fixed in all 6 production notebooks
+**Status**: [DONE] Fixed in all 6 production notebooks
 
 ---
 
@@ -25,12 +25,12 @@ The sys.path detection logic in production notebooks was checking for **old dire
 **OLD (Broken) Logic:**
 ```python
 cwd = os.getcwd()
-if 'notebooks/rila/production' in cwd or 'notebooks/rila/eda' in cwd:  # ❌ WRONG PATH
+if 'notebooks/rila/production' in cwd or 'notebooks/rila/eda' in cwd:  # [ERROR] WRONG PATH
     project_root = Path(cwd).parents[3]
-elif 'notebooks/rila' in cwd:  # ❌ WRONG PATH
+elif 'notebooks/rila' in cwd:  # [ERROR] WRONG PATH
     project_root = Path(cwd).parents[2]
 else:
-    project_root = cwd  # ❌ Falls back to notebook directory
+    project_root = cwd  # [ERROR] Falls back to notebook directory
 ```
 
 **Actual Directory Structure:**
@@ -53,7 +53,7 @@ RILA_6Y20B_refactored/
 
 **Problem**: When running from `/notebooks/production/rila_6y20b/`:
 - Path contains: `notebooks/production/rila_6y20b`
-- Old logic checks for: `notebooks/rila/production` ❌
+- Old logic checks for: `notebooks/rila/production` [ERROR]
 - No conditions match → falls back to `project_root = cwd` (notebook directory)
 - Import fails because `src/` is not in notebook directory
 
@@ -102,7 +102,7 @@ if not os.path.exists(os.path.join(project_root, 'src')):
     )
 
 sys.path.insert(0, project_root)
-print(f"✓ Project root: {project_root}")
+print(f"[PASS] Project root: {project_root}")
 ```
 
 ### Key Changes
@@ -114,7 +114,7 @@ print(f"✓ Project root: {project_root}")
    - From `/notebooks/production/rila_6y20b/`:
      - `parents[0]` = `production/`
      - `parents[1]` = `notebooks/`
-     - `parents[2]` = project root ✅
+     - `parents[2]` = project root [DONE]
 
 3. **Added Verification**: Checks that `src/` exists before continuing
    - Fails fast with clear error message if path detection is wrong
@@ -140,14 +140,14 @@ print(f"✓ Project root: {project_root}")
 All 6 production notebooks have been updated with corrected sys.path detection:
 
 ### RILA 6Y20B (3 notebooks)
-- ✅ `/notebooks/production/rila_6y20b/00_data_pipeline.ipynb` (Cell 2)
-- ✅ `/notebooks/production/rila_6y20b/01_price_elasticity_inference.ipynb` (Cell 3)
-- ✅ `/notebooks/production/rila_6y20b/02_time_series_forecasting.ipynb` (Cell 3)
+- [DONE] `/notebooks/production/rila_6y20b/00_data_pipeline.ipynb` (Cell 2)
+- [DONE] `/notebooks/production/rila_6y20b/01_price_elasticity_inference.ipynb` (Cell 3)
+- [DONE] `/notebooks/production/rila_6y20b/02_time_series_forecasting.ipynb` (Cell 3)
 
 ### RILA 1Y10B (3 notebooks)
-- ✅ `/notebooks/production/rila_1y10b/00_data_pipeline.ipynb` (Cell 2)
-- ✅ `/notebooks/production/rila_1y10b/01_price_elasticity_inference.ipynb` (Cell 3)
-- ✅ `/notebooks/production/rila_1y10b/02_time_series_forecasting.ipynb` (Cell 3)
+- [DONE] `/notebooks/production/rila_1y10b/00_data_pipeline.ipynb` (Cell 2)
+- [DONE] `/notebooks/production/rila_1y10b/01_price_elasticity_inference.ipynb` (Cell 3)
+- [DONE] `/notebooks/production/rila_1y10b/02_time_series_forecasting.ipynb` (Cell 3)
 
 ---
 
@@ -167,7 +167,7 @@ if 'notebooks/production/rila' in cwd:
 project_root_str = str(project_root)
 sys.path.insert(0, project_root_str)
 from src.data import extraction as ext
-print(f'✓ Import successful from: {cwd}')
+print(f'[PASS] Import successful from: {cwd}')
 "
 
 # Test RILA 1Y10B
@@ -181,14 +181,14 @@ if 'notebooks/production/rila' in cwd:
 project_root_str = str(project_root)
 sys.path.insert(0, project_root_str)
 from src.data import extraction as ext
-print(f'✓ Import successful from: {cwd}')
+print(f'[PASS] Import successful from: {cwd}')
 "
 ```
 
 **Expected Output:**
 ```
-✓ Import successful from: /home/sagemaker-user/RILA_6Y20B_refactored/notebooks/production/rila_6y20b
-✓ Import successful from: /home/sagemaker-user/RILA_6Y20B_refactored/notebooks/production/rila_1y10b
+[PASS] Import successful from: /home/sagemaker-user/RILA_6Y20B_refactored/notebooks/production/rila_6y20b
+[PASS] Import successful from: /home/sagemaker-user/RILA_6Y20B_refactored/notebooks/production/rila_1y10b
 ```
 
 ---
@@ -263,7 +263,7 @@ if not os.path.exists(os.path.join(project_root, 'src')):
     )
 
 sys.path.insert(0, project_root)
-print(f"✓ Project root: {project_root}")
+print(f"[PASS] Project root: {project_root}")
 ```
 
 ### Directory Structure Rules
@@ -283,6 +283,6 @@ print(f"✓ Project root: {project_root}")
 
 ---
 
-**Status**: ✅ Complete - All production notebooks fixed and verified
+**Status**: [DONE] Complete - All production notebooks fixed and verified
 **Impact**: Critical - Unblocks all RILA production notebook execution
 **Testing**: Manual verification in both rila_6y20b and rila_1y10b directories

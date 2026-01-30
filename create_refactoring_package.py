@@ -101,13 +101,13 @@ def validate_source_structure():
     for dir_path in required_dirs:
         if not Path(dir_path).is_dir():
             missing_dirs.append(dir_path)
-            print(f"  ✗ Missing directory: {dir_path}")
+            print(f"  [FAIL] Missing directory: {dir_path}")
 
     missing_files = []
     for file_path in required_files:
         if not Path(file_path).is_file():
             missing_files.append(file_path)
-            print(f"  ✗ Missing file: {file_path}")
+            print(f"  [FAIL] Missing file: {file_path}")
 
     # Check optional files (just inform, don't fail)
     for file_path in optional_files:
@@ -115,10 +115,10 @@ def validate_source_structure():
             print(f"  ⓘ Optional file not present: {file_path}")
 
     if missing_dirs or missing_files:
-        print(f"\n✗ Validation failed: {len(missing_dirs)} directories and {len(missing_files)} files missing")
+        print(f"\n[FAIL] Validation failed: {len(missing_dirs)} directories and {len(missing_files)} files missing")
         return False
 
-    print("  ✓ All required directories and files present")
+    print("  [PASS] All required directories and files present")
     return True
 
 
@@ -128,7 +128,7 @@ def check_fixture_completeness():
 
     fixtures_dir = Path("tests/fixtures/rila")
     if not fixtures_dir.exists():
-        print("  ✗ Fixtures directory not found")
+        print("  [FAIL] Fixtures directory not found")
         return False
 
     fixture_files = list(fixtures_dir.rglob("*.parquet"))
@@ -140,11 +140,11 @@ def check_fixture_completeness():
 
     # Expected approximately 74 MB and 20+ files
     if len(fixture_files) < 15:
-        print(f"  ⚠ Warning: Expected 20+ fixture files, found {len(fixture_files)}")
+        print(f"  [WARN] Warning: Expected 20+ fixture files, found {len(fixture_files)}")
     if total_size_mb < 50:
-        print(f"  ⚠ Warning: Expected ~74 MB, found {total_size_mb:.1f} MB")
+        print(f"  [WARN] Warning: Expected ~74 MB, found {total_size_mb:.1f} MB")
 
-    print("  ✓ Fixtures appear complete")
+    print("  [PASS] Fixtures appear complete")
     return True
 
 
@@ -154,7 +154,7 @@ def check_baseline_completeness():
 
     baselines_dir = Path("tests/baselines")
     if not baselines_dir.exists():
-        print("  ✗ Baselines directory not found")
+        print("  [FAIL] Baselines directory not found")
         return False
 
     baseline_files = list(baselines_dir.rglob("*.parquet"))
@@ -166,11 +166,11 @@ def check_baseline_completeness():
 
     # Expected approximately 144 MB and 230+ files
     if len(baseline_files) < 200:
-        print(f"  ⚠ Warning: Expected 230+ baseline files, found {len(baseline_files)}")
+        print(f"  [WARN] Warning: Expected 230+ baseline files, found {len(baseline_files)}")
     if total_size_mb < 100:
-        print(f"  ⚠ Warning: Expected ~144 MB, found {total_size_mb:.1f} MB")
+        print(f"  [WARN] Warning: Expected ~144 MB, found {total_size_mb:.1f} MB")
 
-    print("  ✓ Baselines appear complete")
+    print("  [PASS] Baselines appear complete")
     return True
 
 
@@ -180,7 +180,7 @@ def update_changelog_metadata(git_info):
 
     changelog_path = Path("CHANGELOG_REFACTORING.md")
     if not changelog_path.exists():
-        print("  ⚠ Warning: CHANGELOG_REFACTORING.md not found")
+        print("  [WARN] Warning: CHANGELOG_REFACTORING.md not found")
         return
 
     with open(changelog_path, 'r') as f:
@@ -199,7 +199,7 @@ def update_changelog_metadata(git_info):
     with open(changelog_path, 'w') as f:
         f.write(content)
 
-    print("  ✓ Changelog metadata updated")
+    print("  [PASS] Changelog metadata updated")
 
 
 def update_readme_metadata(git_info):
@@ -208,7 +208,7 @@ def update_readme_metadata(git_info):
 
     readme_path = Path("README_REFACTORING.md")
     if not readme_path.exists():
-        print("  ⚠ Warning: README_REFACTORING.md not found")
+        print("  [WARN] Warning: README_REFACTORING.md not found")
         return
 
     with open(readme_path, 'r') as f:
@@ -231,7 +231,7 @@ def update_readme_metadata(git_info):
     with open(readme_path, 'w') as f:
         f.write(content)
 
-    print("  ✓ README metadata updated")
+    print("  [PASS] README metadata updated")
 
 
 def create_manifest(file_list):
@@ -274,7 +274,7 @@ def create_manifest(file_list):
         "fixtures_size_mb": manifest["directories"].get("tests", {}).get("size_mb", 0)
     }
 
-    print(f"  ✓ Generated checksums for {len(manifest['files'])} files")
+    print(f"  [PASS] Generated checksums for {len(manifest['files'])} files")
 
     return manifest
 
@@ -359,9 +359,9 @@ def create_package_zip(output_filename):
     zip_size = Path(output_filename).stat().st_size
     zip_size_mb = zip_size / (1024 * 1024)
 
-    print(f"  ✓ Package created: {output_filename}")
-    print(f"  ✓ Package size: {zip_size_mb:.1f} MB")
-    print(f"  ✓ Contains {len(files_to_include)} files")
+    print(f"  [PASS] Package created: {output_filename}")
+    print(f"  [PASS] Package size: {zip_size_mb:.1f} MB")
+    print(f"  [PASS] Contains {len(files_to_include)} files")
 
     return output_filename, zip_size_mb
 
@@ -381,16 +381,16 @@ def create_package():
 
     # Validate structure
     if not validate_source_structure():
-        print("\n✗ Package creation failed: source structure validation failed")
+        print("\n[FAIL] Package creation failed: source structure validation failed")
         return 1
 
     # Check fixtures
     if not check_fixture_completeness():
-        print("\n⚠ Warning: Fixture check failed (continuing anyway)")
+        print("\n[WARN] Warning: Fixture check failed (continuing anyway)")
 
     # Check baselines
     if not check_baseline_completeness():
-        print("\n⚠ Warning: Baseline check failed (continuing anyway)")
+        print("\n[WARN] Warning: Baseline check failed (continuing anyway)")
 
     # Update metadata
     update_changelog_metadata(git_info)
@@ -408,9 +408,9 @@ def create_package():
     print("PACKAGE CREATION COMPLETE")
     print("=" * 80)
     print()
-    print(f"✓ Package: {package_path}")
-    print(f"✓ Size: {package_size:.1f} MB")
-    print(f"✓ Source commit: {git_info['commit_short']}")
+    print(f"[PASS] Package: {package_path}")
+    print(f"[PASS] Size: {package_size:.1f} MB")
+    print(f"[PASS] Source commit: {git_info['commit_short']}")
     print()
     print("Next steps:")
     print("1. Transfer this package to your non-AWS environment")

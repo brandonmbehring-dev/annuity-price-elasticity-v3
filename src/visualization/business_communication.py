@@ -126,7 +126,7 @@ class BusinessCommunicationPlots:
         Business Impact Level: {impact_level} ({performance:.1f}% explanatory power)
         Impact Assessment: {impact_description}
 
-        Validation Status: ✓ Economic Logic Confirmed  ✓ Statistical Reliability Tested  ✓ Production Ready
+        Validation Status: [PASS] Economic Logic Confirmed  [PASS] Statistical Reliability Tested  [PASS] Production Ready
         """
         ax.text(0.02, 0.5, outcomes_text, transform=ax.transAxes, fontsize=12, verticalalignment='center',
                 fontfamily='sans-serif', bbox=dict(boxstyle='round,pad=0.8', facecolor=self.colors['light_gray'],
@@ -540,24 +540,24 @@ class BusinessCommunicationPlots:
         features_lower = features.lower()
 
         if 'competitor' in features_lower:
-            recommendations.extend(["✓ Strong competitor price monitoring capability",
+            recommendations.extend(["[PASS] Strong competitor price monitoring capability",
                                     "• Implement real-time competitive pricing alerts",
                                     "• Develop rapid response pricing strategies"])
         else:
-            recommendations.extend(["⚠ Limited competitive intelligence integration",
+            recommendations.extend(["[WARN] Limited competitive intelligence integration",
                                     "• Consider adding competitive data sources"])
 
         if 'prudential' in features_lower:
-            recommendations.extend(["✓ Internal pricing strategy optimization enabled",
+            recommendations.extend(["[PASS] Internal pricing strategy optimization enabled",
                                     "• Leverage pricing flexibility for market positioning"])
         else:
-            recommendations.append("⚠ Internal pricing strategy not fully optimized")
+            recommendations.append("[WARN] Internal pricing strategy not fully optimized")
 
         if any(term in features_lower for term in ['treasury', 'econ']):
-            recommendations.extend(["✓ Economic cycle awareness integrated",
+            recommendations.extend(["[PASS] Economic cycle awareness integrated",
                                     "• Plan pricing strategies around economic indicators"])
         else:
-            recommendations.append("⚠ Economic timing factors not considered")
+            recommendations.append("[WARN] Economic timing factors not considered")
 
         recommendations.extend(["", "Strategic Priority: Focus on competitive differentiation",
                                 "Implementation: Quarterly competitive analysis reviews"])

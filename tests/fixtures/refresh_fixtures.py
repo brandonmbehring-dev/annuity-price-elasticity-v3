@@ -138,7 +138,7 @@ def refresh_fixtures_from_aws(output_dir: Path, aws_config: Dict[str, str], verb
         adapter = S3Adapter(aws_config)
         adapter._ensure_connection()
         if verbose:
-            print("✓ AWS S3 connection established")
+            print("[PASS] AWS S3 connection established")
     except Exception as e:
         raise RuntimeError(f"Failed to connect to AWS S3: {e}")
 
@@ -152,7 +152,7 @@ def refresh_fixtures_from_aws(output_dir: Path, aws_config: Dict[str, str], verb
         sales.to_parquet(sales_path)
 
         if verbose:
-            print(f"✓ Sales data: {sales.shape} → {sales_path}")
+            print(f"[PASS] Sales data: {sales.shape} → {sales_path}")
     except Exception as e:
         raise RuntimeError(f"Failed to load sales data: {e}")
 
@@ -166,7 +166,7 @@ def refresh_fixtures_from_aws(output_dir: Path, aws_config: Dict[str, str], verb
         rates.to_parquet(rates_path)
 
         if verbose:
-            print(f"✓ Competitive rates: {rates.shape} → {rates_path}")
+            print(f"[PASS] Competitive rates: {rates.shape} → {rates_path}")
     except Exception as e:
         raise RuntimeError(f"Failed to load competitive rates: {e}")
 
@@ -180,7 +180,7 @@ def refresh_fixtures_from_aws(output_dir: Path, aws_config: Dict[str, str], verb
         weights.to_parquet(weights_path)
 
         if verbose:
-            print(f"✓ Market weights: {weights.shape} → {weights_path}")
+            print(f"[PASS] Market weights: {weights.shape} → {weights_path}")
     except Exception as e:
         raise RuntimeError(f"Failed to load market weights: {e}")
 
@@ -199,10 +199,10 @@ def refresh_fixtures_from_aws(output_dir: Path, aws_config: Dict[str, str], verb
                 print(f"  - {indicator_name}: {indicator_df.shape}")
 
         if verbose:
-            print(f"✓ Economic indicators: {len(macro)} files")
+            print(f"[PASS] Economic indicators: {len(macro)} files")
     except Exception as e:
         if verbose:
-            print(f"⚠ Warning: Could not load economic indicators: {e}")
+            print(f"[WARN] Warning: Could not load economic indicators: {e}")
 
     # Run full pipeline and capture stage outputs
     if verbose:
@@ -221,14 +221,14 @@ def refresh_fixtures_from_aws(output_dir: Path, aws_config: Dict[str, str], verb
             stage_output.to_parquet(stage_path)
 
             if verbose:
-                print(f"✓ {stage_output.shape}")
+                print(f"[PASS] {stage_output.shape}")
 
         if verbose:
-            print(f"✓ Pipeline: All 10 stages captured")
+            print(f"[PASS] Pipeline: All 10 stages captured")
 
     except Exception as e:
         if verbose:
-            print(f"\n⚠ Warning: Pipeline execution failed: {e}")
+            print(f"\n[WARN] Warning: Pipeline execution failed: {e}")
             print("  Continuing with partial fixtures...")
 
     # Run inference and capture baseline (optional)
@@ -249,11 +249,11 @@ def refresh_fixtures_from_aws(output_dir: Path, aws_config: Dict[str, str], verb
             baseline_df.to_parquet(baseline_path)
 
             if verbose:
-                print(f"✓ Inference baseline: {baseline_df.shape}")
+                print(f"[PASS] Inference baseline: {baseline_df.shape}")
 
     except Exception as e:
         if verbose:
-            print(f"⚠ Warning: Inference failed: {e}")
+            print(f"[WARN] Warning: Inference failed: {e}")
             print("  Continuing without inference baseline...")
 
     # Save metadata
@@ -279,7 +279,7 @@ def refresh_fixtures_from_aws(output_dir: Path, aws_config: Dict[str, str], verb
         json.dump(metadata, f, indent=2)
 
     if verbose:
-        print(f"✓ Metadata: {metadata_path}")
+        print(f"[PASS] Metadata: {metadata_path}")
 
     # Summary
     if verbose:

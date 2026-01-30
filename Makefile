@@ -1,4 +1,4 @@
-# Annuity Price Elasticity v2 - Makefile
+# Annuity Price Elasticity v3 - Makefile
 # Multi-product support: RILA, FIA, MYGA
 
 .PHONY: help install dev test test-unit test-integration test-rila test-fia
@@ -11,7 +11,7 @@ PYTHON ?= python3
 PYTEST ?= pytest
 
 help:
-	@echo "Annuity Price Elasticity v2.0 - Available commands:"
+	@echo "Annuity Price Elasticity v3.0 - Available commands:"
 	@echo ""
 	@echo "  Development:"
 	@echo "    make install       - Install package dependencies"

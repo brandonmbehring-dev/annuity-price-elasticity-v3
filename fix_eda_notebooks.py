@@ -59,16 +59,16 @@ def fix_eda_notebook(notebook_path):
     # Verify it's the setup cell
     cell_text = ''.join(source)
     if 'STANDARD SETUP CELL' not in cell_text:
-        print(f"  ✗ ERROR: Cell 1 is not the setup cell!")
+        print(f"  [FAIL] ERROR: Cell 1 is not the setup cell!")
         return False
 
     # Path import should already exist
     has_pathlib = any('from pathlib import Path' in line for line in source)
     if not has_pathlib:
-        print(f"  ⚠️ Warning: Missing 'from pathlib import Path' - should already exist")
+        print(f"  [WARN] Warning: Missing 'from pathlib import Path' - should already exist")
         return False
 
-    print(f"  ✓ Verified: Has 'from pathlib import Path'")
+    print(f"  [PASS] Verified: Has 'from pathlib import Path'")
 
     # Find the sys.path setup section
     syspath_start = None
@@ -83,10 +83,10 @@ def fix_eda_notebook(notebook_path):
             break
 
     if syspath_start is None or syspath_end is None:
-        print(f"  ✗ ERROR: Could not find sys.path section")
+        print(f"  [FAIL] ERROR: Could not find sys.path section")
         return False
 
-    print(f"  ✓ Found sys.path section: lines {syspath_start} to {syspath_end}")
+    print(f"  [PASS] Found sys.path section: lines {syspath_start} to {syspath_end}")
 
     # Extract old logic for comparison
     old_logic = ''.join(source[syspath_start:syspath_end])
@@ -113,7 +113,7 @@ def fix_eda_notebook(notebook_path):
     with open(notebook_path, 'w') as f:
         json.dump(nb, f, indent=1, ensure_ascii=False)
 
-    print(f"\n  ✓ Notebook saved successfully")
+    print(f"\n  [PASS] Notebook saved successfully")
     return True
 
 
@@ -135,7 +135,7 @@ def main():
     results = []
     for nb_path in notebooks_to_fix:
         if not nb_path.exists():
-            print(f"\n✗ ERROR: Notebook not found: {nb_path}")
+            print(f"\n[FAIL] ERROR: Notebook not found: {nb_path}")
             results.append(False)
             continue
 
@@ -148,17 +148,17 @@ def main():
     print("="*70)
 
     for nb_path, success in zip(notebooks_to_fix, results):
-        status = "✓ SUCCESS" if success else "✗ FAILED"
+        status = "[PASS] SUCCESS" if success else "[FAIL] FAILED"
         print(f"{status}: {nb_path.name}")
 
     total_success = sum(results)
     print(f"\nTotal: {total_success}/{len(notebooks_to_fix)} notebooks fixed successfully")
 
     if total_success == len(notebooks_to_fix):
-        print("\n✓✓ ALL NOTEBOOKS FIXED SUCCESSFULLY ✓✓")
+        print("\n[PASS][PASS] ALL NOTEBOOKS FIXED SUCCESSFULLY [PASS][PASS]")
         return 0
     else:
-        print("\n✗✗ SOME NOTEBOOKS FAILED ✗✗")
+        print("\n[FAIL][FAIL] SOME NOTEBOOKS FAILED [FAIL][FAIL]")
         return 1
 
 

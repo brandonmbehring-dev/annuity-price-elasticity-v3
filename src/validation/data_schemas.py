@@ -129,7 +129,7 @@ class DataFrameValidator:
                 # Sample validation for large datasets
                 sample_df = df.sample(n=1000, random_state=42)
                 FINAL_DATASET_SCHEMA.validate(sample_df, lazy=True)
-                print(f"✓ Sample validation passed ({len(sample_df)} rows sampled)")
+                print(f"[PASS] Sample validation passed ({len(sample_df)} rows sampled)")
 
             validated_df = FINAL_DATASET_SCHEMA.validate(df, lazy=not strict)
 
@@ -243,10 +243,10 @@ class DataFrameValidator:
                     if validation_strict:
                         raise RuntimeError(f"MLflow logging failed for {schema_name}: {e}")
                     else:
-                        print(f"⚠ MLflow logging warning for {schema_name}: {e}")
+                        print(f"[WARN] MLflow logging warning for {schema_name}: {e}")
 
             elif log_to_mlflow and not MLFLOW_INTEGRATION_AVAILABLE:
-                print(f"⚠ MLflow integration not available - skipping logging for {schema_name}")
+                print(f"[WARN] MLflow integration not available - skipping logging for {schema_name}")
 
             return validated_df
 
@@ -255,7 +255,7 @@ class DataFrameValidator:
             if validation_strict:
                 raise ValueError(error_msg)
             else:
-                print(f"⚠ {error_msg} (non-strict mode)")
+                print(f"[WARN] {error_msg} (non-strict mode)")
                 return df
 
     @staticmethod
@@ -430,7 +430,7 @@ def load_validated_dataset(file_path: str,
         df = pd.read_parquet(file_path, **pandas_kwargs)
         validated_df = schema.validate(df, lazy=True)
 
-        print(f"✓ Loaded and validated dataset: {file_path}")
+        print(f"[PASS] Loaded and validated dataset: {file_path}")
         print(f"   Shape: {validated_df.shape}")
         print(f"   Date range: {validated_df['date'].min()} to {validated_df['date'].max()}")
 
@@ -467,18 +467,18 @@ def validate_and_save_dataset(df: pd.DataFrame,
 
     # Save validated dataset
     validated_df.to_parquet(output_path)
-    print(f"✓ Saved validated dataset: {output_path}")
+    print(f"[PASS] Saved validated dataset: {output_path}")
 
     # Optional DVC tracking
     if dvc_add:
         try:
             result = os.system(f'dvc add {output_path}')
             if result == 0:
-                print(f"✓ Added to DVC tracking: {output_path}")
+                print(f"[PASS] Added to DVC tracking: {output_path}")
             else:
-                print(f"⚠ DVC add failed for: {output_path}")
+                print(f"[WARN] DVC add failed for: {output_path}")
         except Exception as e:
-            print(f"⚠ DVC add error: {e}")
+            print(f"[WARN] DVC add error: {e}")
 
     return validated_df
 
@@ -691,11 +691,11 @@ def load_and_validate_with_dvc_context(file_path: str,
                 capture_output=True, text=True
             )
             if dvc_status_result.returncode == 0 and dvc_status_result.stdout.strip():
-                print(f"⚠ DVC file may need updating: {file_path}")
+                print(f"[WARN] DVC file may need updating: {file_path}")
             else:
                 print(f"SUCCESS: DVC file up to date: {file_path}")
         except FileNotFoundError:
-            print("⚠ DVC not available - skipping status check")
+            print("[WARN] DVC not available - skipping status check")
 
     # Load and validate using existing function
     return load_validated_dataset(file_path, schema)
@@ -721,9 +721,9 @@ if __name__ == "__main__":
 
     try:
         validated_df = DataFrameValidator.validate_final_dataset(test_df)
-        print(f"✓ Test dataset validation passed: {validated_df.shape}")
+        print(f"[PASS] Test dataset validation passed: {validated_df.shape}")
     except Exception as e:
-        print(f"✗ Test dataset validation failed: {e}")
+        print(f"[FAIL] Test dataset validation failed: {e}")
 
     # Test forecast results validation
     forecast_test_data = {
@@ -737,9 +737,9 @@ if __name__ == "__main__":
 
     try:
         validated_forecast = DataFrameValidator.validate_forecast_results(forecast_df)
-        print(f"✓ Forecast results validation passed: {validated_forecast.shape}")
+        print(f"[PASS] Forecast results validation passed: {validated_forecast.shape}")
     except Exception as e:
-        print(f"✗ Forecast results validation failed: {e}")
+        print(f"[FAIL] Forecast results validation failed: {e}")
 
     # Test schema-aware DVC tracking functionality
     print("\nTesting Schema-Aware DVC Tracking...")
@@ -761,7 +761,7 @@ if __name__ == "__main__":
             validation_strict=False  # Non-strict for testing
         )
 
-        print(f"✓ Schema-aware DVC tracking test: {tracking_result['validation_status']}")
+        print(f"[PASS] Schema-aware DVC tracking test: {tracking_result['validation_status']}")
 
         # Test bulk tracking
         datasets_config = [
@@ -780,14 +780,14 @@ if __name__ == "__main__":
         ]
 
         bulk_results = SchemaAwareDVCTracker.bulk_validate_and_track(datasets_config)
-        print(f"✓ Bulk tracking test: {bulk_results['summary']['validation_success_rate']:.1%} success rate")
+        print(f"[PASS] Bulk tracking test: {bulk_results['summary']['validation_success_rate']:.1%} success rate")
 
         # Cleanup
         import shutil
         shutil.rmtree(temp_dir)
 
     except Exception as e:
-        print(f"✗ Schema-aware DVC tracking test failed: {e}")
+        print(f"[FAIL] Schema-aware DVC tracking test failed: {e}")
 
     # Test MLflow integration functionality
     print("\nTesting DataFrameValidator MLflow Integration...")
@@ -802,7 +802,7 @@ if __name__ == "__main__":
             log_to_mlflow=False  # Disable MLflow logging for standalone test
         )
 
-        print(f"✓ MLflow integration validation test: {mlflow_validated_df.shape}")
+        print(f"[PASS] MLflow integration validation test: {mlflow_validated_df.shape}")
 
         # Test batch validation with MLflow
         batch_validations = [
@@ -821,9 +821,9 @@ if __name__ == "__main__":
         ]
 
         batch_results = DataFrameValidator.batch_validate_with_mlflow(batch_validations)
-        print(f"✓ Batch MLflow validation test: {batch_results['summary']['validation_success_rate']:.1%} success rate")
+        print(f"[PASS] Batch MLflow validation test: {batch_results['summary']['validation_success_rate']:.1%} success rate")
 
     except Exception as e:
-        print(f"✗ MLflow integration test failed: {e}")
+        print(f"[FAIL] MLflow integration test failed: {e}")
 
     print("Pandera DataFrame validation with MLflow and DVC integration test completed!")

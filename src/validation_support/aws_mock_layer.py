@@ -384,7 +384,7 @@ def verify_fixture_availability(fixture_path: str = 'tests/fixtures/aws_complete
     Example:
         >>> from src.validation_support.aws_mock_layer import verify_fixture_availability
         >>> verify_fixture_availability()
-        ✓ All required fixtures present
+        [PASS] All required fixtures present
         True
     """
     required_files = [

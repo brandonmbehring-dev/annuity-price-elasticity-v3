@@ -1,6 +1,6 @@
 # CLAUDE.md - Primary Guidance for Claude Code
 
-**Essential guidance for optimal Claude Code performance in the v2 multi-product annuity price elasticity repository.**
+**Essential guidance for optimal Claude Code performance in the v3 multi-product annuity price elasticity repository.**
 
 ## **Project Phase: DEVELOPMENT**
 
@@ -28,7 +28,7 @@
 4. **Zero Regression During Refactoring**: Mathematical equivalence at 1e-12 precision
 5. **Follow Canonical Patterns**: Use established implementations
 
-## **🔗 Hub Pattern References**
+## Hub Pattern References
 
 **Global Patterns (lever_of_archimedes):**
 - `~/Claude/lever_of_archimedes/patterns/git.md` - Commit format with attribution
@@ -42,9 +42,9 @@
 - `ANTI_PATTERNS.md` - Common mistakes to avoid
 - `testing.md` - 6-layer validation architecture
 
-## **📍 Quick Start - Entry Points**
+## Quick Start - Entry Points
 
-### v2 Architecture (NEW)
+### v3 Architecture
 
 | Task | Entry Point | Pattern |
 |------|-------------|---------|
@@ -79,7 +79,7 @@ results = interface.run_inference(df)
 | 6Y10B | RILA | 10% | 6 years |
 | 10Y20B | RILA | 20% | 10 years |
 
-## **⚙️ Code Quality Standards**
+## Code Quality Standards
 
 **Function Design:**
 - **Length**: 30-50 lines maximum
@@ -92,7 +92,7 @@ results = interface.run_inference(df)
 - **Context**: All errors include business impact and required actions
 - **Prohibited**: `return None` on critical failures
 
-## **🏗️ Architecture Overview**
+## Architecture Overview
 
 ### Dependency Injection Pattern
 
@@ -166,7 +166,7 @@ from src.core.exceptions import (
 )
 ```
 
-## **✅ Success Criteria**
+## Success Criteria
 
 ### Adding Features
 - [ ] Unit tests written with 100% coverage for new code
@@ -179,7 +179,7 @@ from src.core.exceptions import (
 - [ ] Solution uses canonical patterns only
 - [ ] No new pattern violations introduced
 
-## **🚫 Version Control Standards**
+## Version Control Standards
 
 **Commit Message Policy - NO EMOJIS:**
 ```bash
@@ -189,7 +189,7 @@ git commit -m "Add multi-product support for UnifiedNotebookInterface
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
-## **📚 Documentation Hierarchy**
+## Documentation Hierarchy
 
 **Primary (Always Read):**
 - `CLAUDE.md` - This file (core principles)
@@ -206,7 +206,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 - `knowledge/integration/LESSONS_LEARNED.md` - 5 critical traps
 - `knowledge/practices/LEAKAGE_CHECKLIST.md` - Pre-deployment gate
 
-## **⚡ Quick Commands**
+## Quick Commands
 
 ```bash
 # Makefile targets
@@ -222,7 +222,7 @@ make clean          # Remove cache directories
 python -c "from src.notebooks import create_interface; print('OK')"
 ```
 
-## **🔬 Key Economic Constraints**
+## Key Economic Constraints
 
 | Constraint | Expected Sign | Rationale |
 |------------|--------------|-----------|

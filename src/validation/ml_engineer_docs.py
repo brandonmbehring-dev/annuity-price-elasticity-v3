@@ -800,7 +800,7 @@ if __name__ == "__main__":
         sample_data = notebook_load_rila_data()
         print(f"SUCCESS: Real data loaded: {sample_data.shape}")
     except Exception as e:
-        print(f"⚠ Could not load real data: {e}")
+        print(f"[WARN] Could not load real data: {e}")
         print("   Generating documentation without compatibility analysis")
         sample_data = None
 
@@ -808,4 +808,4 @@ if __name__ == "__main__":
     doc_path = doc_generator.generate_complete_documentation(sample_data)
 
     print(f"\nSUCCESS: Complete ML engineer handoff documentation generated!")
-    print(f"📄 Documentation available at: {doc_path}")
+    print(f"[DOC] Documentation available at: {doc_path}")

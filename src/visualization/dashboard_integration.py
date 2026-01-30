@@ -691,7 +691,7 @@ Status: Analysis Incomplete
     def _create_statistical_preview(self, ax: Any, analysis_results: Dict[str, Any]) -> None:
         """Create statistical validation preview."""
         ax.set_title('Statistical Validation Preview', fontweight='bold')
-        ax.text(0.5, 0.5, 'Bootstrap Stability: ✓\\nInformation Criteria: ✓\\nMath Equivalence: ✓',
+        ax.text(0.5, 0.5, 'Bootstrap Stability: [PASS]\\nInformation Criteria: [PASS]\\nMath Equivalence: [PASS]',
                ha='center', va='center', transform=ax.transAxes,
                bbox=dict(boxstyle='round', facecolor=self.branding['accent_color'], alpha=0.2))
 

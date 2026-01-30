@@ -8,6 +8,9 @@ Tests cover:
 - _create_error_feature_selection_results: Full error results
 - _create_error_fallback_results: Return type routing
 - _handle_pipeline_error: Error logging and fallback creation
+- _execute_feature_selection_pipeline: Pipeline execution with mocking
+- _format_pipeline_results: Result formatting logic
+- _run_atomic_pipeline: Atomic pipeline execution with mocking
 - run_feature_selection: Main entry point with error handling
 
 Design Principles:
@@ -36,6 +39,12 @@ from src.features.selection.interface.interface_execution import (
     run_feature_selection,
 )
 from src.features.selection.interface.interface_config import FEATURE_FLAGS
+from src.features.selection_types import (
+    AICResult,
+    FeatureSelectionResults,
+    FeatureSelectionConfig,
+    EconomicConstraintConfig,
+)
 
 
 # =============================================================================
@@ -87,6 +96,49 @@ def empty_mock_results():
     mock_results.valid_results = pd.DataFrame()
     mock_results.all_results = pd.DataFrame({'col': [1, 2]})
     return mock_results
+
+
+@pytest.fixture
+def real_feature_selection_results():
+    """Create a real FeatureSelectionResults dataclass for testing."""
+    best_model = AICResult(
+        features="feature_1 + feature_2",
+        n_features=2,
+        aic=150.5,
+        bic=160.2,
+        r_squared=0.75,
+        r_squared_adj=0.72,
+        coefficients={"feature_1": 0.5, "feature_2": -0.3, "const": 10.0},
+        converged=True,
+        n_obs=100,
+    )
+
+    feature_config = FeatureSelectionConfig(
+        base_features=[],
+        candidate_features=["feature_1", "feature_2", "feature_3"],
+        max_candidate_features=3,
+        target_variable="target",
+    )
+
+    constraint_config = EconomicConstraintConfig(enabled=True)
+
+    return FeatureSelectionResults(
+        best_model=best_model,
+        all_results=pd.DataFrame({
+            'features': ['feature_1', 'feature_1 + feature_2'],
+            'aic': [155.0, 150.5],
+        }),
+        valid_results=pd.DataFrame({
+            'features': ['feature_1 + feature_2'],
+            'aic': [150.5],
+        }),
+        total_combinations=10,
+        converged_models=8,
+        economically_valid_models=5,
+        constraint_violations=[],
+        feature_config=feature_config,
+        constraint_config=constraint_config,
+    )
 
 
 # =============================================================================
@@ -143,6 +195,19 @@ class TestPrepareFeatureSelectionParameters:
         assert display is False
         assert bootstrap is True
 
+    def test_both_none_with_true_defaults(self, reset_feature_flags):
+        """Test both None parameters with True defaults."""
+        FEATURE_FLAGS["AUTO_DISPLAY_RESULTS"] = True
+        FEATURE_FLAGS["ENABLE_BOOTSTRAP_DEFAULT"] = True
+
+        display, bootstrap = _prepare_feature_selection_parameters(
+            display_results=None,
+            enable_bootstrap=None,
+        )
+
+        assert display is True
+        assert bootstrap is True
+
 
 # =============================================================================
 # Tests for _log_pipeline_status
@@ -177,6 +242,23 @@ class TestLogPipelineStatus:
 
         captured = capsys.readouterr()
         assert "Legacy Implementation" in captured.out
+
+    def test_logs_legacy_when_atomic_flag_true_but_unavailable(self, capsys, reset_feature_flags):
+        """Test that legacy message shown when flag True but functions unavailable."""
+        FEATURE_FLAGS["USE_ATOMIC_FUNCTIONS"] = True
+
+        # Temporarily patch ATOMIC_FUNCTIONS_AVAILABLE
+        with patch('src.features.selection.interface.interface_execution.ATOMIC_FUNCTIONS_AVAILABLE', False):
+            from src.features.selection.interface import interface_execution
+            original_value = interface_execution.ATOMIC_FUNCTIONS_AVAILABLE
+            interface_execution.ATOMIC_FUNCTIONS_AVAILABLE = False
+
+            _log_pipeline_status()
+
+            interface_execution.ATOMIC_FUNCTIONS_AVAILABLE = original_value
+
+        captured = capsys.readouterr()
+        assert "Using" in captured.out
 
 
 # =============================================================================
@@ -216,6 +298,26 @@ class TestCreateErrorAICResult:
 
         assert result_small.n_obs == 10
         assert result_large.n_obs == 10000
+
+    def test_r_squared_adj_is_zero(self, sample_error):
+        """Test that r_squared_adj is also zero for error results."""
+        result = _create_error_aic_result(n_obs=100, error=sample_error)
+
+        assert result.r_squared_adj == 0.0
+
+    def test_coefficients_is_empty_dict(self, sample_error):
+        """Test that coefficients is empty dict for error results."""
+        result = _create_error_aic_result(n_obs=100, error=sample_error)
+
+        assert result.coefficients == {}
+
+    def test_complex_exception_message(self):
+        """Test with complex exception message containing special characters."""
+        error = ValueError("Error with 'quotes' and \"double quotes\" and newline\n")
+        result = _create_error_aic_result(n_obs=50, error=error)
+
+        assert "quotes" in result.error
+        assert result.converged is False
 
 
 # =============================================================================
@@ -278,6 +380,62 @@ class TestCreateErrorFeatureSelectionResults:
 
         assert result.feature_config["base_features"] == []
 
+    def test_constraint_config_enabled_flag(self, sample_error):
+        """Test that constraint config enabled flag is set correctly."""
+        error_aic = _create_error_aic_result(n_obs=50, error=sample_error)
+
+        result_enabled = _create_error_feature_selection_results(
+            error_aic=error_aic,
+            candidate_features=["feat1"],
+            target_variable="target",
+            max_features=1,
+            base_features=None,
+            enable_constraints=True,
+        )
+
+        result_disabled = _create_error_feature_selection_results(
+            error_aic=error_aic,
+            candidate_features=["feat1"],
+            target_variable="target",
+            max_features=1,
+            base_features=None,
+            enable_constraints=False,
+        )
+
+        assert result_enabled.constraint_config["enabled"] is True
+        assert result_disabled.constraint_config["enabled"] is False
+
+    def test_all_results_is_empty_dataframe(self, sample_error):
+        """Test that all_results is empty DataFrame."""
+        error_aic = _create_error_aic_result(n_obs=50, error=sample_error)
+
+        result = _create_error_feature_selection_results(
+            error_aic=error_aic,
+            candidate_features=["feat1"],
+            target_variable="target",
+            max_features=1,
+            base_features=None,
+            enable_constraints=True,
+        )
+
+        assert isinstance(result.all_results, pd.DataFrame)
+        assert result.all_results.empty
+
+    def test_constraint_violations_is_empty_list(self, sample_error):
+        """Test that constraint_violations is empty list."""
+        error_aic = _create_error_aic_result(n_obs=50, error=sample_error)
+
+        result = _create_error_feature_selection_results(
+            error_aic=error_aic,
+            candidate_features=["feat1"],
+            target_variable="target",
+            max_features=1,
+            base_features=None,
+            enable_constraints=True,
+        )
+
+        assert result.constraint_violations == []
+
 
 # =============================================================================
 # Tests for _create_error_fallback_results
@@ -319,6 +477,23 @@ class TestCreateErrorFallbackResults:
         # Returns FeatureSelectionResults dataclass
         assert hasattr(result, 'best_model')
         assert result.best_model.features == "ERROR"
+
+    def test_data_length_used_for_n_obs(self, sample_error):
+        """Test that data length is used for n_obs in error result."""
+        small_df = pd.DataFrame({'target': [1, 2, 3]})
+
+        result = _create_error_fallback_results(
+            data=small_df,
+            candidate_features=["feature_1"],
+            target_variable="target",
+            max_features=1,
+            base_features=None,
+            enable_constraints=True,
+            error=sample_error,
+            return_detailed=True,
+        )
+
+        assert result.best_model.n_obs == 3
 
 
 # =============================================================================
@@ -362,6 +537,29 @@ class TestHandlePipelineError:
         # Returns FeatureSelectionResults dataclass
         assert hasattr(result, 'best_model')
 
+    def test_logs_different_error_types(self, simple_dataframe, capsys):
+        """Test that different error types are logged correctly."""
+        errors = [
+            RuntimeError("Runtime issue"),
+            TypeError("Type mismatch"),
+            KeyError("missing_key"),
+        ]
+
+        for error in errors:
+            _handle_pipeline_error(
+                error=error,
+                data=simple_dataframe,
+                candidate_features=["feature_1"],
+                target_variable="target",
+                max_features=1,
+                base_features=None,
+                enable_constraints=True,
+                return_detailed=False,
+            )
+
+            captured = capsys.readouterr()
+            assert "ERROR" in captured.out
+
 
 # =============================================================================
 # Tests for _format_pipeline_results
@@ -399,6 +597,23 @@ class TestFormatPipelineResults:
 
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 2  # all_results has 2 rows
+
+    def test_with_real_feature_selection_results(self, real_feature_selection_results):
+        """Test with real FeatureSelectionResults dataclass."""
+        # Test detailed return
+        result_detailed = _format_pipeline_results(
+            results=real_feature_selection_results,
+            return_detailed=True,
+        )
+        assert result_detailed is real_feature_selection_results
+
+        # Test non-detailed return
+        result_simple = _format_pipeline_results(
+            results=real_feature_selection_results,
+            return_detailed=False,
+        )
+        assert isinstance(result_simple, pd.DataFrame)
+        assert len(result_simple) == 1  # valid_results has 1 row
 
 
 # =============================================================================
@@ -487,6 +702,172 @@ class TestRunFeatureSelection:
             assert result["feature_config"]["candidate_features"] == ["feature_1", "feature_2"]
             assert result["feature_config"]["max_candidate_features"] == 2
 
+    def test_with_all_parameters(self, simple_dataframe, reset_feature_flags, capsys):
+        """Test with all parameters specified."""
+        FEATURE_FLAGS["AUTO_DISPLAY_RESULTS"] = False
+
+        result = run_feature_selection(
+            data=simple_dataframe,
+            candidate_features=["feature_1", "feature_2"],
+            target_variable="target",
+            max_features=2,
+            base_features=None,
+            enable_constraints=True,
+            enable_bootstrap=False,
+            bootstrap_samples=50,
+            random_seed=123,
+            display_results=False,
+            return_detailed=True,
+        )
+
+        # Should complete without error
+        assert result is not None
+
+    def test_bootstrap_parameter_resolution(self, simple_dataframe, reset_feature_flags):
+        """Test bootstrap parameter resolution from flag."""
+        FEATURE_FLAGS["AUTO_DISPLAY_RESULTS"] = False
+        FEATURE_FLAGS["ENABLE_BOOTSTRAP_DEFAULT"] = True
+
+        # Pass None to use flag default
+        result = run_feature_selection(
+            data=simple_dataframe,
+            candidate_features=["feature_1"],
+            target_variable="target",
+            enable_bootstrap=None,  # Should use flag (True)
+            return_detailed=True,
+        )
+
+        assert result is not None
+
+
+# =============================================================================
+# Tests for _execute_feature_selection_pipeline (mocked)
+# =============================================================================
+
+
+class TestExecuteFeatureSelectionPipeline:
+    """Tests for _execute_feature_selection_pipeline with mocking."""
+
+    @pytest.mark.skipif(
+        not ATOMIC_FUNCTIONS_AVAILABLE,
+        reason="Atomic functions not available - cannot test pipeline execution"
+    )
+    def test_executes_pipeline_and_displays_results(
+        self, simple_dataframe, real_feature_selection_results
+    ):
+        """Test that pipeline is executed and results displayed."""
+        from src.features.selection.interface.interface_execution import _execute_feature_selection_pipeline
+
+        with patch('src.features.selection.pipeline_orchestrator.run_feature_selection_pipeline') as mock_pipeline, \
+             patch('src.features.selection.interface.interface_execution.display_results_summary') as mock_display:
+
+            mock_pipeline.return_value = real_feature_selection_results
+
+            feature_config = FeatureSelectionConfig(
+                base_features=[],
+                candidate_features=["feature_1", "feature_2"],
+                max_candidate_features=2,
+                target_variable="target",
+            )
+            constraint_config = EconomicConstraintConfig(enabled=True)
+
+            result = _execute_feature_selection_pipeline(
+                data=simple_dataframe,
+                feature_config=feature_config,
+                constraint_config=constraint_config,
+                bootstrap_config=None,
+                resolved_display_results=True,
+            )
+
+            mock_pipeline.assert_called_once()
+            mock_display.assert_called_once()
+            assert result == real_feature_selection_results
+
+    @pytest.mark.skipif(
+        not ATOMIC_FUNCTIONS_AVAILABLE,
+        reason="Atomic functions not available - cannot test pipeline execution"
+    )
+    def test_skips_display_when_disabled(
+        self, simple_dataframe, real_feature_selection_results
+    ):
+        """Test that display is skipped when resolved_display_results=False."""
+        from src.features.selection.interface.interface_execution import _execute_feature_selection_pipeline
+
+        with patch('src.features.selection.pipeline_orchestrator.run_feature_selection_pipeline') as mock_pipeline, \
+             patch('src.features.selection.interface.interface_execution.display_results_summary') as mock_display:
+
+            mock_pipeline.return_value = real_feature_selection_results
+
+            feature_config = FeatureSelectionConfig(
+                base_features=[],
+                candidate_features=["feature_1"],
+                max_candidate_features=1,
+                target_variable="target",
+            )
+            constraint_config = EconomicConstraintConfig(enabled=True)
+
+            _execute_feature_selection_pipeline(
+                data=simple_dataframe,
+                feature_config=feature_config,
+                constraint_config=constraint_config,
+                bootstrap_config=None,
+                resolved_display_results=False,
+            )
+
+            mock_display.assert_not_called()
+
+
+# =============================================================================
+# Tests for _run_atomic_pipeline (mocked)
+# =============================================================================
+
+
+class TestRunAtomicPipeline:
+    """Tests for _run_atomic_pipeline with mocking."""
+
+    def test_creates_configs_and_executes_pipeline(
+        self, simple_dataframe, real_feature_selection_results
+    ):
+        """Test that configs are created and pipeline is executed."""
+        from src.features.selection.interface.interface_execution import _run_atomic_pipeline
+
+        feature_config = FeatureSelectionConfig(
+            base_features=[],
+            candidate_features=["feature_1"],
+            max_candidate_features=1,
+            target_variable="target",
+        )
+        constraint_config = EconomicConstraintConfig(enabled=True)
+
+        with patch.object(
+            __import__('src.features.selection.interface.interface_execution', fromlist=['_execute_feature_selection_pipeline']),
+            '_execute_feature_selection_pipeline'
+        ) as mock_execute, patch.object(
+            __import__('src.features.selection.interface.interface_execution', fromlist=['create_feature_selection_config']),
+            'create_feature_selection_config'
+        ) as mock_create_config:
+
+            mock_create_config.return_value = (feature_config, constraint_config, None)
+            mock_execute.return_value = real_feature_selection_results
+
+            result = _run_atomic_pipeline(
+                data=simple_dataframe,
+                candidate_features=["feature_1"],
+                target_variable="target",
+                max_features=1,
+                base_features=None,
+                enable_constraints=True,
+                resolved_enable_bootstrap=False,
+                bootstrap_samples=100,
+                random_seed=42,
+                resolved_display_results=False,
+                return_detailed=True,
+            )
+
+            mock_create_config.assert_called_once()
+            mock_execute.assert_called_once()
+            assert result == real_feature_selection_results
+
 
 # =============================================================================
 # Integration Tests
@@ -541,3 +922,25 @@ class TestInterfaceExecutionIntegration:
 
         assert display2 is False
         assert bootstrap2 is False
+
+    def test_error_aic_to_feature_selection_results_chain(self, sample_error):
+        """Test the chain from error AIC to full feature selection results."""
+        # Create error AIC
+        error_aic = _create_error_aic_result(n_obs=100, error=sample_error)
+        assert error_aic.features == "ERROR"
+        assert error_aic.aic == np.inf
+
+        # Create feature selection results from error AIC
+        results = _create_error_feature_selection_results(
+            error_aic=error_aic,
+            candidate_features=["f1", "f2"],
+            target_variable="target",
+            max_features=2,
+            base_features=None,
+            enable_constraints=True,
+        )
+
+        # Verify chain
+        assert results.best_model is error_aic
+        assert results.total_combinations == 0
+        assert results.feature_config["candidate_features"] == ["f1", "f2"]

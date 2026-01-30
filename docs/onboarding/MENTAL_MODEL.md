@@ -240,10 +240,10 @@ annuity-price-elasticity-v3/
 │
 ├── knowledge/                    # Domain documentation
 │   ├── domain/                   # Product economics
-│   │   ├── RILA_ECONOMICS.md     # ★ Start here for product understanding
+│   │   ├── RILA_ECONOMICS.md     #  Start here for product understanding
 │   │   └── GLOSSARY.md           # Term definitions
 │   ├── analysis/                 # Modeling framework
-│   │   └── CAUSAL_FRAMEWORK.md   # ★ Start here for causal understanding
+│   │   └── CAUSAL_FRAMEWORK.md   #  Start here for causal understanding
 │   └── practices/                # Best practices
 │       └── LEAKAGE_CHECKLIST.md  # Pre-deployment validation
 │
@@ -288,8 +288,8 @@ results = interface.run_inference(df)
 
 # 4. Validate results (check economic constraints)
 validation = interface.validate_coefficients(results["coefficients"])
-#             └── P_coef > 0? ✓
-#             └── C_coef < 0? ✓
+#             └── P_coef > 0? [PASS]
+#             └── C_coef < 0? [PASS]
 ```
 
 ### Adding a New Product

@@ -43,9 +43,9 @@ def check_directory_structure():
     for dir_path in required_dirs:
         if not Path(dir_path).is_dir():
             missing.append(dir_path)
-            print(f"  ✗ Missing: {dir_path}")
+            print(f"  [FAIL] Missing: {dir_path}")
         else:
-            print(f"  ✓ Found: {dir_path}")
+            print(f"  [PASS] Found: {dir_path}")
 
     return len(missing) == 0, missing
 
@@ -72,16 +72,16 @@ def check_key_files():
     for file_path in required_files:
         if not Path(file_path).is_file():
             missing.append(file_path)
-            print(f"  ✗ Missing: {file_path}")
+            print(f"  [FAIL] Missing: {file_path}")
         else:
-            print(f"  ✓ Found: {file_path}")
+            print(f"  [PASS] Found: {file_path}")
 
     # Check optional files (informational only)
     for file_path in optional_files:
         if not Path(file_path).is_file():
             print(f"  ⓘ Optional file not present: {file_path}")
         else:
-            print(f"  ✓ Found: {file_path}")
+            print(f"  [PASS] Found: {file_path}")
 
     return len(missing) == 0, missing
 
@@ -91,27 +91,27 @@ def check_fixtures():
     fixtures_dir = Path("tests/fixtures/rila")
 
     if not fixtures_dir.exists():
-        print("\n✗ Fixtures directory not found")
+        print("\n[FAIL] Fixtures directory not found")
         return False, []
 
     print("\nChecking fixtures...")
     fixture_files = list(fixtures_dir.rglob("*.parquet"))
 
     if len(fixture_files) == 0:
-        print("  ✗ No fixture files found")
+        print("  [FAIL] No fixture files found")
         return False, []
 
     total_size = sum(f.stat().st_size for f in fixture_files)
     total_size_mb = total_size / (1024 * 1024)
 
-    print(f"  ✓ Found {len(fixture_files)} fixture files")
-    print(f"  ✓ Total size: {total_size_mb:.1f} MB")
+    print(f"  [PASS] Found {len(fixture_files)} fixture files")
+    print(f"  [PASS] Total size: {total_size_mb:.1f} MB")
 
     # Expected approximately 74 MB
     if total_size_mb < 50:
-        print(f"  ⚠ Warning: Fixture size seems small (expected ~74 MB)")
+        print(f"  [WARN] Warning: Fixture size seems small (expected ~74 MB)")
     elif total_size_mb > 100:
-        print(f"  ⚠ Warning: Fixture size seems large (expected ~74 MB)")
+        print(f"  [WARN] Warning: Fixture size seems large (expected ~74 MB)")
 
     return True, []
 
@@ -121,27 +121,27 @@ def check_baselines():
     baselines_dir = Path("tests/baselines")
 
     if not baselines_dir.exists():
-        print("\n✗ Baselines directory not found")
+        print("\n[FAIL] Baselines directory not found")
         return False, []
 
     print("\nChecking baselines...")
     baseline_files = list(baselines_dir.rglob("*.parquet"))
 
     if len(baseline_files) == 0:
-        print("  ✗ No baseline files found")
+        print("  [FAIL] No baseline files found")
         return False, []
 
     total_size = sum(f.stat().st_size for f in baseline_files)
     total_size_mb = total_size / (1024 * 1024)
 
-    print(f"  ✓ Found {len(baseline_files)} baseline files")
-    print(f"  ✓ Total size: {total_size_mb:.1f} MB")
+    print(f"  [PASS] Found {len(baseline_files)} baseline files")
+    print(f"  [PASS] Total size: {total_size_mb:.1f} MB")
 
     # Expected approximately 144 MB
     if total_size_mb < 100:
-        print(f"  ⚠ Warning: Baseline size seems small (expected ~144 MB)")
+        print(f"  [WARN] Warning: Baseline size seems small (expected ~144 MB)")
     elif total_size_mb > 200:
-        print(f"  ⚠ Warning: Baseline size seems large (expected ~144 MB)")
+        print(f"  [WARN] Warning: Baseline size seems large (expected ~144 MB)")
 
     return True, []
 
@@ -151,7 +151,7 @@ def check_manifest():
     manifest_path = Path("manifest.json")
 
     if not manifest_path.exists():
-        print("\n⚠ Warning: manifest.json not found (checksum validation skipped)")
+        print("\n[WARN] Warning: manifest.json not found (checksum validation skipped)")
         return True, []
 
     print("\nValidating checksums from manifest...")
@@ -159,7 +159,7 @@ def check_manifest():
         manifest = json.load(f)
 
     if "files" not in manifest:
-        print("  ⚠ Warning: No file checksums in manifest")
+        print("  [WARN] Warning: No file checksums in manifest")
         return True, []
 
     mismatches = []
@@ -170,15 +170,15 @@ def check_manifest():
             actual_checksum = compute_checksum(path)
             if actual_checksum != expected_checksum:
                 mismatches.append(file_path)
-                print(f"  ✗ Checksum mismatch: {file_path}")
+                print(f"  [FAIL] Checksum mismatch: {file_path}")
             else:
                 checked += 1
 
     if len(mismatches) == 0:
-        print(f"  ✓ All {checked} checksums validated")
+        print(f"  [PASS] All {checked} checksums validated")
         return True, []
     else:
-        print(f"  ✗ {len(mismatches)} checksum mismatches found")
+        print(f"  [FAIL] {len(mismatches)} checksum mismatches found")
         return False, mismatches
 
 
@@ -200,7 +200,7 @@ def test_imports():
     for module_name in test_imports:
         try:
             __import__(module_name)
-            print(f"  ✓ Import successful: {module_name}")
+            print(f"  [PASS] Import successful: {module_name}")
         except Exception as e:
             import_errors.append((module_name, str(e)))
             print(f"  ⓘ Import not yet working: {module_name}")
@@ -255,13 +255,13 @@ def validate_package():
 
     for check_name, check_result in results["checks"].items():
         passed = check_result["passed"]
-        symbol = "✓" if passed else "✗"
+        symbol = "[PASS]" if passed else "[FAIL]"
         print(f"{symbol} {check_name.replace('_', ' ').title()}: {'PASSED' if passed else 'FAILED'}")
 
     print()
 
     if all_passed:
-        print("RESULT: Package Validation PASSED ✓")
+        print("RESULT: Package Validation PASSED [PASS]")
         print()
         print("Next steps:")
         print("1. Install dependencies: pip install -r requirements.txt")
@@ -270,7 +270,7 @@ def validate_package():
         print("4. Start refactoring!")
         exit_code = 0
     else:
-        print("RESULT: Package Validation FAILED ✗")
+        print("RESULT: Package Validation FAILED [FAIL]")
         print()
         print("Issues found. Review errors above.")
         print("Package may be incomplete or corrupted.")

@@ -93,11 +93,11 @@ def validate_against_benchmark(
     """
     if benchmark.min_value <= value <= benchmark.max_value:
         if abs(value - benchmark.typical_value) / abs(benchmark.typical_value) < 0.5:
-            return True, f"✓ {benchmark.name}: {value:.2f} (typical: {benchmark.typical_value:.2f})"
+            return True, f"[PASS] {benchmark.name}: {value:.2f} (typical: {benchmark.typical_value:.2f})"
         else:
-            return True, f"⚠ {benchmark.name}: {value:.2f} (typical: {benchmark.typical_value:.2f}, within range but atypical)"
+            return True, f"[WARN] {benchmark.name}: {value:.2f} (typical: {benchmark.typical_value:.2f}, within range but atypical)"
     else:
-        msg = (f"✗ {benchmark.name}: {value:.2f} outside expected range "
+        msg = (f"[FAIL] {benchmark.name}: {value:.2f} outside expected range "
                f"[{benchmark.min_value:.2f}, {benchmark.max_value:.2f}]")
         return not strict, msg
 

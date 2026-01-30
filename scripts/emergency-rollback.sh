@@ -1,5 +1,5 @@
 #!/bin/bash
-# Emergency Rollback Script for Annuity Price Elasticity v2
+# Emergency Rollback Script for Annuity Price Elasticity v3
 #
 # Usage:
 #   ./scripts/emergency-rollback.sh [--dry-run] [commit-sha]

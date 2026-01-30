@@ -131,42 +131,42 @@ MATHEMATICAL EQUIVALENCE VALIDATION
 1. Stage-by-Stage Validation (1e-12 precision)
 --------------------------------------------------------------------------------
 Running pytest tests/integration/test_pipeline_stage_equivalence.py...
-✓ Stage 01: Product Filtering - PASSED
-✓ Stage 02: Sales Cleanup - PASSED
-✓ Stage 03: Product Cleanup - PASSED
-✓ Stage 04: Merge Sales and Products - PASSED
-✓ Stage 05: Add Competitive Rates - PASSED
-✓ Stage 06: Add Economic Features - PASSED
-✓ Stage 07: Feature Engineering - PASSED
-✓ Stage 08: Add Market Share - PASSED
-✓ Stage 09: Aggregate to Weekly - PASSED
-✓ Stage 10: Final Preparation - PASSED
+[PASS] Stage 01: Product Filtering - PASSED
+[PASS] Stage 02: Sales Cleanup - PASSED
+[PASS] Stage 03: Product Cleanup - PASSED
+[PASS] Stage 04: Merge Sales and Products - PASSED
+[PASS] Stage 05: Add Competitive Rates - PASSED
+[PASS] Stage 06: Add Economic Features - PASSED
+[PASS] Stage 07: Feature Engineering - PASSED
+[PASS] Stage 08: Add Market Share - PASSED
+[PASS] Stage 09: Aggregate to Weekly - PASSED
+[PASS] Stage 10: Final Preparation - PASSED
 
 2. Bootstrap Statistical Validation (CV < 5%)
 --------------------------------------------------------------------------------
 Running pytest tests/integration/test_bootstrap_statistical_equivalence.py...
-✓ Coefficient distributions stable
-✓ Bootstrap convergence verified
+[PASS] Coefficient distributions stable
+[PASS] Bootstrap convergence verified
 
 3. End-to-End Pipeline Validation
 --------------------------------------------------------------------------------
 Running pytest tests/e2e/test_full_pipeline_offline.py...
-✓ Full pipeline equivalence maintained
+[PASS] Full pipeline equivalence maintained
 
 4. Economic Constraint Validation
 --------------------------------------------------------------------------------
 Running pytest tests/property_based/test_economic_constraints.py...
-✓ All economic constraints satisfied
+[PASS] All economic constraints satisfied
 
 ================================================================================
 VALIDATION SUMMARY
 ================================================================================
-✓ Stage By Stage: PASSED
-✓ Bootstrap Statistical: PASSED
-✓ E2E Pipeline: PASSED
-✓ Economic Constraints: PASSED
+[PASS] Stage By Stage: PASSED
+[PASS] Bootstrap Statistical: PASSED
+[PASS] E2E Pipeline: PASSED
+[PASS] Economic Constraints: PASSED
 
-RESULT: Mathematical Equivalence MAINTAINED ✓
+RESULT: Mathematical Equivalence MAINTAINED [PASS]
 Your refactored code is ready for reintegration.
 
 Detailed report saved to: validation_report.json
@@ -270,13 +270,13 @@ Before committing code:
 ```
 ========================= 2500 passed in 600.45s =========================
 ```
-✓ You're good to continue
+[PASS] You're good to continue
 
 **Some tests skipped**:
 ```
 =================== 2450 passed, 50 skipped in 580.12s ===================
 ```
-✓ This is normal (AWS tests are skipped offline)
+[PASS] This is normal (AWS tests are skipped offline)
 
 ### Failure Patterns
 
@@ -327,8 +327,8 @@ AssertionError: Arrays are not equal at 1e-12 precision
 
 **Symptom**:
 ```
-✗ Stage By Stage: FAILED
-✗ Mathematical equivalence BROKEN
+[FAIL] Stage By Stage: FAILED
+[FAIL] Mathematical equivalence BROKEN
 ```
 
 **Cause**: Mathematical equivalence broken (THIS IS CRITICAL)
@@ -697,14 +697,14 @@ python validate_equivalence.py
 
 Your refactoring is ready for reintegration when:
 
-✓ **All unit tests pass** (100% - ~1,200 tests)
-✓ **All integration tests pass** (100% - ~800 tests)
-✓ **All E2E tests pass** (100% - ~200 tests)
-✓ **Mathematical equivalence maintained** (1e-12 precision)
-✓ **Performance baselines met** (no significant regressions)
-✓ **No new warnings or errors**
-✓ **Documentation updated**
-✓ **Changelog complete**
+[PASS] **All unit tests pass** (100% - ~1,200 tests)
+[PASS] **All integration tests pass** (100% - ~800 tests)
+[PASS] **All E2E tests pass** (100% - ~200 tests)
+[PASS] **Mathematical equivalence maintained** (1e-12 precision)
+[PASS] **Performance baselines met** (no significant regressions)
+[PASS] **No new warnings or errors**
+[PASS] **Documentation updated**
+[PASS] **Changelog complete**
 
 Run `python prepare_reintegration.py` to verify all criteria.
 

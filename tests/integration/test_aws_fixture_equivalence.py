@@ -206,7 +206,7 @@ class TestAWSFixtureEquivalence:
         assert "xid" in aws_config
         assert "bucket_name" in aws_config
 
-        print(f"✓ AWS credentials configured: {aws_config['bucket_name']}")
+        print(f"[PASS] AWS credentials configured: {aws_config['bucket_name']}")
 
     def test_data_loading_sales_equivalence(self, aws_adapter, fixture_adapter):
         """
@@ -229,7 +229,7 @@ class TestAWSFixtureEquivalence:
             stage="sales_data_loading"
         )
 
-        print(f"✓ Sales data equivalence: {aws_sales.shape}")
+        print(f"[PASS] Sales data equivalence: {aws_sales.shape}")
 
     def test_data_loading_rates_equivalence(self, aws_adapter, fixture_adapter):
         """
@@ -252,7 +252,7 @@ class TestAWSFixtureEquivalence:
             stage="competitive_rates_loading"
         )
 
-        print(f"✓ Competitive rates equivalence: {aws_rates.shape}")
+        print(f"[PASS] Competitive rates equivalence: {aws_rates.shape}")
 
     def test_data_loading_weights_equivalence(self, aws_adapter, fixture_adapter):
         """
@@ -275,7 +275,7 @@ class TestAWSFixtureEquivalence:
             stage="market_weights_loading"
         )
 
-        print(f"✓ Market weights equivalence: {aws_weights.shape}")
+        print(f"[PASS] Market weights equivalence: {aws_weights.shape}")
 
     @pytest.mark.slow
     def test_pipeline_stage_01_equivalence(self, aws_adapter, fixture_adapter):
@@ -304,7 +304,7 @@ class TestAWSFixtureEquivalence:
             stage="pipeline_stage_01_product_filtering"
         )
 
-        print(f"✓ Pipeline stage 1 equivalence: {aws_stage_01.shape}")
+        print(f"[PASS] Pipeline stage 1 equivalence: {aws_stage_01.shape}")
 
     @pytest.mark.slow
     def test_pipeline_full_equivalence(self, aws_adapter, fixture_adapter):
@@ -336,7 +336,7 @@ class TestAWSFixtureEquivalence:
             stage="pipeline_full_execution"
         )
 
-        print(f"✓ Full pipeline equivalence: {aws_result.shape}")
+        print(f"[PASS] Full pipeline equivalence: {aws_result.shape}")
 
     @pytest.mark.slow
     def test_inference_equivalence(self, aws_adapter, fixture_adapter):
@@ -380,7 +380,7 @@ class TestAWSFixtureEquivalence:
                 atol=1e-12,
                 err_msg="Inference coefficients differ between AWS and fixture"
             )
-            print(f"✓ Inference coefficients equivalence")
+            print(f"[PASS] Inference coefficients equivalence")
 
         # Validate predictions equivalence
         if 'predictions' in aws_inference and 'predictions' in fixture_inference:
@@ -391,7 +391,7 @@ class TestAWSFixtureEquivalence:
                 atol=1e-12,
                 err_msg="Inference predictions differ between AWS and fixture"
             )
-            print(f"✓ Inference predictions equivalence")
+            print(f"[PASS] Inference predictions equivalence")
 
         # Validate metrics equivalence
         if 'metrics' in aws_inference and 'metrics' in fixture_inference:
@@ -401,7 +401,7 @@ class TestAWSFixtureEquivalence:
                     f"Metric '{metric_name}' differs: "
                     f"Fixture={fixture_value}, AWS={aws_value}"
                 )
-            print(f"✓ Inference metrics equivalence")
+            print(f"[PASS] Inference metrics equivalence")
 
 
 class TestAWSConnection:
@@ -428,7 +428,7 @@ class TestAWSConnection:
         # Try to establish connection
         try:
             adapter._ensure_connection()
-            print("✓ AWS S3 connection successful")
+            print("[PASS] AWS S3 connection successful")
         except Exception as e:
             pytest.fail(f"AWS S3 connection failed: {e}")
 
@@ -447,7 +447,7 @@ class TestAWSConnection:
 
             # Try to get bucket metadata
             bucket.load()
-            print(f"✓ AWS S3 bucket accessible: {bucket.name}")
+            print(f"[PASS] AWS S3 bucket accessible: {bucket.name}")
 
         except Exception as e:
             pytest.fail(f"AWS S3 bucket access failed: {e}")

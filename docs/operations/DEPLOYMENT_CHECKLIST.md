@@ -105,7 +105,7 @@ assert comp_coef < 0, f"Competitor coefficient wrong sign: {comp_coef}"
 sales_coef = coefs['sales_target_contract_t5']  # 5-week lag
 assert sales_coef > 0, f"Sales momentum coefficient wrong sign: {sales_coef}"
 
-print("✓ All coefficient signs consistent with economic theory")
+print("[PASS] All coefficient signs consistent with economic theory")
 ```
 
 **Checklist**:
@@ -129,7 +129,7 @@ historical_mape = rolling_metrics['mape'].mean()
 drift = abs(recent_mape - historical_mape) / historical_mape
 
 assert drift < 0.15, f"Model drift detected: {drift:.1%} increase in MAPE"
-print(f"✓ Model stability confirmed (drift: {drift:.1%})")
+print(f"[PASS] Model stability confirmed (drift: {drift:.1%})")
 ```
 
 **Checklist**:
@@ -160,7 +160,7 @@ sales_date = pd.read_parquet('data/processed/sales_latest.parquet')['date'].max(
 days_old = (datetime.now() - sales_date).days
 
 assert days_old <= 7, f'Sales data is {days_old} days old (max: 7)'
-print(f'✓ Data freshness confirmed: {days_old} days old')
+print(f'[PASS] Data freshness confirmed: {days_old} days old')
 "
 ```
 
@@ -192,7 +192,7 @@ for feat in critical_features:
     missing_pct = completeness[feat]['missing_pct']
     assert missing_pct < 0.01, f"{feat} has {missing_pct:.1%} missing data"
 
-print("✓ All critical features complete")
+print("[PASS] All critical features complete")
 ```
 
 **Checklist**:
@@ -221,10 +221,10 @@ anomalies = [
 ]
 
 if anomalies:
-    print(f"⚠️  Warning: Anomalous features detected: {anomalies}")
+    print(f"[WARN]  Warning: Anomalous features detected: {anomalies}")
     print("Review distributions before deployment")
 else:
-    print("✓ All feature distributions normal")
+    print("[PASS] All feature distributions normal")
 ```
 
 **Checklist**:
@@ -329,7 +329,7 @@ cp outputs/production/rila_6y20b/latest_predictions.csv ${BACKUP_DIR}/
 echo "Backup created: ${BACKUP_DATE}" >> ${BACKUP_DIR}/backup_log.txt
 echo "Previous model version: $(cat models/production/rila_6y20b/version.txt)" >> ${BACKUP_DIR}/backup_log.txt
 
-echo "✓ Backup complete: ${BACKUP_DIR}"
+echo "[PASS] Backup complete: ${BACKUP_DIR}"
 ```
 
 **Checklist**:
@@ -358,7 +358,7 @@ cp validation/rila_6y20b/latest_validation_report.html ${STAGING_DIR}/
 NEW_VERSION="v3.1_$(date +%Y%m%d)"
 echo ${NEW_VERSION} > ${STAGING_DIR}/version.txt
 
-echo "✓ New model staged: ${NEW_VERSION}"
+echo "[PASS] New model staged: ${NEW_VERSION}"
 ```
 
 **Checklist**:
@@ -387,22 +387,22 @@ print("Running smoke tests...")
 
 # 1. Model loads successfully
 assert staged_model is not None, "Model failed to load"
-print("✓ Model loads")
+print("[PASS] Model loads")
 
 # 2. Can generate predictions
 test_prediction = staged_model.predict(test_features)
 assert test_prediction is not None, "Prediction failed"
-print(f"✓ Predictions work: {test_prediction['mean']:.0f}")
+print(f"[PASS] Predictions work: {test_prediction['mean']:.0f}")
 
 # 3. Feature names match training
 assert set(staged_model.feature_names_) == set(train_features.columns), "Feature mismatch"
-print("✓ Features match")
+print("[PASS] Features match")
 
 # 4. Can generate confidence intervals
 assert 'lower' in test_prediction and 'upper' in test_prediction, "CI generation failed"
-print("✓ Confidence intervals work")
+print("[PASS] Confidence intervals work")
 
-print("\n✓ All smoke tests passed - staged model ready for deployment")
+print("\n[PASS] All smoke tests passed - staged model ready for deployment")
 ```
 
 **Checklist**:
@@ -437,10 +437,10 @@ mv models/staging/rila_6y20b ${PRODUCTION_DIR}
 
 # Verify deployment
 if [ -f "${PRODUCTION_DIR}/model.pkl" ]; then
-    echo "✓ Deployment successful" | tee -a ${DEPLOYMENT_LOG}
+    echo "[PASS] Deployment successful" | tee -a ${DEPLOYMENT_LOG}
     echo "Production model updated: $(cat ${PRODUCTION_DIR}/version.txt)" | tee -a ${DEPLOYMENT_LOG}
 else
-    echo "✗ Deployment FAILED - rolling back" | tee -a ${DEPLOYMENT_LOG}
+    echo "[FAIL] Deployment FAILED - rolling back" | tee -a ${DEPLOYMENT_LOG}
     # Automatic rollback
     mv ${PRODUCTION_DIR}_old_$(date +%Y%m%d_%H%M%S) ${PRODUCTION_DIR}
     exit 1
@@ -465,9 +465,9 @@ ln -sf ../../../models/production/rila_6y20b/model.pkl latest_model.pkl
 
 # Verify symlink
 if [ -L "latest_model.pkl" ]; then
-    echo "✓ Symlink updated"
+    echo "[PASS] Symlink updated"
 else
-    echo "✗ Symlink update failed"
+    echo "[FAIL] Symlink update failed"
     exit 1
 fi
 ```
@@ -510,7 +510,7 @@ elasticity_curve = production_model.generate_elasticity_curve(
 predictions.to_csv('outputs/production/rila_6y20b/latest_predictions.csv')
 elasticity_curve.to_csv('outputs/production/rila_6y20b/latest_elasticity_curve.csv')
 
-print("✓ Production inference complete")
+print("[PASS] Production inference complete")
 print(f"  Current week prediction: {predictions['mean'].iloc[-1]:.0f} contracts")
 print(f"  95% CI: [{predictions['lower'].iloc[-1]:.0f}, {predictions['upper'].iloc[-1]:.0f}]")
 ```
@@ -540,10 +540,10 @@ print(f"Prediction difference: {prediction_diff:.1%}")
 
 # Flag if predictions differ dramatically
 if abs(prediction_diff) > 0.20:
-    print(f"⚠️  WARNING: Predictions differ by {prediction_diff:.1%}")
+    print(f"[WARN]  WARNING: Predictions differ by {prediction_diff:.1%}")
     print("   Review before business consumption")
 else:
-    print(f"✓ Predictions reasonable ({prediction_diff:.1%} difference)")
+    print(f"[PASS] Predictions reasonable ({prediction_diff:.1%} difference)")
 ```
 
 **Expected Behavior**:
@@ -573,7 +573,7 @@ report = generate_deployment_report(
 # Export report
 report.to_html('outputs/deployment_reports/deployment_report_{DEPLOYMENT_TIMESTAMP}.html')
 
-print("✓ Deployment report generated")
+print("[PASS] Deployment report generated")
 ```
 
 **Report Contents**:
@@ -711,9 +711,9 @@ cp -r ${ROLLBACK_SOURCE} ${PRODUCTION_DIR}
 # Verify rollback
 if [ -f "${PRODUCTION_DIR}/model.pkl" ]; then
     RESTORED_VERSION=$(cat ${PRODUCTION_DIR}/version.txt)
-    echo "✓ Rollback successful to version: ${RESTORED_VERSION}" | tee -a ${ROLLBACK_LOG}
+    echo "[PASS] Rollback successful to version: ${RESTORED_VERSION}" | tee -a ${ROLLBACK_LOG}
 else
-    echo "✗ ROLLBACK FAILED - CRITICAL ERROR" | tee -a ${ROLLBACK_LOG}
+    echo "[FAIL] ROLLBACK FAILED - CRITICAL ERROR" | tee -a ${ROLLBACK_LOG}
     exit 1
 fi
 ```
@@ -727,7 +727,7 @@ rolled_back_model = PriceElasticityInference.load("rila_6y20b")
 
 # Run smoke tests
 test_prediction = rolled_back_model.predict(current_week_features)
-print(f"✓ Rolled-back model working: {test_prediction['mean']:.0f}")
+print(f"[PASS] Rolled-back model working: {test_prediction['mean']:.0f}")
 
 # Verify version
 print(f"Restored version: {rolled_back_model.metadata['version']}")
@@ -789,13 +789,13 @@ results = run_daily_monitoring(
 
 # Flag any issues
 if results['any_failures']:
-    print("⚠️  Daily monitoring detected issues:")
+    print("[WARN]  Daily monitoring detected issues:")
     for issue in results['issues']:
         print(f"  - {issue}")
     # Send alert email
     send_monitoring_alert(results)
 else:
-    print("✓ Daily monitoring passed all checks")
+    print("[PASS] Daily monitoring passed all checks")
 ```
 
 ### Week 2: Business Review
@@ -834,10 +834,10 @@ drift_report = detect_drift(
 )
 
 if drift_report['drift_detected']:
-    print(f"⚠️  Model drift detected: {drift_report['drift_magnitude']:.1%}")
+    print(f"[WARN]  Model drift detected: {drift_report['drift_magnitude']:.1%}")
     print("Consider model retraining or rollback")
 else:
-    print("✓ Model performance stable")
+    print("[PASS] Model performance stable")
 ```
 
 ---

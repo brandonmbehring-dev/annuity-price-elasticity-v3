@@ -319,7 +319,7 @@ print(carrier_coverage)
 # Alert if any carrier missing
 critical_carriers = carrier_coverage[carrier_coverage['status'] == 'CRITICAL']
 if len(critical_carriers) > 0:
-    print(f"\n⚠️  WARNING: {len(critical_carriers)} carriers missing data")
+    print(f"\n[WARN]  WARNING: {len(critical_carriers)} carriers missing data")
     print(critical_carriers[['record_count', 'latest_date']])
 ```
 
@@ -394,7 +394,7 @@ def detect_duplicates(data, key_columns):
     duplicates = data[data.duplicated(subset=key_columns, keep=False)]
 
     if len(duplicates) > 0:
-        print(f"⚠️  WARNING: {len(duplicates)} duplicate records detected")
+        print(f"[WARN]  WARNING: {len(duplicates)} duplicate records detected")
         print(f"Duplicated on: {key_columns}")
         print(duplicates[key_columns].head(10))
 
@@ -404,7 +404,7 @@ def detect_duplicates(data, key_columns):
             'status': 'WARNING' if len(duplicates) < 10 else 'CRITICAL'
         }
     else:
-        print("✓ No duplicates detected")
+        print("[PASS] No duplicates detected")
         return {'duplicate_count': 0, 'status': 'OK'}
 
 # Check for duplicates in TDE sales
@@ -437,12 +437,12 @@ def validate_schema(data, expected_schema):
         schema_issues.append(f"Unexpected columns: {unexpected_cols}")
 
     if schema_issues:
-        print("⚠️  Schema Validation Issues:")
+        print("[WARN]  Schema Validation Issues:")
         for issue in schema_issues:
             print(f"  - {issue}")
         return {'status': 'WARNING', 'issues': schema_issues}
     else:
-        print("✓ Schema validation passed")
+        print("[PASS] Schema validation passed")
         return {'status': 'OK', 'issues': []}
 
 # Expected TDE schema
@@ -526,7 +526,7 @@ print(drift_report[['mean_shift_sigma', 'p_value', 'status']])
 # Alert on significant drift
 drift_issues = drift_report[drift_report['status'].isin(['WARNING', 'CRITICAL'])]
 if len(drift_issues) > 0:
-    print(f"\n⚠️  {len(drift_issues)} features showing distribution drift")
+    print(f"\n[WARN]  {len(drift_issues)} features showing distribution drift")
 ```
 
 ### Sales Volume Drift
@@ -552,7 +552,7 @@ def detect_sales_drift(sales_data, window_weeks=13):
     anomalies = weekly_sales[abs(z_scores) > 2]
 
     if len(anomalies) > 0:
-        print(f"⚠️  {len(anomalies)} anomalous weeks detected:")
+        print(f"[WARN]  {len(anomalies)} anomalous weeks detected:")
         print(anomalies)
 
         return {
@@ -561,7 +561,7 @@ def detect_sales_drift(sales_data, window_weeks=13):
             'status': 'WARNING' if len(anomalies) < 3 else 'CRITICAL'
         }
     else:
-        print("✓ No sales anomalies detected")
+        print("[PASS] No sales anomalies detected")
         return {'anomaly_count': 0, 'status': 'OK'}
 
 # Run sales drift detection
@@ -590,20 +590,20 @@ def test_pipeline_end_to_end():
         import boto3
         s3 = boto3.client('s3')
         response = s3.list_objects_v2(Bucket='pruvpcaws031-east', Prefix='rila/sales/', MaxKeys=1)
-        print("✓ Test 1: S3 access successful")
+        print("[PASS] Test 1: S3 access successful")
         tests_passed += 1
     except Exception as e:
-        print(f"✗ Test 1: S3 access failed: {e}")
+        print(f"[FAIL] Test 1: S3 access failed: {e}")
         tests_failed += 1
 
     # Test 2: Raw Data Loading
     try:
         sales_raw = pd.read_parquet('data/raw/tde_sales/latest/')
         assert len(sales_raw) > 100000, "Insufficient records"
-        print(f"✓ Test 2: Raw data loaded ({len(sales_raw)} records)")
+        print(f"[PASS] Test 2: Raw data loaded ({len(sales_raw)} records)")
         tests_passed += 1
     except Exception as e:
-        print(f"✗ Test 2: Raw data loading failed: {e}")
+        print(f"[FAIL] Test 2: Raw data loading failed: {e}")
         tests_failed += 1
 
     # Test 3: Data Processing
@@ -611,10 +611,10 @@ def test_pipeline_end_to_end():
         from src.data.pipeline import process_sales_data
         sales_processed = process_sales_data(sales_raw)
         assert len(sales_processed) > 0, "Processing produced empty data"
-        print(f"✓ Test 3: Data processing successful ({len(sales_processed)} records)")
+        print(f"[PASS] Test 3: Data processing successful ({len(sales_processed)} records)")
         tests_passed += 1
     except Exception as e:
-        print(f"✗ Test 3: Data processing failed: {e}")
+        print(f"[FAIL] Test 3: Data processing failed: {e}")
         tests_failed += 1
 
     # Test 4: Feature Engineering
@@ -622,10 +622,10 @@ def test_pipeline_end_to_end():
         from src.features.engineering import engineer_features
         features = engineer_features(sales_processed)
         assert features.shape[1] > 500, "Insufficient features generated"
-        print(f"✓ Test 4: Feature engineering successful ({features.shape[1]} features)")
+        print(f"[PASS] Test 4: Feature engineering successful ({features.shape[1]} features)")
         tests_passed += 1
     except Exception as e:
-        print(f"✗ Test 4: Feature engineering failed: {e}")
+        print(f"[FAIL] Test 4: Feature engineering failed: {e}")
         tests_failed += 1
 
     # Test 5: Model Loading
@@ -633,10 +633,10 @@ def test_pipeline_end_to_end():
         from src.models.inference import PriceElasticityInference
         model = PriceElasticityInference.load('rila_6y20b')
         assert model is not None
-        print("✓ Test 5: Model loading successful")
+        print("[PASS] Test 5: Model loading successful")
         tests_passed += 1
     except Exception as e:
-        print(f"✗ Test 5: Model loading failed: {e}")
+        print(f"[FAIL] Test 5: Model loading failed: {e}")
         tests_failed += 1
 
     # Summary

@@ -1007,16 +1007,16 @@ def test_coverage_summary_validation_feature_selection():
     8. Edge Cases & Initialization (3 tests) - default/custom precision, metadata
 
     Functions Tested:
-    ✅ capture_baseline_results() - baseline capture with metadata
-    ✅ validate_aic_calculations() - shape mismatch, NaN, negative, tolerance
-    ✅ validate_bootstrap_stability_metrics() - empty, count mismatch, NaN
-    ✅ validate_economic_constraints() - count, features, order independence
-    ✅ validate_final_model_selection() - missing fields, NaN, feature mismatch
-    ✅ run_comprehensive_validation() - orchestration, partial failures
-    ✅ save_baseline_data() - file creation, JSON validity
-    ✅ load_baseline_data() - state restoration, roundtrip
-    ✅ validate_mathematical_equivalence_comprehensive() - convenience function
-    ✅ _compare_models_for_equivalence() - model comparison helper
+    [DONE] capture_baseline_results() - baseline capture with metadata
+    [DONE] validate_aic_calculations() - shape mismatch, NaN, negative, tolerance
+    [DONE] validate_bootstrap_stability_metrics() - empty, count mismatch, NaN
+    [DONE] validate_economic_constraints() - count, features, order independence
+    [DONE] validate_final_model_selection() - missing fields, NaN, feature mismatch
+    [DONE] run_comprehensive_validation() - orchestration, partial failures
+    [DONE] save_baseline_data() - file creation, JSON validity
+    [DONE] load_baseline_data() - state restoration, roundtrip
+    [DONE] validate_mathematical_equivalence_comprehensive() - convenience function
+    [DONE] _compare_models_for_equivalence() - model comparison helper
 
     Estimated Coverage: 90% (target achieved)
     """

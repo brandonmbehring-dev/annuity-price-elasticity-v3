@@ -24,7 +24,7 @@ sessions/
 
 **Date**: YYYY-MM-DD
 **Duration**: XX minutes (planned/actual)
-**Status**: ⏳ IN PROGRESS | ✅ COMPLETE
+**Status**: IN PROGRESS | COMPLETE
 
 ---
 
@@ -87,7 +87,7 @@ sessions/
 
 ### Ending Session
 
-1. Update SESSION file status to ✅ COMPLETE
+1. Update SESSION file status to COMPLETE
 2. Move from `active/` to `archive/`
 3. Update `CURRENT_WORK.md` with results
 4. Commit with session summary

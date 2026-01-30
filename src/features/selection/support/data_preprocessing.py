@@ -368,8 +368,8 @@ def _print_availability_summary(
     availability_rate = len(available_candidates) / len(candidate_features) * 100
 
     print(f"Feature availability validation:")
-    print(f"  Target variable: '{target_variable}' ✓")
-    print(f"  Base features: {len(base_features)} available ✓")
+    print(f"  Target variable: '{target_variable}' [PASS]")
+    print(f"  Base features: {len(base_features)} available [PASS]")
     print(f"  Candidate features: {len(available_candidates)}/{len(candidate_features)} "
           f"available ({availability_rate:.1f}%)")
 

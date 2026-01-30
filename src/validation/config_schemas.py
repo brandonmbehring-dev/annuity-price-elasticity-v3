@@ -170,9 +170,9 @@ if __name__ == "__main__":
             mature_data_cutoff_days=50,
             min_training_cutoff=30
         )
-        print(f"✓ Valid configuration: {config.dict()}")
+        print(f"[PASS] Valid configuration: {config.dict()}")
     except Exception as e:
-        print(f"✗ Valid configuration failed: {e}")
+        print(f"[FAIL] Valid configuration failed: {e}")
 
     # Invalid configuration (should fail)
     try:
@@ -181,9 +181,9 @@ if __name__ == "__main__":
             ridge_alpha=1.0,
             random_state=42
         )
-        print(f"✗ Invalid configuration should have failed: {invalid_config}")
+        print(f"[FAIL] Invalid configuration should have failed: {invalid_config}")
     except Exception as e:
-        print(f"✓ Invalid configuration correctly failed: {e}")
+        print(f"[PASS] Invalid configuration correctly failed: {e}")
 
     # Test backward compatibility
     try:
@@ -195,8 +195,8 @@ if __name__ == "__main__":
             mature_data_cutoff_days=50,
             min_training_cutoff=30
         )
-        print(f"✓ Legacy dict interface works: {type(legacy_dict)}")
+        print(f"[PASS] Legacy dict interface works: {type(legacy_dict)}")
     except Exception as e:
-        print(f"✗ Legacy interface failed: {e}")
+        print(f"[FAIL] Legacy interface failed: {e}")
 
     print("Pydantic configuration validation test completed!")

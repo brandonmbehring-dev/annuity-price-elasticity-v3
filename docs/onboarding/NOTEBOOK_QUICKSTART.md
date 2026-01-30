@@ -44,7 +44,7 @@ START: What do you want to do?
 
 The notebooks are organized into three directories with clear purposes:
 
-### 📁 `production/` - Production-Ready Analysis
+###  `production/` - Production-Ready Analysis
 
 **Purpose:** Stable, tested notebooks used for business-critical analysis.
 
@@ -75,7 +75,7 @@ production/
 
 ---
 
-### 📁 `eda/` - Exploratory Data Analysis
+###  `eda/` - Exploratory Data Analysis
 
 **Purpose:** Exploratory notebooks for data investigation and feature development.
 
@@ -100,7 +100,7 @@ eda/
 
 ---
 
-### 📁 `archive/` - Historical Reference
+###  `archive/` - Historical Reference
 
 **Purpose:** Historical notebooks preserved for reference and reproducibility.
 
@@ -273,7 +273,7 @@ Target Variable: sales_target_current
 Model Features: 4 features
 Bootstrap Estimators: 1,000
 ...
-✓ Random seed initialized: 42
+[PASS] Random seed initialized: 42
 ...
 Bootstrap ensemble training completed
 ...

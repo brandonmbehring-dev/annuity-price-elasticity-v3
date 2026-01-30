@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Fixture Optimization for Annuity Price Elasticity v2.
+Fixture Optimization for Annuity Price Elasticity v3.
 
 Analyzes and optimizes test fixtures:
 1. Remove unused columns

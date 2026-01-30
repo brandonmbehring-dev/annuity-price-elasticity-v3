@@ -123,7 +123,7 @@ Prudential's cap rate is determined by:
 | **VNB targets** | Strategic planning | Exogenous to weekly sales |
 | **Option costs** | Real-time market | Affects rate; confounder |
 | **Earned rates** | Current portfolio | Exogenous to new sales |
-| **Past sales** | Contract-issue-date (lagged) | Delayed feedback ✓ |
+| **Past sales** | Contract-issue-date (lagged) | Delayed feedback [PASS] |
 | **Competitor rates** | Rate-setting day | Observed, controlled |
 | **Buffer level** | Product design | Stratification variable |
 

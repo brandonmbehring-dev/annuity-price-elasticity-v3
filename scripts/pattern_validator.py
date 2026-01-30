@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Pattern Validator for Annuity Price Elasticity v2.
+Pattern Validator for Annuity Price Elasticity v3.
 
 Validates codebase patterns to prevent anti-pattern regression:
 1. Import hygiene - No triple-fallback imports, proper dependency handling

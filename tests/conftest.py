@@ -128,7 +128,7 @@ def raw_sales_data(fixtures_dir: Path) -> pd.DataFrame:
     assert 'application_signed_date' in df.columns, "Missing required column"
     assert 'product_name' in df.columns, "Missing required column"
 
-    logger.info(f"✓ Loaded raw_sales_data: {df.shape}")
+    logger.info(f"[PASS] Loaded raw_sales_data: {df.shape}")
     return df
 
 
@@ -159,7 +159,7 @@ def raw_wink_data(fixtures_dir: Path) -> pd.DataFrame:
     assert len(df) > 1_000_000, f"Expected >1M rows, got {len(df)}"
     assert 'date' in df.columns, "Missing required column"
 
-    logger.info(f"✓ Loaded raw_wink_data: {df.shape}")
+    logger.info(f"[PASS] Loaded raw_wink_data: {df.shape}")
     return df
 
 
@@ -188,7 +188,7 @@ def filtered_product_data(fixtures_dir: Path) -> pd.DataFrame:
     # Validate
     assert 50_000 < len(df) < 70_000, f"Expected 50-70K rows, got {len(df)}"
 
-    logger.info(f"✓ Loaded filtered_product_data: {df.shape}")
+    logger.info(f"[PASS] Loaded filtered_product_data: {df.shape}")
     return df
 
 
@@ -218,7 +218,7 @@ def cleaned_sales_data(fixtures_dir: Path) -> pd.DataFrame:
     assert 50_000 < len(df) < 60_000, f"Expected 50-60K rows, got {len(df)}"
     assert 'processing_days' in df.columns, "Missing processing_days column"
 
-    logger.info(f"✓ Loaded cleaned_sales_data: {df.shape}")
+    logger.info(f"[PASS] Loaded cleaned_sales_data: {df.shape}")
     return df
 
 
@@ -248,7 +248,7 @@ def daily_sales_timeseries(fixtures_dir: Path) -> pd.DataFrame:
     assert 1_700 < len(df) < 1_900, f"Expected 1700-1900 rows, got {len(df)}"
     assert 'sales' in df.columns, "Missing sales column"
 
-    logger.info(f"✓ Loaded daily_sales_timeseries: {df.shape}")
+    logger.info(f"[PASS] Loaded daily_sales_timeseries: {df.shape}")
     return df
 
 
@@ -278,7 +278,7 @@ def contract_sales_timeseries(fixtures_dir: Path) -> pd.DataFrame:
     assert 1_700 < len(df) < 1_900, f"Expected 1700-1900 rows, got {len(df)}"
     assert 'sales_by_contract_date' in df.columns, "Missing sales_by_contract_date column"
 
-    logger.info(f"✓ Loaded contract_sales_timeseries: {df.shape}")
+    logger.info(f"[PASS] Loaded contract_sales_timeseries: {df.shape}")
     return df
 
 
@@ -308,7 +308,7 @@ def wink_competitive_rates(fixtures_dir: Path) -> pd.DataFrame:
     assert 'Prudential' in df.columns, "Missing Prudential column"
     assert 'date' in df.columns, "Missing date column"
 
-    logger.info(f"✓ Loaded wink_competitive_rates: {df.shape}")
+    logger.info(f"[PASS] Loaded wink_competitive_rates: {df.shape}")
     return df
 
 
@@ -339,7 +339,7 @@ def market_weighted_rates(fixtures_dir: Path) -> pd.DataFrame:
     assert 'C_weighted_mean' in df.columns, "Missing C_weighted_mean column"
     assert 'C_core' in df.columns, "Missing C_core column"
 
-    logger.info(f"✓ Loaded market_weighted_rates: {df.shape}")
+    logger.info(f"[PASS] Loaded market_weighted_rates: {df.shape}")
     return df
 
 
@@ -367,7 +367,7 @@ def market_share_weights(fixtures_dir: Path) -> pd.DataFrame:
     # Validate
     assert len(df) > 15, f"Expected >15 quarters, got {len(df)}"
 
-    logger.info(f"✓ Loaded market_share_weights: {df.shape}")
+    logger.info(f"[PASS] Loaded market_share_weights: {df.shape}")
     return df
 
 
@@ -397,7 +397,7 @@ def daily_integrated_data(fixtures_dir: Path) -> pd.DataFrame:
     assert 'date' in df.columns, "Missing date column"
     assert 'sales' in df.columns, "Missing sales column"
 
-    logger.info(f"✓ Loaded daily_integrated_data: {df.shape}")
+    logger.info(f"[PASS] Loaded daily_integrated_data: {df.shape}")
     return df
 
 
@@ -427,7 +427,7 @@ def competitive_features_data(fixtures_dir: Path) -> pd.DataFrame:
     assert 'C_median' in df.columns, "Missing C_median column"
     assert 'C_top_5' in df.columns, "Missing C_top_5 column"
 
-    logger.info(f"✓ Loaded competitive_features_data: {df.shape}")
+    logger.info(f"[PASS] Loaded competitive_features_data: {df.shape}")
     return df
 
 
@@ -465,7 +465,7 @@ def final_weekly_dataset(fixtures_dir: Path) -> pd.DataFrame:
     assert 'Spread' in df.columns, "Missing Spread column"
     assert 'sales_log' in df.columns, "Missing sales_log column"
 
-    logger.info(f"✓ Loaded final_weekly_dataset: {df.shape}")
+    logger.info(f"[PASS] Loaded final_weekly_dataset: {df.shape}")
     return df
 
 
@@ -1444,7 +1444,7 @@ def nb00_baseline_outputs(aws_mode_baselines_dir: Path) -> Dict[str, pd.DataFram
         filepath = aws_mode_baselines_dir / filename
         if filepath.exists():
             outputs[stage_name] = pd.read_parquet(filepath)
-            logger.info(f"✓ Loaded {stage_name}: {outputs[stage_name].shape}")
+            logger.info(f"[PASS] Loaded {stage_name}: {outputs[stage_name].shape}")
         else:
             logger.warning(f"NB00 baseline missing: {filepath}")
 
@@ -1546,7 +1546,7 @@ def nb01_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
         with open(capture_meta_path) as f:
             outputs['_capture_metadata'] = json.load(f)
 
-    logger.info(f"✓ Loaded {len(outputs)} NB01 baseline outputs")
+    logger.info(f"[PASS] Loaded {len(outputs)} NB01 baseline outputs")
     return outputs
 
 
@@ -1612,7 +1612,7 @@ def nb02_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
         with open(capture_meta_path) as f:
             outputs['_capture_metadata'] = json.load(f)
 
-    logger.info(f"✓ Loaded {len(outputs)} NB02 baseline outputs")
+    logger.info(f"[PASS] Loaded {len(outputs)} NB02 baseline outputs")
     return outputs
 
 
@@ -2257,8 +2257,8 @@ def pytest_configure(config):
         "notebook: Tests that validate notebook compatibility"
     )
 
-    logger.info("✓ Pytest markers registered")
-    logger.info("✓ Central fixture system initialized")
+    logger.info("[PASS] Pytest markers registered")
+    logger.info("[PASS] Central fixture system initialized")
 
 
 def pytest_collection_modifyitems(config, items):

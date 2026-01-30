@@ -171,7 +171,7 @@ def generate_report():
     print()
 
     # Test Suite
-    print(f"Test Suite: {'✓ PASSED' if test_passed else '✗ FAILED'}")
+    print(f"Test Suite: {'[PASS] PASSED' if test_passed else '[FAIL] FAILED'}")
     if report['checks']['test_suite']['total_tests'] != "unknown":
         print(f"  - Tests run: {report['checks']['test_suite']['total_tests']}")
         print(f"  - Tests passed: {report['checks']['test_suite']['passed']}")
@@ -182,22 +182,22 @@ def generate_report():
     print()
 
     # Mathematical Equivalence
-    print(f"Mathematical Equivalence: {'✓ PASSED' if equiv_passed else '✗ FAILED'}")
+    print(f"Mathematical Equivalence: {'[PASS] PASSED' if equiv_passed else '[FAIL] FAILED'}")
     if "checks" in report["checks"]["equivalence"]:
         for check, status in report["checks"]["equivalence"]["checks"].items():
-            symbol = "✓" if status == "PASSED" else "✗"
+            symbol = "[PASS]" if status == "PASSED" else "[FAIL]"
             print(f"  {symbol} {check.replace('_', ' ').title()}: {status}")
     elif "error" in report["checks"]["equivalence"]:
-        print(f"  ✗ Error: {report['checks']['equivalence']['error']}")
+        print(f"  [FAIL] Error: {report['checks']['equivalence']['error']}")
     print()
 
     # Performance
-    print(f"Performance Baselines: {'✓ PASSED' if perf_passed else '✗ FAILED'}")
+    print(f"Performance Baselines: {'[PASS] PASSED' if perf_passed else '[FAIL] FAILED'}")
     print()
 
     # Changelog
     changelog_status = report["checks"]["changelog"]
-    print(f"Changelog: {'✓ UPDATED' if changelog_updated else '⚠ NOT UPDATED'}")
+    print(f"Changelog: {'[PASS] UPDATED' if changelog_updated else '[WARN] NOT UPDATED'}")
     if changelog_status.get("warning"):
         print(f"  Warning: {changelog_status['warning']}")
     print()
@@ -205,7 +205,7 @@ def generate_report():
     # Final verdict
     print("=" * 80)
     if report["ready_for_reintegration"]:
-        print("✓ READY FOR REINTEGRATION")
+        print("[PASS] READY FOR REINTEGRATION")
         print()
         print("Next steps:")
         print("1. Review CHANGELOG_REFACTORING.md")
@@ -214,7 +214,7 @@ def generate_report():
         print("4. Follow REINTEGRATION_GUIDE.md")
         exit_code = 0
     else:
-        print("✗ NOT READY FOR REINTEGRATION")
+        print("[FAIL] NOT READY FOR REINTEGRATION")
         print()
         print("Issues found:")
         if not test_passed:

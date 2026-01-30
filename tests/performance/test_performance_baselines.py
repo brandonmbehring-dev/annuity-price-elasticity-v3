@@ -129,7 +129,7 @@ class TestPerformanceBaselines:
             f"Dataset: {medium_dataset.shape}"
         )
 
-        print(f"✓ Feature engineering completed in {elapsed:.2f}s (baseline: < {max_time}s)")
+        print(f"[PASS] Feature engineering completed in {elapsed:.2f}s (baseline: < {max_time}s)")
 
     def test_feature_selection_performance(self, medium_dataset, performance_baselines):
         """
@@ -171,7 +171,7 @@ class TestPerformanceBaselines:
             f"Dataset: {medium_dataset.shape}, Selected: {len(selected_features)} features"
         )
 
-        print(f"✓ Feature selection completed in {elapsed:.2f}s (baseline: < {max_time}s)")
+        print(f"[PASS] Feature selection completed in {elapsed:.2f}s (baseline: < {max_time}s)")
 
     def test_bootstrap_100_performance(self, medium_dataset, small_bootstrap_config, performance_baselines):
         """
@@ -217,7 +217,7 @@ class TestPerformanceBaselines:
             f"Dataset: {X.shape}, Bootstrap samples: 100"
         )
 
-        print(f"✓ Bootstrap (100 samples) completed in {elapsed:.2f}s (baseline: < {max_time}s)")
+        print(f"[PASS] Bootstrap (100 samples) completed in {elapsed:.2f}s (baseline: < {max_time}s)")
 
     def test_bootstrap_1000_performance(self, medium_dataset, medium_bootstrap_config, performance_baselines):
         """
@@ -264,7 +264,7 @@ class TestPerformanceBaselines:
             f"Dataset: {X.shape}, Bootstrap samples: 1000"
         )
 
-        print(f"✓ Bootstrap (1000 samples) completed in {elapsed:.2f}s (baseline: < {max_time}s)")
+        print(f"[PASS] Bootstrap (1000 samples) completed in {elapsed:.2f}s (baseline: < {max_time}s)")
 
     @pytest.mark.slow
     def test_bootstrap_10000_performance(self, full_production_dataset, production_bootstrap_config, performance_baselines):
@@ -312,7 +312,7 @@ class TestPerformanceBaselines:
             f"Dataset: {X.shape}, Bootstrap samples: 10000"
         )
 
-        print(f"✓ Bootstrap (10000 samples) completed in {elapsed:.2f}s = {elapsed/60:.1f} min (baseline: < {max_time/60:.1f} min)")
+        print(f"[PASS] Bootstrap (10000 samples) completed in {elapsed:.2f}s = {elapsed/60:.1f} min (baseline: < {max_time/60:.1f} min)")
 
     @pytest.mark.slow
     def test_full_pipeline_performance(self, performance_baselines):
@@ -355,7 +355,7 @@ class TestPerformanceBaselines:
             f"Output shape: {result.shape}"
         )
 
-        print(f"✓ Full pipeline completed in {elapsed:.2f}s = {elapsed/60:.1f} min (baseline: < {max_time/60:.1f} min)")
+        print(f"[PASS] Full pipeline completed in {elapsed:.2f}s = {elapsed/60:.1f} min (baseline: < {max_time/60:.1f} min)")
 
 
 class TestComponentPerformance:
@@ -395,7 +395,7 @@ class TestComponentPerformance:
             f"Shape: {df.shape}, Size: {fixture_path.stat().st_size / 1024 / 1024:.1f} MB"
         )
 
-        print(f"✓ Fixture loading completed in {elapsed:.3f}s (baseline: < {max_time}s)")
+        print(f"[PASS] Fixture loading completed in {elapsed:.3f}s (baseline: < {max_time}s)")
 
     def test_data_aggregation_performance(self, medium_dataset):
         """
@@ -429,7 +429,7 @@ class TestComponentPerformance:
             f"Performance regression detected. Dataset: {medium_dataset.shape}"
         )
 
-        print(f"✓ Data aggregation completed in {elapsed:.3f}s (baseline: < {max_time}s)")
+        print(f"[PASS] Data aggregation completed in {elapsed:.3f}s (baseline: < {max_time}s)")
 
     def test_data_filtering_performance(self, medium_dataset):
         """
@@ -463,7 +463,7 @@ class TestComponentPerformance:
             f"Performance regression detected. Dataset: {medium_dataset.shape}"
         )
 
-        print(f"✓ Data filtering completed in {elapsed:.3f}s (baseline: < {max_time}s)")
+        print(f"[PASS] Data filtering completed in {elapsed:.3f}s (baseline: < {max_time}s)")
 
 
 # Performance baseline configuration (can be loaded from JSON in future)

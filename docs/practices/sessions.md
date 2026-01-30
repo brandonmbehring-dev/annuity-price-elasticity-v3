@@ -54,7 +54,7 @@
 **Duration**: XX minutes (planned/actual)
 **Type**: [Implementation, Refactoring, Bug Fix, etc.]
 
-**Status**: ⏳ IN PROGRESS | ✅ COMPLETE
+**Status**:  IN PROGRESS | [DONE] COMPLETE
 
 ---
 
@@ -113,7 +113,7 @@ Continue with:
 
 ### Ending Session
 
-1. Update SESSION_*.md status to ✅ COMPLETE
+1. Update SESSION_*.md status to [DONE] COMPLETE
 2. Add completion timestamp
 3. Update CURRENT_WORK.md with session results
 4. Git commit with session summary

@@ -1171,15 +1171,15 @@ def test_coverage_summary_block_bootstrap_engine():
     8. Edge Cases (10 tests) - insufficient data, extreme values
 
     Functions Tested:
-    ✅ create_temporal_blocks() - overlapping/non-overlapping blocks
-    ✅ run_block_bootstrap_stability() - main entry point
-    ✅ assess_block_size_sensitivity() - optimal block size
-    ✅ _create_bootstrap_sample() - sample from blocks
-    ✅ _calculate_bootstrap_confidence_intervals() - percentile CIs
-    ✅ _calculate_block_bootstrap_stability_metrics() - stability metrics
-    ✅ _assess_overall_stability() - classification
-    ✅ _compare_with_standard_bootstrap() - method comparison
-    ✅ BlockBootstrapResult dataclass - result container
+    [DONE] create_temporal_blocks() - overlapping/non-overlapping blocks
+    [DONE] run_block_bootstrap_stability() - main entry point
+    [DONE] assess_block_size_sensitivity() - optimal block size
+    [DONE] _create_bootstrap_sample() - sample from blocks
+    [DONE] _calculate_bootstrap_confidence_intervals() - percentile CIs
+    [DONE] _calculate_block_bootstrap_stability_metrics() - stability metrics
+    [DONE] _assess_overall_stability() - classification
+    [DONE] _compare_with_standard_bootstrap() - method comparison
+    [DONE] BlockBootstrapResult dataclass - result container
 
     Key Testing Insights:
     - Block bootstrap preserves temporal structure within blocks

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Domain Knowledge Search (FTS5) for Annuity Price Elasticity v2.
+Domain Knowledge Search (FTS5) for Annuity Price Elasticity v3.
 
 Indexes all markdown files and Python docstrings for full-text search.
 Uses SQLite FTS5 for fast, ranked search results.

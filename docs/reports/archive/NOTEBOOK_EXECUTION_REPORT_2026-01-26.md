@@ -1,7 +1,7 @@
 # Fresh Notebook Execution Report
 **Date**: 2026-01-26 21:42:00
 **Execution Type**: Fresh execution from scratch with live AWS data
-**Status**: ✓ SUCCESS - All notebooks executed and validated
+**Status**: [PASS] SUCCESS - All notebooks executed and validated
 
 ---
 
@@ -9,9 +9,9 @@
 
 Successfully executed all 3 production RILA notebooks fresh from scratch with live AWS S3 data:
 
-1. **00_data_pipeline.ipynb** - ✓ Complete (252 rows × 598 features)
-2. **01_price_elasticity_inference.ipynb** - ✓ Complete (8 CSV exports, 2 PNG visualizations)
-3. **02_time_series_forecasting.ipynb** - ✓ Complete (1,288 forecast records)
+1. **00_data_pipeline.ipynb** - [PASS] Complete (252 rows × 598 features)
+2. **01_price_elasticity_inference.ipynb** - [PASS] Complete (8 CSV exports, 2 PNG visualizations)
+3. **02_time_series_forecasting.ipynb** - [PASS] Complete (1,288 forecast records)
 
 All validation checks passed. Pipeline is production-ready.
 
@@ -21,24 +21,24 @@ All validation checks passed. Pipeline is production-ready.
 
 | Step | Notebook | Duration | Status | Output Files |
 |------|----------|----------|--------|--------------|
-| 0 | Backup outputs | ~1 min | ✓ Complete | 6 parquet files backed up |
-| 1 | 00_data_pipeline.ipynb | ~3 min | ✓ Complete | 6 parquet files |
-| 2 | 01_price_elasticity_inference.ipynb | ~2 min | ✓ Complete | 8 CSV + 2 PNG |
-| 3 | 02_time_series_forecasting.ipynb | ~3 min | ✓ Complete | 1 CSV + 2 PNG |
-| 4 | Validation checks | ~1 min | ✓ Complete | All passed |
-| **Total** | | **~10 min** | **✓ Complete** | **23 files** |
+| 0 | Backup outputs | ~1 min | [PASS] Complete | 6 parquet files backed up |
+| 1 | 00_data_pipeline.ipynb | ~3 min | [PASS] Complete | 6 parquet files |
+| 2 | 01_price_elasticity_inference.ipynb | ~2 min | [PASS] Complete | 8 CSV + 2 PNG |
+| 3 | 02_time_series_forecasting.ipynb | ~3 min | [PASS] Complete | 1 CSV + 2 PNG |
+| 4 | Validation checks | ~1 min | [PASS] Complete | All passed |
+| **Total** | | **~10 min** | **[PASS] Complete** | **23 files** |
 
 ---
 
 ## Data Pipeline Outputs (00_data_pipeline.ipynb)
 
 ### Generated Files
-- ✓ `outputs/datasets/final_dataset.parquet` (252 rows × 598 features)
-- ✓ `outputs/datasets/WINK_competitive_rates.parquet` (2,777 rows × 25 columns)
-- ✓ `outputs/datasets/FlexGuard_Sales.parquet` (2,076 rows × 2 columns)
-- ✓ `outputs/datasets/FlexGuard_Sales_contract.parquet` (2,069 rows × 2 columns)
-- ✓ `outputs/datasets/weekly_aggregated_features.parquet` (265 rows × 26 columns)
-- ✓ `outputs/datasets/lag_features_created.parquet` (265 rows × 594 columns)
+- [PASS] `outputs/datasets/final_dataset.parquet` (252 rows × 598 features)
+- [PASS] `outputs/datasets/WINK_competitive_rates.parquet` (2,777 rows × 25 columns)
+- [PASS] `outputs/datasets/FlexGuard_Sales.parquet` (2,076 rows × 2 columns)
+- [PASS] `outputs/datasets/FlexGuard_Sales_contract.parquet` (2,069 rows × 2 columns)
+- [PASS] `outputs/datasets/weekly_aggregated_features.parquet` (265 rows × 26 columns)
+- [PASS] `outputs/datasets/lag_features_created.parquet` (265 rows × 594 columns)
 
 ### Data Quality Metrics
 - **AWS Data Source**: Live S3 bucket `pruvpcaws031-east-isg-ie-lake`
@@ -61,18 +61,18 @@ All validation checks passed. Pipeline is production-ready.
 ### Generated Files
 
 **BI Exports (CSV):**
-- ✓ `weekly_raw_bootstrap_2026-01-26.csv` (1,001 rows)
-- ✓ `price_elasticity_FlexGuard_bootstrap_distributions_2026-01-26.csv` (2,001 rows)
-- ✓ `price_elasticity_FlexGuard_bootstrap_distributions_melt_2026-01-26.csv` (19,001 rows)
-- ✓ `price_elasticity_FlexGuard_bootstrap_distributions_melt_dollars_2026-01-26.csv` (19,001 rows)
-- ✓ `price_elasticity_FlexGuard_confidence_intervals_2026-01-26.csv` (58 rows)
-- ✓ `price_elasticity_FlexGuard_confidence_intervals_melt_2026-01-26.csv` (115 rows)
-- ✓ `sample_price_elasticity_FlexGuard_output_simple_pct_change_confidence_intervals_2026-01-26.csv` (20 rows)
-- ✓ `sample_price_elasticity_FlexGuard_output_simple_amount_in_dollars_confidence_intervals_2026-01-26.csv` (20 rows)
+- [PASS] `weekly_raw_bootstrap_2026-01-26.csv` (1,001 rows)
+- [PASS] `price_elasticity_FlexGuard_bootstrap_distributions_2026-01-26.csv` (2,001 rows)
+- [PASS] `price_elasticity_FlexGuard_bootstrap_distributions_melt_2026-01-26.csv` (19,001 rows)
+- [PASS] `price_elasticity_FlexGuard_bootstrap_distributions_melt_dollars_2026-01-26.csv` (19,001 rows)
+- [PASS] `price_elasticity_FlexGuard_confidence_intervals_2026-01-26.csv` (58 rows)
+- [PASS] `price_elasticity_FlexGuard_confidence_intervals_melt_2026-01-26.csv` (115 rows)
+- [PASS] `sample_price_elasticity_FlexGuard_output_simple_pct_change_confidence_intervals_2026-01-26.csv` (20 rows)
+- [PASS] `sample_price_elasticity_FlexGuard_output_simple_amount_in_dollars_confidence_intervals_2026-01-26.csv` (20 rows)
 
 **Visualizations (PNG):**
-- ✓ `price_elasticity_FlexGuard_Sample_2026-01-26.png` (693 KB)
-- ✓ `price_elasticity_FlexGuard_Dollars_Sample_2026-01-26.png` (713 KB)
+- [PASS] `price_elasticity_FlexGuard_Sample_2026-01-26.png` (693 KB)
+- [PASS] `price_elasticity_FlexGuard_Dollars_Sample_2026-01-26.png` (713 KB)
 
 ### Model Metrics
 - **Bootstrap Estimators**: 1,000 iterations
@@ -93,11 +93,11 @@ All validation checks passed. Pipeline is production-ready.
 ### Generated Files
 
 **Forecast Results (CSV):**
-- ✓ `outputs/results/flexguard_forecasting_results_atomic.csv` (1,288 rows × 9 columns)
+- [PASS] `outputs/results/flexguard_forecasting_results_atomic.csv` (1,288 rows × 9 columns)
 
 **Visualizations (PNG):**
-- ✓ `docs/images/model_performance/model_performance_comprehensive_forecasting_analysis_latest.png` (1.1 MB)
-- ✓ `docs/images/model_performance/model_performance_comprehensive_forecasting_analysis_v6.png` (1.1 MB)
+- [PASS] `docs/images/model_performance/model_performance_comprehensive_forecasting_analysis_latest.png` (1.1 MB)
+- [PASS] `docs/images/model_performance/model_performance_comprehensive_forecasting_analysis_v6.png` (1.1 MB)
 
 ### Forecast Metrics
 - **Forecast Records**: 1,288 records (atomic-level forecasts)
@@ -112,13 +112,13 @@ All validation checks passed. Pipeline is production-ready.
 ### Data Quality Checks
 | Check | Expected | Actual | Status |
 |-------|----------|--------|--------|
-| Feature count | 598 | 598 | ✓ PASS |
-| Record count | 250-260 | 252 | ✓ PASS |
-| Date range start | 2021-02-07 | 2021-02-07 | ✓ PASS |
-| Date range end | 2025-11-30 | 2025-11-30 | ✓ PASS |
-| Forecast records | ~1,288 | 1,288 | ✓ PASS |
-| BI CSV exports | 8 | 8 | ✓ PASS |
-| BI PNG visualizations | 2 | 2 | ✓ PASS |
+| Feature count | 598 | 598 | [PASS] PASS |
+| Record count | 250-260 | 252 | [PASS] PASS |
+| Date range start | 2021-02-07 | 2021-02-07 | [PASS] PASS |
+| Date range end | 2025-11-30 | 2025-11-30 | [PASS] PASS |
+| Forecast records | ~1,288 | 1,288 | [PASS] PASS |
+| BI CSV exports | 8 | 8 | [PASS] PASS |
+| BI PNG visualizations | 2 | 2 | [PASS] PASS |
 
 ### Test Suite Results
 ```
@@ -126,7 +126,7 @@ make test-rila
 =============== 50 passed, 1250 deselected, 23 warnings in 2.59s ===============
 ```
 
-**Status**: ✓ All RILA tests passed
+**Status**: [PASS] All RILA tests passed
 
 ### Pattern Validation
 ```
@@ -137,32 +137,32 @@ Errors: 1 (non-blocking LAG0_COMPETITOR_USAGE warning)
 Warnings: 2 (non-blocking COMPETING_IMPLEMENTATION warnings)
 ```
 
-**Status**: ⚠ Minor warnings (non-blocking, code-level only)
+**Status**: [WARN] Minor warnings (non-blocking, code-level only)
 
 ---
 
 ## Success Criteria Validation
 
-### Must Pass (Execution) ✓
-- ✓ 00_data_pipeline.ipynb executed without errors
-- ✓ 01_price_elasticity_inference.ipynb executed without errors
-- ✓ 02_time_series_forecasting.ipynb executed without errors
-- ✓ All notebooks completed in < 15 minutes total (~10 minutes actual)
+### Must Pass (Execution) [PASS]
+- [PASS] 00_data_pipeline.ipynb executed without errors
+- [PASS] 01_price_elasticity_inference.ipynb executed without errors
+- [PASS] 02_time_series_forecasting.ipynb executed without errors
+- [PASS] All notebooks completed in < 15 minutes total (~10 minutes actual)
 
-### Must Pass (Outputs) ✓
-- ✓ final_dataset.parquet generated (252 rows × 598 features)
-- ✓ WINK_competitive_rates.parquet generated
-- ✓ BI_TEAM/*.csv generated (8 CSV files)
-- ✓ BI_TEAM/*.png generated (2 PNG files)
-- ✓ flexguard_forecasting_results_atomic.csv generated (1,288 rows)
-- ✓ model_performance/*.png generated (2 PNG files)
+### Must Pass (Outputs) [PASS]
+- [PASS] final_dataset.parquet generated (252 rows × 598 features)
+- [PASS] WINK_competitive_rates.parquet generated
+- [PASS] BI_TEAM/*.csv generated (8 CSV files)
+- [PASS] BI_TEAM/*.png generated (2 PNG files)
+- [PASS] flexguard_forecasting_results_atomic.csv generated (1,288 rows)
+- [PASS] model_performance/*.png generated (2 PNG files)
 
-### Should Pass (Validation) ✓
-- ✓ Feature count = 598 features exactly
-- ✓ Date range = 2021-02-07 to 2025-11-30
-- ✓ Record count in expected range (252 records)
-- ✓ No data leakage detected
-- ✓ Economic constraints satisfied
+### Should Pass (Validation) [PASS]
+- [PASS] Feature count = 598 features exactly
+- [PASS] Date range = 2021-02-07 to 2025-11-30
+- [PASS] Record count in expected range (252 records)
+- [PASS] No data leakage detected
+- [PASS] Economic constraints satisfied
 
 ---
 
@@ -270,7 +270,7 @@ outputs/backup_20260126_213312/
 
 ## Conclusion
 
-**Status**: ✓ SUCCESS
+**Status**: [PASS] SUCCESS
 
 All 3 production RILA notebooks executed successfully with live AWS S3 data:
 - 252 weekly records processed (2021-02-07 to 2025-11-30)

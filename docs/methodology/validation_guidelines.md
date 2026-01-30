@@ -117,7 +117,7 @@ If MAPE_late_period - MAPE_early_period > 10%: Investigate structural change
 - No catastrophic drift in late periods
 - Performance stable across market volatility regimes
 
-**Reference:** `src/models/cross_validation.py`
+**Reference:** Expanding window validation is implemented within `src/models/inference_models.py`
 
 ---
 
@@ -589,14 +589,14 @@ graph TD
 - **RAI governance:** [../business/rai_governance.md](../business/rai_governance.md)
 
 ### Implementation References
-- **Cross-validation:** `src/models/cross_validation.py`
+- **Cross-validation:** Expanding window methodology integrated in `src/models/inference_models.py`
 - **Economic constraints:** `src/features/selection/constraints_engine.py`
 - **AIC selection:** `src/features/selection/aic_engine.py`
 - **Bootstrap ensemble:** `src/models/inference_models.py`
 
 ---
 
-**Last Updated:** 2026-01-28
-**Version:** 2.0 (v2 refactored architecture)
+**Last Updated:** 2026-01-30
+**Version:** 3.0 (v3 multi-product architecture)
 **Owner:** Brandon Behring
 **Review Cycle:** Annual

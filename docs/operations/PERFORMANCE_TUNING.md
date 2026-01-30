@@ -741,11 +741,11 @@ def check_performance_regression(current_metrics, baseline_metrics, threshold=0.
     ) / baseline_metrics['training_time_min']
 
     if training_time_increase > threshold:
-        print(f"⚠️  WARNING: Training time increased {training_time_increase:.1%}")
+        print(f"[WARN]  WARNING: Training time increased {training_time_increase:.1%}")
         print("  Investigate: Data size growth? Instance degradation? Code regression?")
         return False
 
-    print(f"✓ Training time within expected range ({training_time_increase:.1%} change)")
+    print(f"[PASS] Training time within expected range ({training_time_increase:.1%} change)")
     return True
 ```
 

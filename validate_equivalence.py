@@ -86,18 +86,18 @@ def run_validation():
     all_passed = all(v == "PASSED" for v in results["checks"].values())
 
     for check, status in results["checks"].items():
-        symbol = "✓" if status == "PASSED" else "✗"
+        symbol = "[PASS]" if status == "PASSED" else "[FAIL]"
         print(f"{symbol} {check.replace('_', ' ').title()}: {status}")
 
     print()
 
     if all_passed:
-        print("RESULT: Mathematical Equivalence MAINTAINED ✓")
+        print("RESULT: Mathematical Equivalence MAINTAINED [PASS]")
         print("Your refactored code is ready for reintegration.")
         results["ready_for_reintegration"] = True
         exit_code = 0
     else:
-        print("RESULT: Mathematical Equivalence BROKEN ✗")
+        print("RESULT: Mathematical Equivalence BROKEN [FAIL]")
         print("Review failures above before reintegration.")
         results["ready_for_reintegration"] = False
         exit_code = 1
