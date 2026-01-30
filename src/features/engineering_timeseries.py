@@ -85,9 +85,9 @@ def _apply_cpi_transformations(df_ts: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         Transformed DataFrame with CPI-adjusted sales and smoothed indicators
     """
-    df_ts['CPILFESL_inv'] = df_ts.CPILFESL_inv.fillna(method='ffill')
-    df_ts['DGS5'] = df_ts.DGS5.fillna(method='ffill')
-    df_ts['VIXCLS'] = df_ts.VIXCLS.fillna(method='ffill')
+    df_ts['CPILFESL_inv'] = df_ts.CPILFESL_inv.ffill()
+    df_ts['DGS5'] = df_ts.DGS5.ffill()
+    df_ts['VIXCLS'] = df_ts.VIXCLS.ffill()
 
     df_ts['sales'] = df_ts['CPILFESL_inv'] * df_ts['sales']
     df_ts['sales_by_contract_date'] = df_ts['CPILFESL_inv'] * df_ts['sales_by_contract_date']

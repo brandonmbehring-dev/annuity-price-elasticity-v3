@@ -491,7 +491,7 @@ def test_aggregate_by_frequency_monthly():
     })
 
     agg_dict = {'sales': 'sum'}
-    result = aggregate_dataframe_by_frequency(df, 'date', 'M', agg_dict)
+    result = aggregate_dataframe_by_frequency(df, 'date', 'ME', agg_dict)
 
     # 60 days should aggregate to 2 months
     assert len(result) == 2

@@ -143,7 +143,7 @@ class MathematicalEquivalenceValidator:
         max_aic_diff = np.max(aic_diffs)
         max_r2_diff = np.max(r2_diffs)
         max_difference = max(max_aic_diff, max_r2_diff)
-        passed = max_difference <= self.precision
+        passed = bool(max_difference <= self.precision)
 
         details = {
             'max_aic_difference': max_aic_diff,
@@ -227,7 +227,7 @@ class MathematicalEquivalenceValidator:
         max_cv_diff = max(c['cv_difference'] for c in comparisons)
         max_median_diff = max(c['median_difference'] for c in comparisons)
         max_difference = max(max_cv_diff, max_median_diff)
-        passed = max_difference <= self.BOOTSTRAP_STATISTICAL_TOLERANCE
+        passed = bool(max_difference <= self.BOOTSTRAP_STATISTICAL_TOLERANCE)
 
         result = ValidationResult(
             test_name=test_name,
@@ -333,14 +333,14 @@ class MathematicalEquivalenceValidator:
         baseline_aic = baseline_model.get('aic', 0.0)
         test_aic = test_final_model.get('aic', 0.0)
         aic_difference = abs(baseline_aic - test_aic)
-        aic_match = aic_difference <= self.precision
+        aic_match = bool(aic_difference <= self.precision)
 
         baseline_r2 = baseline_model.get('r_squared', 0.0)
         test_r2 = test_final_model.get('r_squared', 0.0)
         r2_difference = abs(baseline_r2 - test_r2)
-        r2_match = r2_difference <= self.precision
+        r2_match = bool(r2_difference <= self.precision)
 
-        passed = features_match and aic_match and r2_match
+        passed = bool(features_match and aic_match and r2_match)
         max_difference = max(aic_difference, r2_difference)
 
         result = ValidationResult(

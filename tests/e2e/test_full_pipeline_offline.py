@@ -47,7 +47,6 @@ from src.data.pipelines import (
     apply_final_feature_preparation
 )
 from src.features.selection.notebook_interface import run_feature_selection
-from src.models.inference import BootstrapInference
 
 # Tolerance for baseline comparisons
 TOLERANCE = 1e-12
