@@ -224,10 +224,17 @@ class MathematicalEquivalenceValidator:
                 'test_cv': test_cv
             })
 
-        max_cv_diff = max(c['cv_difference'] for c in comparisons)
-        max_median_diff = max(c['median_difference'] for c in comparisons)
-        max_difference = max(max_cv_diff, max_median_diff)
-        passed = bool(max_difference <= self.BOOTSTRAP_STATISTICAL_TOLERANCE)
+        # Handle empty comparisons (both baseline and test are empty)
+        if not comparisons:
+            max_cv_diff = 0.0
+            max_median_diff = 0.0
+            max_difference = 0.0
+            passed = True  # Empty lists are technically equivalent
+        else:
+            max_cv_diff = max(c['cv_difference'] for c in comparisons)
+            max_median_diff = max(c['median_difference'] for c in comparisons)
+            max_difference = max(max_cv_diff, max_median_diff)
+            passed = bool(max_difference <= self.BOOTSTRAP_STATISTICAL_TOLERANCE)
 
         result = ValidationResult(
             test_name=test_name,

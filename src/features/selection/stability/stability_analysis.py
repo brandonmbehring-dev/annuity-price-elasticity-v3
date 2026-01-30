@@ -184,10 +184,16 @@ def _validate_single_result(result: Any, model_index: int) -> List[str]:
             errors.append(f"{model_name}: Missing attribute '{attr}'")
 
     if hasattr(result, 'bootstrap_aics'):
-        if not result.bootstrap_aics or len(result.bootstrap_aics) == 0:
+        aics = result.bootstrap_aics
+        # Handle numpy arrays correctly
+        is_empty = aics is None or (hasattr(aics, '__len__') and len(aics) == 0)
+        if is_empty:
             errors.append(f"{model_name}: Empty bootstrap AIC values")
-        elif any(np.isnan(aic) or np.isinf(aic) for aic in result.bootstrap_aics):
-            errors.append(f"{model_name}: Invalid AIC values (NaN or Inf)")
+        else:
+            # Convert to numpy array for proper NaN/Inf checking
+            aics_arr = np.asarray(aics)
+            if np.any(np.isnan(aics_arr)) or np.any(np.isinf(aics_arr)):
+                errors.append(f"{model_name}: Invalid AIC values (NaN or Inf)")
 
     if hasattr(result, 'aic_stability_coefficient'):
         if np.isnan(result.aic_stability_coefficient) or result.aic_stability_coefficient < 0:
@@ -260,10 +266,17 @@ def _build_top_performers(win_rates: List[Dict[str, Any]], ir_results: List[Dict
     """Build top performers dictionary for insights."""
     top_win = win_rates[0]['model_name'] if win_rates else None
     top_ir = ir_results[0]['model_name'] if ir_results else None
+    # Determine consensus: if both are None or disagree, report 'Mixed'
+    if top_win is None or top_ir is None:
+        consensus = 'Mixed'
+    elif top_win == top_ir:
+        consensus = top_win
+    else:
+        consensus = 'Mixed'
     return {
         'win_rate_leader': win_rates[0] if win_rates else None,
         'ir_leader': ir_results[0] if ir_results else None,
-        'consensus_winner': top_win if top_win == top_ir else 'Mixed'
+        'consensus_winner': consensus
     }
 
 
@@ -452,10 +465,12 @@ def validate_bootstrap_results(bootstrap_results: List[Any]) -> Tuple[bool, List
     for i, result in enumerate(bootstrap_results):
         validation_errors.extend(_validate_single_result(result, i))
 
-    # Cross-validation: check consistent sample sizes
-    sample_sizes = set(len(result.bootstrap_aics) for result in bootstrap_results)
-    if len(sample_sizes) > 1:
-        validation_errors.append("Inconsistent bootstrap sample sizes across models")
+    # Cross-validation: check consistent sample sizes (only for results with valid bootstrap_aics)
+    valid_results = [r for r in bootstrap_results if hasattr(r, 'bootstrap_aics') and r.bootstrap_aics is not None]
+    if valid_results:
+        sample_sizes = set(len(result.bootstrap_aics) for result in valid_results)
+        if len(sample_sizes) > 1:
+            validation_errors.append("Inconsistent bootstrap sample sizes across models")
 
     return len(validation_errors) == 0, validation_errors
 

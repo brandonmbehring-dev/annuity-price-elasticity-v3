@@ -139,8 +139,14 @@ class TestConvertColumnToDatetime:
         from src.data.preprocessing import convert_column_to_datetime
 
         df = pd.DataFrame({'date': ['2022-01-01']})
+        original_dtype = df['date'].dtype
         result = convert_column_to_datetime(df, 'date')
-        assert df['date'].dtype == object  # Original unchanged
+        # Original should be unchanged (still string type, not datetime)
+        # pandas 3.0+ uses StringDtype, earlier versions use object
+        assert df['date'].dtype == original_dtype  # Original unchanged
+        # Verify result is converted to datetime but original is not
+        assert pd.api.types.is_datetime64_any_dtype(result['date'])
+        assert not pd.api.types.is_datetime64_any_dtype(df['date'])
 
 
 class TestCalculateDaysBetweenDates:

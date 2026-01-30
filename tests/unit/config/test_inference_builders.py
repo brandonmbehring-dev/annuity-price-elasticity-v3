@@ -366,7 +366,8 @@ class TestBuildOutputConfigs:
             basis_points_multiplier=100,
             prudential_rate_col='prudential_rate_current',
             competitor_rate_col='competitor_mid_current',
-            sales_lag_cols=None
+            sales_lag_cols=None,
+            output_directory='test_outputs'
         )
         assert 'confidence_interval_config' in configs
         assert 'tableau_formatting_config' in configs

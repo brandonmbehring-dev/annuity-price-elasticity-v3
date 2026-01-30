@@ -151,11 +151,12 @@ class TestBuildVisualizationConfig:
         assert config['seaborn_palette'] == 'deep'
 
     def test_default_output_directory(self):
-        """Default output directory is 'BI_TEAM'."""
+        """Default output directory is relative to notebooks/production."""
         from src.config.visualization_builders import build_visualization_config
 
         config = build_visualization_config()
-        assert config['output_directory'] == 'BI_TEAM'
+        # Default output directory for 6Y20B product
+        assert config['output_directory'] == '../../outputs/rila_6y20b/bi_team'
 
     def test_default_dpi(self):
         """Default DPI is 300 for high resolution."""

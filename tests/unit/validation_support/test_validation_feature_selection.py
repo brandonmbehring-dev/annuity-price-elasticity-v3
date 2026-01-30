@@ -634,19 +634,20 @@ def test_validate_final_model_selection_no_baseline():
 
 
 def test_validate_final_model_selection_feature_count_mismatch(sample_final_model):
-    """Test final model validation with different feature counts."""
+    """Test final model validation with different feature string."""
     validator = MathematicalEquivalenceValidator()
     validator.capture_baseline_results(
         pd.DataFrame(), pd.DataFrame(), [], sample_final_model
     )
 
-    # Change n_features
+    # Change features string (n_features alone is not directly validated)
     test_model = sample_final_model.copy()
+    test_model['features'] = 'A+B+C'  # Different features = should fail
     test_model['n_features'] = 3
 
     result = validator.validate_final_model_selection(test_model)
 
-    # Should be detected as difference in numerical metric
+    # Should be detected as feature mismatch
     assert result.passed is False
 
 

@@ -88,11 +88,19 @@ class TestMultiProductPipeline:
         config = get_product_config(product_code)
 
         assert config is not None
-        assert config['buffer_rate'] == thresholds['expected_buffer'], (
-            f"{product_code}: Buffer rate mismatch"
+        # ProductConfig is a dataclass with buffer_level (float) and term_years (int)
+        # Convert to expected format for comparison
+        expected_buffer = thresholds['expected_buffer']  # e.g., "20%"
+        expected_term = thresholds['expected_term']      # e.g., "6Y"
+
+        actual_buffer = f"{int(config.buffer_level * 100)}%" if config.buffer_level else "N/A"
+        actual_term = f"{config.term_years}Y"
+
+        assert actual_buffer == expected_buffer, (
+            f"{product_code}: Buffer rate mismatch: {actual_buffer} != {expected_buffer}"
         )
-        assert config['term'] == thresholds['expected_term'], (
-            f"{product_code}: Term mismatch"
+        assert actual_term == expected_term, (
+            f"{product_code}: Term mismatch: {actual_term} != {expected_term}"
         )
 
     def test_product_methodology_correct(self, product_code, thresholds):
@@ -347,10 +355,11 @@ class TestProductConfiguration:
         """All product configs should have required fields."""
         products = ["6Y20B", "6Y10B", "10Y20B"]
 
+        # ProductConfig is a dataclass - check attributes exist
         required_fields = [
-            'product_name',
-            'buffer_rate',
-            'term',
+            'name',           # was 'product_name'
+            'buffer_level',   # was 'buffer_rate'
+            'term_years',     # was 'term'
             'product_code'
         ]
 
@@ -358,7 +367,7 @@ class TestProductConfiguration:
             config = get_product_config(product_code)
 
             for field in required_fields:
-                assert field in config, (
+                assert hasattr(config, field), (
                     f"{product_code} config missing required field: {field}"
                 )
 
@@ -369,7 +378,8 @@ class TestProductConfiguration:
         configs = {}
         for product_code in products:
             config = get_product_config(product_code)
-            key = f"{config['buffer_rate']}_{config['term']}"
+            # ProductConfig is a dataclass: use buffer_level and term_years
+            key = f"{config.buffer_level}_{config.term_years}"
             configs[key] = product_code
 
         # Should have 3 unique combinations

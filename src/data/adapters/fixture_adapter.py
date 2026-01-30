@@ -16,6 +16,10 @@ from pathlib import Path
 import pandas as pd
 
 from src.data.adapters.base import DataAdapterBase
+from src.core.product_registry import (
+    get_fixture_filter_name,
+    is_product_code,
+)
 
 
 class FixtureAdapter(DataAdapterBase):
@@ -186,7 +190,12 @@ class FixtureAdapter(DataAdapterBase):
 
         # Apply product filter if specified
         if product_filter and "product_name" in df.columns:
-            df = df[df["product_name"] == product_filter].reset_index(drop=True)
+            # Use Product Registry to map product code to fixture name
+            if is_product_code(product_filter):
+                actual_filter = get_fixture_filter_name(product_filter)
+            else:
+                actual_filter = product_filter
+            df = df[df["product_name"] == actual_filter].reset_index(drop=True)
 
         return df
 

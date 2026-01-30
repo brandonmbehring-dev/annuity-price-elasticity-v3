@@ -429,15 +429,17 @@ class AggregationRegistry(BaseRegistry):
 # =============================================================================
 
 
-def get_methodology(product_type: str) -> ProductMethodology:
-    """Get methodology for a product type.
+def get_methodology(product_identifier: str) -> ProductMethodology:
+    """Get methodology for a product code or type.
 
-    Convenience wrapper for BusinessRulesRegistry.get().
+    Accepts either a product type directly ("rila", "fia", "myga")
+    or a product code ("6Y20B", "FIA5YR") which is mapped to its type
+    using the Product Registry.
 
     Parameters
     ----------
-    product_type : str
-        Product type: "rila", "fia", "myga"
+    product_identifier : str
+        Product code (e.g., "6Y20B") or product type ("rila")
 
     Returns
     -------
@@ -447,14 +449,30 @@ def get_methodology(product_type: str) -> ProductMethodology:
     Raises
     ------
     ValueError
-        If product_type is not registered
+        If product_identifier is not registered
+
+    Examples
+    --------
+    >>> get_methodology("rila")  # Direct type
+    <RILAMethodology>
+    >>> get_methodology("6Y20B")  # Product code → mapped to "rila"
+    <RILAMethodology>
     """
+    # Import here to avoid circular imports
+    from src.core.product_registry import is_product_code, get_product_type
+
+    # If it's a product code, get the type from registry
+    if is_product_code(product_identifier):
+        product_type = get_product_type(product_identifier)
+    else:
+        product_type = product_identifier  # Assume it's already a type
+
     try:
         return BusinessRulesRegistry.get(product_type)
     except KeyError:
         available = BusinessRulesRegistry.list_registered()
         raise ValueError(
-            f"Unknown product_type: '{product_type}'. "
+            f"Unknown product_type: '{product_type}' (from '{product_identifier}'). "
             f"Available: {', '.join(available)}"
         )
 

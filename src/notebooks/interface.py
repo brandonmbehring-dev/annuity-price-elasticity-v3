@@ -323,9 +323,10 @@ class UnifiedNotebookInterface:
         pd.DataFrame
             Merged, cleaned dataset ready for analysis
         """
-        # Use product name as filter if not specified
+        # Use product code as filter if not specified
+        # Product Registry maps codes to fixture names
         if product_filter is None:
-            product_filter = self._product.name
+            product_filter = self._product.product_code
 
         # Load component datasets
         sales_df = self._adapter.load_sales_data(product_filter)
