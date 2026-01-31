@@ -111,3 +111,11 @@ tmp/
 temp/
 *.tmp
 .domain_search.db
+
+# Sphinx documentation build
+docs/_build/
+docs/api/generated/
+
+# MLflow
+mlflow.db
+mlruns/
