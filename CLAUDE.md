@@ -8,7 +8,7 @@
 |------------|--------|-------|
 | Exploration complete | DONE | Multi-product architecture validated |
 | Core functionality | DONE | DI patterns, adapters, strategies implemented |
-| Test coverage | 44% | 2,467 tests; priority: core modules >60%, infrastructure can be lower |
+| Test coverage | 70% | 3,952 tests; priority: core modules >60%, infrastructure can be lower |
 | Leakage gate | PASSED | Critical tests now BLOCKING (see audit 2026-01-26) |
 | Production deployment | PENDING | Awaiting P0 fixes from audit |
 
@@ -211,7 +211,10 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 ```bash
 # Makefile targets
 make quick-check    # 30-second smoke test
-make test           # Full pytest suite
+make test           # Full pytest suite (unit tests only)
+make test-all       # Unit tests + notebooks (CI target)
+make test-notebooks # Validate 5 fixture-compatible notebooks
+make test-notebooks-aws  # Validate all 7 notebooks (requires AWS)
 make test-rila      # RILA-specific tests
 make test-fia       # FIA-specific tests
 make coverage       # HTML coverage report
@@ -221,6 +224,23 @@ make clean          # Remove cache directories
 # Import validation
 python -c "from src.notebooks import create_interface; print('OK')"
 ```
+
+## Testing Architecture
+
+| Target | Scope | When to Use |
+|--------|-------|-------------|
+| `make test` | Unit tests only | Fast TDD iteration |
+| `make test-notebooks` | 5 notebooks (NB01, NB02 x2 products + onboarding) | CI/fixture-based |
+| `make test-all` | Unit + notebooks | Full CI suite |
+| `make test-notebooks-aws` | All 7 notebooks (includes NB00) | Production validation |
+
+**Note:** NB00 (`00_data_pipeline.ipynb`) requires AWS credentials for raw data loading. NB01/NB02 use fixture data symlinked to `outputs/datasets/` via `make setup-notebook-fixtures`.
+
+### Deferred: NB00 Fixture Support
+
+**All fixtures exist** for NB00 to run without AWS (see `tests/fixtures/rila/`), but NB00 makes direct AWS calls that bypass the DI pattern. Refactoring to use `UnifiedNotebookInterface` would enable 7/7 notebooks in CI.
+
+**Documentation:** `knowledge/practices/NOTEBOOK_CI_STATUS.md`
 
 ## Key Economic Constraints
 

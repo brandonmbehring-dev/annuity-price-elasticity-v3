@@ -4,7 +4,10 @@
 .PHONY: help install dev test test-unit test-integration test-rila test-fia
 .PHONY: lint format coverage quick-check validate clean
 .PHONY: verify verify-quick stub-hunter hardcode-scan pre-commit-install
-.PHONY: test-property test-leakage pattern-check leakage-audit
+.PHONY: test-property test-leakage pattern-check leakage-audit test-notebooks
+.PHONY: setup-notebook-fixtures test-notebooks test-notebooks-aws test-all
+.PHONY: capture-notebook-baselines test-notebook-equivalence
+.PHONY: docstring-check docstring-lint
 
 # Default Python
 PYTHON ?= python3
@@ -20,12 +23,18 @@ help:
 	@echo "    make format        - Format code with black"
 	@echo ""
 	@echo "  Testing:"
-	@echo "    make test          - Run all tests"
+	@echo "    make test          - Run all unit tests"
+	@echo "    make test-all      - Run unit tests + notebooks (CI target)"
 	@echo "    make test-unit     - Run unit tests only"
 	@echo "    make test-rila     - Run RILA-specific tests"
 	@echo "    make test-fia      - Run FIA-specific tests"
 	@echo "    make test-property - Run property-based tests (Hypothesis)"
 	@echo "    make test-leakage  - Run leakage detection tests"
+	@echo "    make test-notebooks - Validate all 7 production notebooks (CI)"
+	@echo "    make test-notebooks-aws - Validate ALL 7 notebooks (requires AWS)"
+	@echo "    make setup-notebook-fixtures - Link fixtures for notebook CI"
+	@echo "    make test-notebook-equivalence - Test notebook outputs at 1e-12"
+	@echo "    make capture-notebook-baselines - Capture new baselines"
 	@echo "    make coverage      - Generate coverage report"
 	@echo ""
 	@echo "  Validation:"
@@ -55,7 +64,8 @@ dev:
 test:
 	$(PYTEST) tests/ -v
 
-test-all: test
+test-all: test test-notebooks test-notebook-equivalence
+	@echo "Full test suite completed (unit tests + notebooks + equivalence)"
 
 test-unit:
 	$(PYTEST) tests/unit/ -v -m "unit"
@@ -74,6 +84,54 @@ test-property:
 
 test-leakage:
 	$(PYTEST) tests/ -v -m "leakage"
+
+# =============================================================================
+# NOTEBOOK TESTING: Fixture Setup and Validation
+# =============================================================================
+# NB01 and NB02 load from outputs/datasets/ which are created by NB00.
+# For CI, we symlink fixture files to enable notebook validation without AWS.
+
+setup-notebook-fixtures:
+	@# Copy and transform fixtures for CI (applies legacy column renaming)
+	$(PYTHON) scripts/setup_notebook_fixtures.py
+
+test-notebooks: setup-notebook-fixtures
+	@echo "Running notebook validation with nbmake (all 7 notebooks, fixture-compatible)..."
+	$(PYTEST) --nbmake \
+		notebooks/onboarding/architecture_walkthrough.ipynb \
+		notebooks/production/rila_6y20b/00_data_pipeline.ipynb \
+		notebooks/production/rila_6y20b/01_price_elasticity_inference.ipynb \
+		notebooks/production/rila_6y20b/02_time_series_forecasting.ipynb \
+		notebooks/production/rila_1y10b/00_data_pipeline.ipynb \
+		notebooks/production/rila_1y10b/01_price_elasticity_inference.ipynb \
+		notebooks/production/rila_1y10b/02_time_series_forecasting.ipynb \
+		-v --nbmake-timeout=600
+	@echo "Notebook validation complete (7 notebooks)."
+
+test-notebooks-aws:
+	@echo "Running ALL notebook validation (requires AWS credentials)..."
+	$(PYTEST) --nbmake \
+		notebooks/production/rila_6y20b/*.ipynb \
+		notebooks/production/rila_1y10b/*.ipynb \
+		notebooks/onboarding/architecture_walkthrough.ipynb \
+		-v --nbmake-timeout=300
+	@echo "Full notebook validation complete (7 notebooks)."
+
+# =============================================================================
+# NOTEBOOK BASELINES: Capture and Equivalence Testing
+# =============================================================================
+# Baselines capture notebook outputs for mathematical equivalence validation.
+# Fixed seed=42 ensures bit-identical bootstrap results at 1e-12 precision.
+
+capture-notebook-baselines:
+	@echo "Capturing notebook baselines (all products)..."
+	$(PYTHON) scripts/capture_notebook_baselines.py --all
+	@echo "Baseline capture complete. See tests/baselines/notebooks/"
+
+test-notebook-equivalence:
+	@echo "Running notebook equivalence tests (1e-12 precision)..."
+	$(PYTEST) tests/integration/test_notebook_equivalence.py -v --tb=short
+	@echo "Equivalence validation complete."
 
 coverage:
 	$(PYTEST) tests/ --cov=src --cov-report=term-missing --cov-report=html
@@ -99,6 +157,17 @@ lint:
 format:
 	black src/ tests/
 	ruff check --fix src/ tests/
+
+# Docstring Quality
+docstring-check:
+	@echo "Checking docstring coverage..."
+	interrogate -v src/
+	@echo "Docstring coverage check complete."
+
+docstring-lint:
+	@echo "Linting docstrings for NumPy style compliance..."
+	ruff check src/ --select=D
+	@echo "Docstring lint complete."
 
 # Maintenance
 clean:
