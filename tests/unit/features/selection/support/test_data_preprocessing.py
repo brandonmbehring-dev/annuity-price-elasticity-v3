@@ -540,3 +540,326 @@ class TestEdgeCasesAndPrecision:
             single_row, feature_selection_config
         )
         assert len(available) == 2
+
+
+# =============================================================================
+# Tests: _load_and_log_dataset
+# =============================================================================
+
+
+class TestLoadAndLogDataset:
+    """Tests for _load_and_log_dataset function."""
+
+    def test_loads_parquet_file(self, tmp_path):
+        """Test successfully loads parquet file."""
+        from src.features.selection.support.data_preprocessing import _load_and_log_dataset
+
+        # Create test parquet file
+        test_df = pd.DataFrame({
+            'col1': [1, 2, 3],
+            'col2': ['a', 'b', 'c']
+        })
+        test_path = tmp_path / 'test_data.parquet'
+        test_df.to_parquet(test_path)
+
+        result = _load_and_log_dataset(str(test_path))
+
+        pd.testing.assert_frame_equal(result, test_df)
+
+    def test_raises_on_missing_file(self):
+        """Test raises ValueError for missing file."""
+        from src.features.selection.support.data_preprocessing import _load_and_log_dataset
+
+        with pytest.raises(ValueError, match="Dataset file not found"):
+            _load_and_log_dataset('/nonexistent/path/file.parquet')
+
+
+# =============================================================================
+# Tests: _apply_temporal_filters
+# =============================================================================
+
+
+class TestApplyTemporalFilters:
+    """Tests for _apply_temporal_filters function."""
+
+    def test_applies_date_filter(self):
+        """Test applies date filtering correctly."""
+        from src.features.selection.support.data_preprocessing import _apply_temporal_filters
+
+        data = pd.DataFrame({
+            'date': pd.to_datetime(['2022-06-01', '2022-08-15', '2022-09-01', '2022-10-01']),
+            'value': [1, 2, 3, 4]
+        })
+        config = {
+            'analysis_start_date': '2022-08-01',
+            'exclude_holidays': False,
+            'target_variable': 'value',
+            'base_features': [],
+            'candidate_features': [],
+            'max_candidate_features': 10
+        }
+
+        result = _apply_temporal_filters(data, config)
+
+        # Should only include rows after 2022-08-01
+        assert len(result) == 3
+        assert result['date'].min() > pd.Timestamp('2022-08-01')
+
+    def test_applies_holiday_filter(self):
+        """Test applies holiday filtering when enabled."""
+        from src.features.selection.support.data_preprocessing import _apply_temporal_filters
+
+        data = pd.DataFrame({
+            'date': pd.to_datetime(['2022-09-01', '2022-09-02', '2022-09-03', '2022-09-04']),
+            'holiday': [0, 1, 0, 1],
+            'value': [1, 2, 3, 4]
+        })
+        config = {
+            'analysis_start_date': '2022-08-01',
+            'exclude_holidays': True,
+            'target_variable': 'value',
+            'base_features': [],
+            'candidate_features': [],
+            'max_candidate_features': 10
+        }
+
+        result = _apply_temporal_filters(data, config)
+
+        # Should only include non-holiday rows
+        assert len(result) == 2
+        assert (result['holiday'] == 0).all()
+
+    def test_skips_holiday_filter_when_disabled(self):
+        """Test skips holiday filter when exclude_holidays is False."""
+        from src.features.selection.support.data_preprocessing import _apply_temporal_filters
+
+        data = pd.DataFrame({
+            'date': pd.to_datetime(['2022-09-01', '2022-09-02']),
+            'holiday': [0, 1],
+            'value': [1, 2]
+        })
+        config = {
+            'analysis_start_date': '2022-08-01',
+            'exclude_holidays': False,
+            'target_variable': 'value',
+            'base_features': [],
+            'candidate_features': [],
+            'max_candidate_features': 10
+        }
+
+        result = _apply_temporal_filters(data, config)
+
+        # Should include all rows
+        assert len(result) == 2
+
+    def test_uses_default_start_date(self):
+        """Test uses default analysis start date when not provided."""
+        from src.features.selection.support.data_preprocessing import _apply_temporal_filters
+
+        data = pd.DataFrame({
+            'date': pd.to_datetime(['2022-06-01', '2022-08-15', '2022-09-01']),
+            'value': [1, 2, 3]
+        })
+        config = {
+            # No analysis_start_date specified
+            'exclude_holidays': False,
+            'target_variable': 'value',
+            'base_features': [],
+            'candidate_features': [],
+            'max_candidate_features': 10
+        }
+
+        result = _apply_temporal_filters(data, config)
+
+        # Default is '2022-08-01', so should include only 2 rows
+        assert len(result) == 2
+
+
+# =============================================================================
+# Tests: _apply_configured_transformations
+# =============================================================================
+
+
+class TestApplyConfiguredTransformations:
+    """Tests for _apply_configured_transformations function."""
+
+    def test_no_transformation(self):
+        """Test with no target transformation configured."""
+        from src.features.selection.support.data_preprocessing import _apply_configured_transformations
+
+        data = pd.DataFrame({
+            'target': [100, 200, 300],
+            'feature': [1, 2, 3]
+        })
+        config = {
+            'target_variable': 'target',
+            'target_transformation': 'none',
+            'base_features': [],
+            'candidate_features': [],
+            'max_candidate_features': 10
+        }
+
+        result_df, effective_target = _apply_configured_transformations(data, config)
+
+        assert effective_target == 'target'
+        assert 'target' in result_df.columns
+
+    def test_with_log1p_transformation(self):
+        """Test with log1p target transformation."""
+        from src.features.selection.support.data_preprocessing import _apply_configured_transformations
+
+        data = pd.DataFrame({
+            'target': [100, 200, 300],
+            'feature': [1, 2, 3]
+        })
+        config = {
+            'target_variable': 'target',
+            'target_transformation': 'log1p',
+            'transformed_target_suffix': '_transformed',
+            'base_features': [],
+            'candidate_features': [],
+            'max_candidate_features': 10
+        }
+
+        result_df, effective_target = _apply_configured_transformations(data, config)
+
+        assert effective_target == 'target_log1p'
+        assert 'target_log1p' in result_df.columns
+
+    def test_default_transformation_is_none(self):
+        """Test that default transformation is 'none' when not specified."""
+        from src.features.selection.support.data_preprocessing import _apply_configured_transformations
+
+        data = pd.DataFrame({
+            'target': [100, 200, 300],
+            'feature': [1, 2, 3]
+        })
+        config = {
+            'target_variable': 'target',
+            # No target_transformation specified
+            'base_features': [],
+            'candidate_features': [],
+            'max_candidate_features': 10
+        }
+
+        result_df, effective_target = _apply_configured_transformations(data, config)
+
+        assert effective_target == 'target'
+
+
+# =============================================================================
+# Tests: prepare_analysis_dataset
+# =============================================================================
+
+
+class TestPrepareAnalysisDataset:
+    """Tests for prepare_analysis_dataset function."""
+
+    def test_full_pipeline(self, tmp_path):
+        """Test full dataset preparation pipeline."""
+        from src.features.selection.support.data_preprocessing import prepare_analysis_dataset
+
+        # Create test parquet file
+        test_df = pd.DataFrame({
+            'date': pd.to_datetime(['2022-09-01', '2022-09-08', '2022-09-15', '2022-09-22']),
+            'target_var': [100, 150, 200, 250],
+            'base_feat': [1.0, 1.1, 1.2, 1.3],
+            'cand_feat': [0.5, 0.6, 0.7, 0.8],
+            'holiday': [0, 0, 0, 0]
+        })
+        test_path = tmp_path / 'test_data.parquet'
+        test_df.to_parquet(test_path)
+
+        config = {
+            'target_variable': 'target_var',
+            'base_features': ['base_feat'],
+            'candidate_features': ['cand_feat'],
+            'max_candidate_features': 10,
+            'analysis_start_date': '2022-08-01',
+            'exclude_holidays': True
+        }
+
+        result_df, effective_target = prepare_analysis_dataset(str(test_path), config)
+
+        assert len(result_df) == 4
+        assert effective_target == 'target_var'
+        assert 'base_feat' in result_df.columns
+        assert 'cand_feat' in result_df.columns
+
+    def test_raises_on_invalid_config(self, tmp_path):
+        """Test raises ValueError on invalid configuration."""
+        from src.features.selection.support.data_preprocessing import prepare_analysis_dataset
+
+        # Create test parquet file
+        test_df = pd.DataFrame({
+            'date': pd.to_datetime(['2022-09-01']),
+            'value': [100]
+        })
+        test_path = tmp_path / 'test_data.parquet'
+        test_df.to_parquet(test_path)
+
+        config = {
+            'target_variable': 'nonexistent_target',
+            'base_features': ['also_nonexistent'],
+            'candidate_features': [],
+            'max_candidate_features': 10,
+            'analysis_start_date': '2022-08-01'
+        }
+
+        with pytest.raises(ValueError, match="preparation failed"):
+            prepare_analysis_dataset(str(test_path), config)
+
+
+# =============================================================================
+# Tests: prepare_feature_subset (additional coverage)
+# =============================================================================
+
+
+class TestPrepareFeatureSubsetAdditional:
+    """Additional tests for prepare_feature_subset function."""
+
+    def test_warns_on_missing_values(self, sample_dataframe, capsys):
+        """Test that missing values trigger a warning message."""
+        from src.features.selection.support.data_preprocessing import prepare_feature_subset
+
+        # Add missing values to sample data
+        df_with_nan = sample_dataframe.copy()
+        df_with_nan.loc[0, 'candidate_1'] = np.nan
+        df_with_nan.loc[1, 'candidate_1'] = np.nan
+
+        result = prepare_feature_subset(
+            df_with_nan,
+            ['candidate_1'],
+            'target_variable'
+        )
+
+        captured = capsys.readouterr()
+        assert "WARNING" in captured.out or "missing values" in captured.out.lower()
+        assert len(result) == 10
+
+
+# =============================================================================
+# Tests: Exception handling in apply_autoregressive_transforms
+# =============================================================================
+
+
+class TestApplyAutoRegressiveTransformsExceptionHandling:
+    """Tests for exception handling in apply_autoregressive_transforms."""
+
+    def test_handles_transformation_error_gracefully(self):
+        """Test that transformation errors are caught and warned."""
+        from src.features.selection.support.data_preprocessing import apply_autoregressive_transforms
+
+        # Create a dataframe where transformation might fail
+        # (e.g., object dtype that can't be log-transformed)
+        df = pd.DataFrame({
+            'sales_target_t1': ['a', 'b', 'c'],  # String values
+            'other': [1, 2, 3]
+        })
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            result = apply_autoregressive_transforms(df)
+
+            # Should return copy and issue warning
+            assert isinstance(result, pd.DataFrame)

@@ -1,0 +1,65 @@
+{
+  "notebook": "nb02_forecasting",
+  "product": "1Y10B",
+  "capture_timestamp": "2026-01-31T00:04:50.925795+00:00",
+  "random_seed": 42,
+  "python_version": "3.13",
+  "pandas_version": "2.3.3",
+  "numpy_version": "2.4.1",
+  "outputs": {
+    "forecast_results": {
+      "shape": [
+        1288,
+        9
+      ],
+      "columns": [
+        "date",
+        "metric_type",
+        "sales_value",
+        "product",
+        "model_version",
+        "forecast_method",
+        "bootstrap_samples",
+        "ridge_alpha",
+        "analysis_date"
+      ],
+      "dtypes": {
+        "date": "object",
+        "metric_type": "object",
+        "sales_value": "float64",
+        "product": "object",
+        "model_version": "object",
+        "forecast_method": "object",
+        "bootstrap_samples": "int64",
+        "ridge_alpha": "float64",
+        "analysis_date": "object"
+      },
+      "memory_bytes": 528534
+    },
+    "performance_metrics": {
+      "analysis_date": "2026-01-30",
+      "model_r2": 0.63712543970409,
+      "model_mape": 13.593098809121642,
+      "benchmark_r2": 0.547649716457075,
+      "benchmark_mape": 15.912708603436071,
+      "mape_improvement_pct": 14.577089621395755,
+      "r2_improvement_pct": 16.338130114603654,
+      "n_forecasts": 161,
+      "bootstrap_samples": 100,
+      "features_used": [
+        "prudential_rate_current",
+        "competitor_mid_t2",
+        "competitor_top5_t3"
+      ],
+      "target_variable": "sales_target_current",
+      "forecast_date_range": {
+        "start": "2022-10-30",
+        "end": "2025-11-23"
+      },
+      "atomic_operations": true,
+      "vectorization_ready": true,
+      "validation_status": "FAILED",
+      "mathematical_equivalence": false
+    }
+  }
+}

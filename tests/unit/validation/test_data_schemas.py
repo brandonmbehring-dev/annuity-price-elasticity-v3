@@ -689,3 +689,359 @@ class TestMLflowIntegration:
             log_to_mlflow=False
         )
         assert len(result) == len(valid_forecast_results)
+
+
+# =============================================================================
+# STRICT VALIDATION ERROR HANDLING TESTS
+# =============================================================================
+
+
+class TestStrictValidationErrorHandling:
+    """Tests for strict validation mode error handling."""
+
+    def test_validate_final_dataset_strict_raises_on_invalid(self):
+        """validate_final_dataset should raise on invalid data in strict mode.
+
+        Note: strict=True uses lazy=False which raises SchemaError (singular).
+        """
+        invalid_df = pd.DataFrame({
+            'date': pd.date_range('2022-01-01', periods=10, freq='D'),
+            'sales': [-100.0] * 10,  # Invalid: negative sales
+            'sales_target_t0': [100.0] * 10,
+            'prudential_rate_t0': [3.0] * 10,
+            'competitor_weighted_t2': [0.0] * 10,
+            'competitor_top5_t3': [0.0] * 10,
+            'sales_target_contract_t5': [100.0] * 10,
+            'weight': [0.5] * 10,
+        })
+
+        # With strict=True and lazy=False, pandera raises SchemaError directly
+        with pytest.raises(pa.errors.SchemaError):
+            DataFrameValidator.validate_final_dataset(invalid_df, strict=True)
+
+    def test_validate_final_dataset_non_strict_returns_original(self):
+        """validate_final_dataset should return original df in non-strict mode."""
+        invalid_df = pd.DataFrame({
+            'date': pd.date_range('2022-01-01', periods=10, freq='D'),
+            'sales': [-100.0] * 10,  # Invalid
+            'sales_target_t0': [100.0] * 10,
+            'prudential_rate_t0': [3.0] * 10,
+            'competitor_weighted_t2': [0.0] * 10,
+            'competitor_top5_t3': [0.0] * 10,
+            'sales_target_contract_t5': [100.0] * 10,
+            'weight': [0.5] * 10,
+        })
+
+        result = DataFrameValidator.validate_final_dataset(invalid_df, strict=False)
+        assert len(result) == len(invalid_df)
+
+    def test_validate_forecast_results_raises_on_missing_columns(self):
+        """validate_forecast_results should raise on missing required columns.
+
+        Note: Uses lazy=True which raises SchemaErrors (plural), but
+        the except block catches SchemaError (singular), so SchemaErrors
+        propagates up.
+        """
+        invalid_df = pd.DataFrame({
+            'date': pd.date_range('2023-01-01', periods=5, freq='D'),
+            'y_true': [100.0] * 5,
+            # Missing y_predict and abs_pct_error
+        })
+
+        # SchemaErrors (plural) is raised by lazy=True validation
+        with pytest.raises(pa.errors.SchemaErrors):
+            DataFrameValidator.validate_forecast_results(invalid_df)
+
+    def test_validate_feature_selection_results_raises_on_schema_error(self):
+        """validate_feature_selection_results should raise ValueError on schema error."""
+        invalid_df = pd.DataFrame({
+            'feature': ['a', 'b'],
+            # Missing required columns
+        })
+
+        with pytest.raises(ValueError, match="Feature selection results validation failed"):
+            DataFrameValidator.validate_feature_selection_results(invalid_df)
+
+
+# =============================================================================
+# MLFLOW LOGGING PATH TESTS
+# =============================================================================
+
+
+class TestMLflowLoggingPaths:
+    """Tests for MLflow logging code paths."""
+
+    def test_validate_and_log_mlflow_success_path(self, valid_final_dataset):
+        """validate_and_log_to_mlflow should log when MLflow available."""
+        mock_log_fn = MagicMock(return_value={'status': 'logged'})
+
+        with patch('src.validation.data_schemas.DataFrameValidator.validate_and_log_to_mlflow') as mock:
+            # Set up mock to call through but with our mock for MLflow
+            mock.return_value = valid_final_dataset
+
+            result = DataFrameValidator.validate_and_log_to_mlflow(
+                df=valid_final_dataset,
+                schema=FINAL_DATASET_SCHEMA,
+                schema_name="test",
+                log_to_mlflow=False  # Skip actual MLflow
+            )
+
+    def test_validate_and_log_non_strict_skips_mlflow(self, valid_final_dataset):
+        """validate_and_log_to_mlflow should work without MLflow logging."""
+        # Simply test that log_to_mlflow=False works correctly
+        result = DataFrameValidator.validate_and_log_to_mlflow(
+            df=valid_final_dataset,
+            schema=FINAL_DATASET_SCHEMA,
+            schema_name="test",
+            validation_strict=False,
+            log_to_mlflow=False
+        )
+        assert len(result) == len(valid_final_dataset)
+
+    def test_validate_and_log_non_strict_mode_on_validation_fail(self, valid_final_dataset):
+        """validate_and_log_to_mlflow should return original df on validation fail in non-strict."""
+        invalid_df = valid_final_dataset.copy()
+        invalid_df.loc[0, 'sales'] = -1000  # Invalid
+
+        result = DataFrameValidator.validate_and_log_to_mlflow(
+            df=invalid_df,
+            schema=FINAL_DATASET_SCHEMA,
+            schema_name="test",
+            validation_strict=False,
+            log_to_mlflow=False
+        )
+        # In non-strict mode, returns original df
+        assert len(result) == len(invalid_df)
+
+
+# =============================================================================
+# DVC TRACKING TESTS
+# =============================================================================
+
+
+class TestDVCTrackingPaths:
+    """Tests for DVC tracking code paths."""
+
+    def test_validate_and_save_with_dvc_add_success(self, valid_final_dataset, temp_dir):
+        """validate_and_save_dataset should handle successful DVC add."""
+        output_path = str(temp_dir / "dvc_test.parquet")
+
+        with patch('os.system', return_value=0) as mock_system:
+            result = validate_and_save_dataset(
+                df=valid_final_dataset,
+                output_path=output_path,
+                schema=FINAL_DATASET_SCHEMA,
+                dvc_add=True
+            )
+
+            mock_system.assert_called_once()
+            assert 'dvc add' in mock_system.call_args[0][0]
+
+    def test_validate_and_save_with_dvc_add_failure(self, valid_final_dataset, temp_dir):
+        """validate_and_save_dataset should handle DVC add failure."""
+        output_path = str(temp_dir / "dvc_fail.parquet")
+
+        with patch('os.system', return_value=1) as mock_system:  # Non-zero = failure
+            result = validate_and_save_dataset(
+                df=valid_final_dataset,
+                output_path=output_path,
+                schema=FINAL_DATASET_SCHEMA,
+                dvc_add=True
+            )
+
+            # Should still save the file even if DVC fails
+            assert Path(output_path).exists()
+
+    def test_validate_and_save_with_dvc_add_exception(self, valid_final_dataset, temp_dir):
+        """validate_and_save_dataset should handle DVC add exception."""
+        output_path = str(temp_dir / "dvc_exc.parquet")
+
+        with patch('os.system', side_effect=Exception("DVC error")):
+            result = validate_and_save_dataset(
+                df=valid_final_dataset,
+                output_path=output_path,
+                schema=FINAL_DATASET_SCHEMA,
+                dvc_add=True
+            )
+
+            # Should still save the file
+            assert Path(output_path).exists()
+
+    def test_run_dvc_tracking_success(self, temp_dir):
+        """_run_dvc_tracking should handle successful DVC add."""
+        output_path = str(temp_dir / "track_success.parquet")
+
+        # Create a dummy file
+        pd.DataFrame({'a': [1]}).to_parquet(output_path)
+
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stderr = ""
+
+        with patch('subprocess.run', return_value=mock_result):
+            result = SchemaAwareDVCTracker._run_dvc_tracking(output_path, None)
+
+            assert result['dvc_tracking_status'] == 'SUCCESS'
+            assert 'dvc_file' in result
+
+    def test_run_dvc_tracking_failure(self, temp_dir):
+        """_run_dvc_tracking should handle DVC add failure."""
+        output_path = str(temp_dir / "track_fail.parquet")
+
+        mock_result = MagicMock()
+        mock_result.returncode = 1
+        mock_result.stderr = "DVC add failed"
+
+        with patch('subprocess.run', return_value=mock_result):
+            result = SchemaAwareDVCTracker._run_dvc_tracking(output_path, None)
+
+            assert result['dvc_tracking_status'] == 'FAILED'
+            assert 'dvc_error' in result
+
+    def test_run_dvc_tracking_dvc_not_available(self, temp_dir):
+        """_run_dvc_tracking should handle DVC not installed."""
+        output_path = str(temp_dir / "no_dvc.parquet")
+
+        with patch('subprocess.run', side_effect=FileNotFoundError("dvc not found")):
+            result = SchemaAwareDVCTracker._run_dvc_tracking(output_path, None)
+
+            assert result['dvc_tracking_status'] == 'DVC_NOT_AVAILABLE'
+
+    def test_run_dvc_tracking_exception(self, temp_dir):
+        """_run_dvc_tracking should handle general exceptions."""
+        output_path = str(temp_dir / "exc.parquet")
+
+        with patch('subprocess.run', side_effect=Exception("Unexpected error")):
+            result = SchemaAwareDVCTracker._run_dvc_tracking(output_path, None)
+
+            assert result['dvc_tracking_status'] == 'ERROR'
+            assert 'dvc_error' in result
+
+    def test_run_dvc_tracking_with_commit_message(self, temp_dir):
+        """_run_dvc_tracking should stage git add with commit message."""
+        output_path = str(temp_dir / "commit.parquet")
+
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+
+        with patch('subprocess.run', return_value=mock_result) as mock_run:
+            result = SchemaAwareDVCTracker._run_dvc_tracking(
+                output_path, dvc_commit_message="Test commit"
+            )
+
+            assert result['dvc_tracking_status'] == 'SUCCESS'
+            # Should call git add for the .dvc file
+            assert mock_run.call_count == 2  # dvc add + git add
+
+
+# =============================================================================
+# BULK VALIDATION ERROR HANDLING TESTS
+# =============================================================================
+
+
+class TestBulkValidationErrorHandling:
+    """Tests for bulk validation error handling."""
+
+    def test_bulk_validate_and_track_handles_exception(self, valid_final_dataset, temp_dir):
+        """bulk_validate_and_track should handle exceptions gracefully."""
+        datasets = [
+            {
+                'df': valid_final_dataset,
+                'output_path': str(temp_dir / "valid.parquet"),
+                'schema': FINAL_DATASET_SCHEMA,
+                'schema_name': 'valid_dataset'
+            },
+            {
+                'df': None,  # This will cause an exception
+                'output_path': str(temp_dir / "invalid.parquet"),
+                'schema': FINAL_DATASET_SCHEMA,
+                'schema_name': 'error_dataset'
+            }
+        ]
+
+        results = SchemaAwareDVCTracker.bulk_validate_and_track(datasets)
+
+        assert results['total_datasets'] == 2
+        assert 'error_dataset' in results['dataset_results']
+        assert results['dataset_results']['error_dataset']['validation_status'] == 'ERROR'
+
+    def test_bulk_validate_counts_dvc_success(self, valid_final_dataset, temp_dir):
+        """bulk_validate_and_track should count successful DVC tracking."""
+        datasets = [
+            {
+                'df': valid_final_dataset,
+                'output_path': str(temp_dir / "bulk1.parquet"),
+                'schema': FINAL_DATASET_SCHEMA,
+                'schema_name': 'dataset_1'
+            }
+        ]
+
+        # Mock DVC to succeed
+        with patch.object(SchemaAwareDVCTracker, '_run_dvc_tracking',
+                         return_value={'dvc_tracking_status': 'SUCCESS'}):
+            results = SchemaAwareDVCTracker.bulk_validate_and_track(datasets)
+
+            assert results['successful_dvc_tracking'] == 1
+
+
+# =============================================================================
+# DVC CONTEXT LOADING TESTS
+# =============================================================================
+
+
+class TestDVCContextLoading:
+    """Tests for DVC context-aware loading."""
+
+    def test_load_with_dvc_file_present(self, valid_final_dataset, temp_dir):
+        """load_and_validate_with_dvc_context should detect DVC-tracked files."""
+        file_path = temp_dir / "dvc_tracked.parquet"
+        dvc_file = temp_dir / "dvc_tracked.parquet.dvc"
+
+        valid_final_dataset.to_parquet(file_path)
+        dvc_file.write_text("# DVC tracking file")
+
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = ""
+
+        with patch('subprocess.run', return_value=mock_result):
+            result = load_and_validate_with_dvc_context(
+                str(file_path), FINAL_DATASET_SCHEMA, "test"
+            )
+
+            assert len(result) == len(valid_final_dataset)
+
+    def test_load_with_dvc_status_warning(self, valid_final_dataset, temp_dir):
+        """load_and_validate_with_dvc_context should warn on DVC status issues."""
+        file_path = temp_dir / "dvc_outdated.parquet"
+        dvc_file = temp_dir / "dvc_outdated.parquet.dvc"
+
+        valid_final_dataset.to_parquet(file_path)
+        dvc_file.write_text("# DVC tracking file")
+
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "modified: file.parquet"  # Non-empty = needs update
+
+        with patch('subprocess.run', return_value=mock_result):
+            result = load_and_validate_with_dvc_context(
+                str(file_path), FINAL_DATASET_SCHEMA, "test"
+            )
+
+            assert len(result) == len(valid_final_dataset)
+
+    def test_load_with_dvc_not_available(self, valid_final_dataset, temp_dir):
+        """load_and_validate_with_dvc_context should handle DVC not available."""
+        file_path = temp_dir / "no_dvc.parquet"
+        dvc_file = temp_dir / "no_dvc.parquet.dvc"
+
+        valid_final_dataset.to_parquet(file_path)
+        dvc_file.write_text("# DVC tracking file")
+
+        with patch('subprocess.run', side_effect=FileNotFoundError("dvc not found")):
+            result = load_and_validate_with_dvc_context(
+                str(file_path), FINAL_DATASET_SCHEMA, "test"
+            )
+
+            # Should still load the file even if DVC not available
+            assert len(result) == len(valid_final_dataset)

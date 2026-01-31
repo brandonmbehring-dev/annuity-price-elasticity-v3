@@ -1,0 +1,29 @@
+{
+  "_documentation": {
+    "source": "Fixture-based forecasting evaluation (tests/fixtures/rila/final_weekly_dataset.parquet)",
+    "generated_date": "2026-01-31",
+    "explanation": {
+      "negative_r2": "The model R² of -2.112464 is VALID for fixture data. Negative R² occurs when predictions are worse than predicting the mean. This happens because: (1) Fixture data has only 203 weeks vs ~5 years of production data, (2) Economic feature relationships may not hold in the truncated sample, (3) The benchmark (lagged sales) outperforms the economic model on this limited data.",
+      "benchmark_vs_model": "The benchmark uses sales_target_contract_t5 (lagged sales) which performs well (R²=0.527) because recent sales predict future sales. The model uses economic features (prudential_rate, competitor rates) which require more data to establish relationships."
+    },
+    "production_baseline": {
+      "note": "Production values from 02_time_series_forecasting_refactored.ipynb with full data:",
+      "model_r2": 0.782598,
+      "model_mape_pct": 12.74,
+      "benchmark_r2": 0.575437,
+      "benchmark_mape_pct": 16.40
+    }
+  },
+  "model_r2": -2.112464,
+  "model_mape": 0.460245,
+  "benchmark_r2": 0.527586,
+  "benchmark_mape": 0.166881,
+  "n_forecasts": 127,
+  "tolerance_r2": 0.0001,
+  "tolerance_mape": 0.001,
+  "start_cutoff": 40,
+  "end_cutoff": 167,
+  "model_features": ["prudential_rate_current", "competitor_mid_t2", "competitor_top5_t3"],
+  "benchmark_features": ["sales_target_contract_t5"],
+  "target_variable": "sales_target_current"
+}

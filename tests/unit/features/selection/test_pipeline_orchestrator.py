@@ -1059,3 +1059,523 @@ class TestBusinessInterpretationEdgeCases:
 
         assert any('instability' in msg.lower() or 'larger dataset' in msg.lower()
                    for msg in interpretation)
+
+
+# =============================================================================
+# Tests for Core Pipeline Execution Functions
+# =============================================================================
+
+
+class TestRunAicEvaluation:
+    """Tests for _run_aic_evaluation."""
+
+    @patch('src.features.selection.pipeline_orchestrator.evaluate_aic_combinations')
+    def test_returns_all_and_converged_results(self, mock_evaluate, feature_config, sample_data):
+        """20.1: Returns tuple of (all_results, converged_results)."""
+        from src.features.selection.pipeline_orchestrator import _run_aic_evaluation
+
+        mock_results = pd.DataFrame({
+            'features': ['f1', 'f2', 'f3'],
+            'aic': [500.0, 520.0, np.inf],
+            'converged': [True, True, False],
+        })
+        mock_evaluate.return_value = mock_results
+
+        all_results, converged = _run_aic_evaluation(sample_data, feature_config)
+
+        assert len(all_results) == 3
+        assert len(converged) == 2
+        assert all(converged['converged'])
+
+    @patch('src.features.selection.pipeline_orchestrator.evaluate_aic_combinations')
+    def test_prints_summary(self, mock_evaluate, feature_config, sample_data, capsys):
+        """20.2: Prints AIC evaluation summary."""
+        from src.features.selection.pipeline_orchestrator import _run_aic_evaluation
+
+        mock_results = pd.DataFrame({
+            'features': ['f1'],
+            'aic': [500.0],
+            'converged': [True],
+        })
+        mock_evaluate.return_value = mock_results
+
+        _run_aic_evaluation(sample_data, feature_config)
+
+        captured = capsys.readouterr()
+        assert 'Phase 2' in captured.out
+        assert 'AIC Evaluation' in captured.out
+
+
+class TestRunConstraintValidation:
+    """Tests for _run_constraint_validation."""
+
+    @patch('src.features.selection.pipeline_orchestrator.apply_economic_constraints')
+    def test_returns_valid_results_and_violations(self, mock_apply, constraint_config):
+        """21.1: Returns tuple of (valid_results, violations)."""
+        from src.features.selection.pipeline_orchestrator import _run_constraint_validation
+
+        converged = pd.DataFrame({
+            'features': ['f1', 'f2'],
+            'aic': [500.0, 520.0],
+        })
+        mock_valid = pd.DataFrame({'features': ['f1'], 'aic': [500.0]})
+        mock_violations = []
+        mock_apply.return_value = (mock_valid, mock_violations)
+
+        valid, violations = _run_constraint_validation(converged, constraint_config)
+
+        assert len(valid) == 1
+        assert violations == []
+
+    @patch('src.features.selection.pipeline_orchestrator.apply_economic_constraints')
+    def test_prints_phase_header(self, mock_apply, constraint_config, capsys):
+        """21.2: Prints Phase 3 header."""
+        from src.features.selection.pipeline_orchestrator import _run_constraint_validation
+
+        mock_apply.return_value = (pd.DataFrame(), [])
+        converged = pd.DataFrame({'features': []})
+
+        _run_constraint_validation(converged, constraint_config)
+
+        captured = capsys.readouterr()
+        assert 'Phase 3' in captured.out
+
+
+class TestCheckCriticalValidationFailures:
+    """Tests for _check_critical_validation_failures."""
+
+    def test_returns_none_when_no_critical_failures(
+        self, sample_data, feature_config, constraint_config
+    ):
+        """22.1: Returns None when no critical failures."""
+        from src.features.selection.pipeline_orchestrator import (
+            _check_critical_validation_failures
+        )
+        import time
+
+        with patch('src.validation.input_validators.validate_target_with_warnings') as mock:
+            mock.return_value = []
+            result = _check_critical_validation_failures(
+                sample_data, feature_config, constraint_config, time.time()
+            )
+
+        assert result is None
+
+    def test_returns_error_result_on_critical_failure(
+        self, feature_config, constraint_config
+    ):
+        """22.2: Returns error result on critical failure."""
+        from src.features.selection.pipeline_orchestrator import (
+            _check_critical_validation_failures
+        )
+        import time
+
+        empty_df = pd.DataFrame()
+        result = _check_critical_validation_failures(
+            empty_df, feature_config, constraint_config, time.time()
+        )
+
+        assert result is not None
+        assert isinstance(result, FeatureSelectionResults)
+        assert 'VALIDATION_FAILED' in result.best_model.features
+
+
+class TestFinalizeAndReport:
+    """Tests for _finalize_and_report."""
+
+    def test_prints_success_message(self, feature_selection_results, capsys):
+        """23.1: Prints success message."""
+        from src.features.selection.pipeline_orchestrator import _finalize_and_report
+
+        _finalize_and_report(feature_selection_results, 5.0, False)
+
+        captured = capsys.readouterr()
+        assert 'SUCCESS' in captured.out
+        assert 'Complete' in captured.out
+
+    def test_returns_results(self, feature_selection_results):
+        """23.2: Returns the results unchanged."""
+        from src.features.selection.pipeline_orchestrator import _finalize_and_report
+
+        result = _finalize_and_report(feature_selection_results, 5.0, False)
+
+        assert result is feature_selection_results
+
+
+class TestCompileFinalResults:
+    """Tests for _compile_final_results."""
+
+    def test_compiles_all_fields(self, aic_result, feature_config, constraint_config):
+        """24.1: Compiles all fields into FeatureSelectionResults."""
+        from src.features.selection.pipeline_orchestrator import _compile_final_results
+
+        all_results = pd.DataFrame({'aic': [500, 520]})
+        valid_results = pd.DataFrame({'aic': [500]})
+        converged_results = pd.DataFrame({'aic': [500, 520]})
+
+        result = _compile_final_results(
+            best_model=aic_result,
+            all_results=all_results,
+            valid_results=valid_results,
+            converged_results=converged_results,
+            constraint_violations=[],
+            feature_config=feature_config,
+            constraint_config=constraint_config,
+            bootstrap_results=None,
+            bootstrap_config=None,
+            experiment_config=None,
+            execution_time=5.0,
+        )
+
+        assert isinstance(result, FeatureSelectionResults)
+        assert result.best_model == aic_result
+        assert result.total_combinations == 2
+        assert result.converged_models == 2
+        assert result.economically_valid_models == 1
+        assert result.execution_time_seconds == 5.0
+
+
+class TestRunFeatureSelectionPipeline:
+    """Tests for run_feature_selection_pipeline main function."""
+
+    @patch('src.features.selection.pipeline_orchestrator._execute_pipeline_phases')
+    @patch('src.features.selection.pipeline_orchestrator._check_critical_validation_failures')
+    def test_returns_validation_error_on_critical_failure(
+        self, mock_check, mock_execute, sample_data, feature_config, constraint_config
+    ):
+        """25.1: Returns error result on critical validation failure."""
+        from src.features.selection.pipeline_orchestrator import run_feature_selection_pipeline
+
+        # Mock critical failure
+        mock_error = FeatureSelectionResults(
+            best_model=AICResult(
+                features='VALIDATION_FAILED', n_features=0, aic=np.inf, bic=np.inf,
+                r_squared=0.0, r_squared_adj=0.0, coefficients={},
+                converged=False, n_obs=0, error='Critical failure'
+            ),
+            all_results=pd.DataFrame(),
+            valid_results=pd.DataFrame(),
+            total_combinations=0,
+            converged_models=0,
+            economically_valid_models=0,
+            constraint_violations=[],
+            feature_config=feature_config,
+            constraint_config=constraint_config,
+        )
+        mock_check.return_value = mock_error
+
+        result = run_feature_selection_pipeline(
+            sample_data, feature_config, constraint_config
+        )
+
+        assert 'VALIDATION_FAILED' in result.best_model.features
+        mock_execute.assert_not_called()
+
+    @patch('src.features.selection.pipeline_orchestrator._execute_pipeline_phases')
+    @patch('src.features.selection.pipeline_orchestrator._check_critical_validation_failures')
+    def test_executes_pipeline_when_validation_passes(
+        self, mock_check, mock_execute, sample_data, feature_config, constraint_config
+    ):
+        """25.2: Executes pipeline when validation passes."""
+        from src.features.selection.pipeline_orchestrator import run_feature_selection_pipeline
+
+        mock_check.return_value = None  # No critical failures
+        mock_result = MagicMock()
+        mock_execute.return_value = mock_result
+
+        result = run_feature_selection_pipeline(
+            sample_data, feature_config, constraint_config
+        )
+
+        mock_execute.assert_called_once()
+        assert result == mock_result
+
+    def test_handles_exception_gracefully(self, feature_config, constraint_config, capsys):
+        """25.3: Returns error result on exception."""
+        from src.features.selection.pipeline_orchestrator import run_feature_selection_pipeline
+
+        # Empty DataFrame will cause issues
+        with patch('src.features.selection.pipeline_orchestrator.validate_pipeline_inputs') as mock:
+            mock.side_effect = Exception("Test exception")
+
+            result = run_feature_selection_pipeline(
+                pd.DataFrame(), feature_config, constraint_config
+            )
+
+        assert 'PIPELINE_ERROR' in result.best_model.features
+        assert result.best_model.converged is False
+
+        captured = capsys.readouterr()
+        assert 'ERROR' in captured.out
+
+    def test_prints_dataset_info(self, sample_data, feature_config, constraint_config, capsys):
+        """25.4: Prints dataset info at start."""
+        from src.features.selection.pipeline_orchestrator import run_feature_selection_pipeline
+
+        # Will fail during validation but should print dataset info first
+        with patch('src.features.selection.pipeline_orchestrator.validate_pipeline_inputs') as mock:
+            mock.return_value = ['CRITICAL: Test failure']
+
+            run_feature_selection_pipeline(sample_data, feature_config, constraint_config)
+
+        captured = capsys.readouterr()
+        assert 'Dataset' in captured.out
+        assert '100 rows' in captured.out
+
+
+class TestExecutePipelinePhases:
+    """Tests for _execute_pipeline_phases."""
+
+    @patch('src.features.selection.pipeline_orchestrator._finalize_and_report')
+    @patch('src.features.selection.pipeline_orchestrator._compile_final_results')
+    @patch('src.features.selection.pipeline_orchestrator._select_best_model')
+    @patch('src.features.selection.pipeline_orchestrator._run_bootstrap_analysis')
+    @patch('src.features.selection.pipeline_orchestrator._run_block_bootstrap')
+    @patch('src.features.selection.pipeline_orchestrator._run_statistical_constraints')
+    @patch('src.features.selection.pipeline_orchestrator._run_oos_validation')
+    @patch('src.features.selection.pipeline_orchestrator._run_constraint_validation')
+    @patch('src.features.selection.pipeline_orchestrator._run_multiple_testing_correction')
+    @patch('src.features.selection.pipeline_orchestrator._run_aic_evaluation')
+    @patch('src.features.selection.pipeline_orchestrator._run_search_space_reduction')
+    @patch('src.features.selection.pipeline_orchestrator._run_regression_diagnostics')
+    def test_executes_all_phases(
+        self,
+        mock_diagnostics, mock_search, mock_aic, mock_mtc, mock_constraint,
+        mock_oos, mock_stat, mock_block, mock_bootstrap, mock_select,
+        mock_compile, mock_finalize,
+        sample_data, feature_config, constraint_config
+    ):
+        """26.1: Executes all phases in sequence."""
+        from src.features.selection.pipeline_orchestrator import _execute_pipeline_phases
+        import time
+
+        # Setup mocks
+        mock_search.return_value = feature_config
+        converged = pd.DataFrame({
+            'features': ['f1'], 'aic': [500.0], 'converged': [True],
+            'n_features': [2], 'r_squared': [0.7], 'r_squared_adj': [0.68],
+            'coefficients': [{}], 'n_obs': [100]
+        })
+        mock_aic.return_value = (converged, converged)
+        mock_mtc.return_value = converged
+        mock_constraint.return_value = (converged, [])
+        mock_oos.return_value = None
+        mock_stat.return_value = None
+        mock_block.return_value = None
+        mock_bootstrap.return_value = None
+        mock_select.return_value = MagicMock()
+        mock_diagnostics.return_value = None
+        mock_compile.return_value = MagicMock()
+        mock_finalize.return_value = MagicMock()
+
+        _execute_pipeline_phases(
+            sample_data, feature_config, constraint_config,
+            None, None, time.time()
+        )
+
+        mock_search.assert_called_once()
+        mock_aic.assert_called_once()
+        mock_mtc.assert_called_once()
+        mock_constraint.assert_called_once()
+        mock_select.assert_called_once()
+        mock_compile.assert_called_once()
+        mock_finalize.assert_called_once()
+
+    @patch('src.features.selection.pipeline_orchestrator._run_search_space_reduction')
+    @patch('src.features.selection.pipeline_orchestrator._run_aic_evaluation')
+    def test_returns_error_when_no_models_converge(
+        self, mock_aic, mock_search,
+        sample_data, feature_config, constraint_config
+    ):
+        """26.2: Returns error result when no models converge."""
+        from src.features.selection.pipeline_orchestrator import _execute_pipeline_phases
+        import time
+
+        mock_search.return_value = feature_config
+        all_results = pd.DataFrame({
+            'features': ['f1'], 'aic': [np.inf], 'converged': [False]
+        })
+        converged = pd.DataFrame()  # Empty - no converged models
+        mock_aic.return_value = (all_results, converged)
+
+        result = _execute_pipeline_phases(
+            sample_data, feature_config, constraint_config,
+            None, None, time.time()
+        )
+
+        assert 'NO_CONVERGED_MODELS' in result.best_model.features
+
+
+class TestEnhancementEnabledPaths:
+    """Tests for enhancement functions when flags are enabled."""
+
+    @patch('src.features.selection.pipeline_orchestrator.reduce_search_space')
+    def test_search_space_reduction_enabled(self, mock_reduce, feature_config, sample_data):
+        """27.1: Calls reduce_search_space when enabled."""
+        from src.features.selection.pipeline_orchestrator import _run_search_space_reduction
+        from src.features.selection.interface.interface_config import FEATURE_FLAGS
+
+        original = FEATURE_FLAGS.get("ENABLE_SEARCH_SPACE_REDUCTION", False)
+        FEATURE_FLAGS["ENABLE_SEARCH_SPACE_REDUCTION"] = True
+
+        try:
+            mock_reduce.return_value = ['competitor_mid_t2']
+
+            result = _run_search_space_reduction(feature_config, sample_data)
+
+            mock_reduce.assert_called_once()
+            assert 'competitor_mid_t2' in result['candidate_features']
+        finally:
+            FEATURE_FLAGS["ENABLE_SEARCH_SPACE_REDUCTION"] = original
+
+    @patch('src.features.selection.pipeline_orchestrator.reduce_search_space')
+    def test_search_space_reduction_handles_failure(self, mock_reduce, feature_config, sample_data, capsys):
+        """27.2: Falls back to original on failure."""
+        from src.features.selection.pipeline_orchestrator import _run_search_space_reduction
+        from src.features.selection.interface.interface_config import FEATURE_FLAGS
+
+        original = FEATURE_FLAGS.get("ENABLE_SEARCH_SPACE_REDUCTION", False)
+        FEATURE_FLAGS["ENABLE_SEARCH_SPACE_REDUCTION"] = True
+
+        try:
+            mock_reduce.side_effect = Exception("Test error")
+
+            result = _run_search_space_reduction(feature_config, sample_data)
+
+            assert result == feature_config  # Returns original
+
+            captured = capsys.readouterr()
+            assert 'WARNING' in captured.out
+        finally:
+            FEATURE_FLAGS["ENABLE_SEARCH_SPACE_REDUCTION"] = original
+
+    @patch('src.features.selection.pipeline_orchestrator.apply_multiple_testing_correction')
+    def test_multiple_testing_enabled(self, mock_mtc):
+        """27.3: Calls apply_multiple_testing_correction when enabled."""
+        from src.features.selection.pipeline_orchestrator import _run_multiple_testing_correction
+        from src.features.selection.interface.interface_config import FEATURE_FLAGS
+
+        original = FEATURE_FLAGS.get("ENABLE_MULTIPLE_TESTING", False)
+        FEATURE_FLAGS["ENABLE_MULTIPLE_TESTING"] = True
+
+        try:
+            converged = pd.DataFrame({'aic': [500], 'pvalue': [0.01]})
+            corrected = pd.DataFrame({'aic': [500], 'pvalue': [0.05], 'pvalue_corrected': [0.05]})
+            mock_mtc.return_value = corrected
+
+            result = _run_multiple_testing_correction(converged)
+
+            mock_mtc.assert_called_once()
+            assert 'pvalue_corrected' in result.columns
+        finally:
+            FEATURE_FLAGS["ENABLE_MULTIPLE_TESTING"] = original
+
+    @patch('src.features.selection.pipeline_orchestrator.apply_multiple_testing_correction')
+    def test_multiple_testing_handles_failure(self, mock_mtc, capsys):
+        """27.4: Falls back to original on failure."""
+        from src.features.selection.pipeline_orchestrator import _run_multiple_testing_correction
+        from src.features.selection.interface.interface_config import FEATURE_FLAGS
+
+        original = FEATURE_FLAGS.get("ENABLE_MULTIPLE_TESTING", False)
+        FEATURE_FLAGS["ENABLE_MULTIPLE_TESTING"] = True
+
+        try:
+            converged = pd.DataFrame({'aic': [500], 'pvalue': [0.01]})
+            mock_mtc.side_effect = Exception("Test error")
+
+            result = _run_multiple_testing_correction(converged)
+
+            pd.testing.assert_frame_equal(result, converged)
+
+            captured = capsys.readouterr()
+            assert 'WARNING' in captured.out
+        finally:
+            FEATURE_FLAGS["ENABLE_MULTIPLE_TESTING"] = original
+
+    @patch('src.features.selection.pipeline_orchestrator.evaluate_temporal_generalization')
+    def test_oos_validation_enabled(self, mock_oos, sample_data):
+        """27.5: Calls evaluate_temporal_generalization when enabled."""
+        from src.features.selection.pipeline_orchestrator import _run_oos_validation
+        from src.features.selection.interface.interface_config import FEATURE_FLAGS
+
+        original = FEATURE_FLAGS.get("ENABLE_OOS_VALIDATION", False)
+        FEATURE_FLAGS["ENABLE_OOS_VALIDATION"] = True
+
+        try:
+            valid_results = pd.DataFrame({'features': ['f1']})
+            mock_oos.return_value = {'oos_r2': 0.7}
+
+            result = _run_oos_validation(sample_data, valid_results, 'sales_target_current')
+
+            mock_oos.assert_called_once()
+            assert result == {'oos_r2': 0.7}
+        finally:
+            FEATURE_FLAGS["ENABLE_OOS_VALIDATION"] = original
+
+    @patch('src.features.selection.pipeline_orchestrator.run_block_bootstrap_stability')
+    def test_block_bootstrap_enabled(self, mock_block, sample_data):
+        """27.6: Calls run_block_bootstrap_stability when enabled."""
+        from src.features.selection.pipeline_orchestrator import _run_block_bootstrap
+        from src.features.selection.interface.interface_config import FEATURE_FLAGS
+
+        original = FEATURE_FLAGS.get("ENABLE_BLOCK_BOOTSTRAP", False)
+        FEATURE_FLAGS["ENABLE_BLOCK_BOOTSTRAP"] = True
+
+        try:
+            valid_results = pd.DataFrame({'features': ['f1']})
+            bootstrap_config = {'enabled': True, 'n_samples': 100, 'block_size': 4}
+            mock_block.return_value = [{'stable': True}]
+
+            result = _run_block_bootstrap(
+                sample_data, valid_results, bootstrap_config, 'sales_target_current'
+            )
+
+            mock_block.assert_called_once()
+            assert result == [{'stable': True}]
+        finally:
+            FEATURE_FLAGS["ENABLE_BLOCK_BOOTSTRAP"] = original
+
+    @patch('src.features.selection.pipeline_orchestrator.apply_statistical_constraints')
+    def test_statistical_constraints_enabled(self, mock_stat):
+        """27.7: Calls apply_statistical_constraints when enabled."""
+        from src.features.selection.pipeline_orchestrator import _run_statistical_constraints
+        from src.features.selection.interface.interface_config import FEATURE_FLAGS
+
+        original = FEATURE_FLAGS.get("ENABLE_STATISTICAL_CONSTRAINTS", False)
+        FEATURE_FLAGS["ENABLE_STATISTICAL_CONSTRAINTS"] = True
+
+        try:
+            valid_results = pd.DataFrame({'features': ['f1']})
+            mock_stat.return_value = {'constrained': 1}
+
+            result = _run_statistical_constraints(valid_results)
+
+            mock_stat.assert_called_once()
+            assert result == {'constrained': 1}
+        finally:
+            FEATURE_FLAGS["ENABLE_STATISTICAL_CONSTRAINTS"] = original
+
+    @patch('src.features.selection.pipeline_orchestrator.comprehensive_diagnostic_suite')
+    def test_regression_diagnostics_enabled(self, mock_diag, sample_data, aic_result):
+        """27.8: Calls comprehensive_diagnostic_suite when enabled."""
+        from src.features.selection.pipeline_orchestrator import _run_regression_diagnostics
+        from src.features.selection.interface.interface_config import FEATURE_FLAGS
+
+        original = FEATURE_FLAGS.get("ENABLE_REGRESSION_DIAGNOSTICS", False)
+        FEATURE_FLAGS["ENABLE_REGRESSION_DIAGNOSTICS"] = True
+
+        # Add required columns to sample_data
+        sample_data['competitor_mid_t2'] = np.random.uniform(2.0, 4.0, len(sample_data))
+        sample_data['prudential_rate_current'] = np.random.uniform(1.5, 3.5, len(sample_data))
+
+        try:
+            mock_diag.return_value = {'passed': True}
+
+            result = _run_regression_diagnostics(
+                sample_data, aic_result, 'sales_target_current'
+            )
+
+            mock_diag.assert_called_once()
+            assert result == {'passed': True}
+        finally:
+            FEATURE_FLAGS["ENABLE_REGRESSION_DIAGNOSTICS"] = original

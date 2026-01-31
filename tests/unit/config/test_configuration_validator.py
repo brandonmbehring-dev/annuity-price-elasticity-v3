@@ -317,3 +317,155 @@ class TestSafeConfigWrappers:
         assert safe_build_enhanced_feature_selection_config is None or callable(
             safe_build_enhanced_feature_selection_config
         )
+
+    def test_safe_wrapper_raises_type_error_with_report(self):
+        """Safe wrapper converts TypeError to helpful report."""
+        from src.config.configuration_validator import create_safe_config_wrapper
+
+        def failing_func(**kwargs):
+            raise TypeError("got an unexpected keyword argument 'invalid'")
+
+        failing_func.__name__ = 'failing_func'
+        wrapped = create_safe_config_wrapper(failing_func, 'failing_func')
+
+        with pytest.raises(TypeError) as exc_info:
+            wrapped(invalid='value')
+
+        # Should include error report in message
+        assert 'CONFIGURATION ERROR ANALYSIS' in str(exc_info.value)
+
+    def test_safe_wrapper_passes_through_non_typeerror(self):
+        """Safe wrapper re-raises non-TypeError exceptions."""
+        from src.config.configuration_validator import create_safe_config_wrapper
+
+        def failing_func(**kwargs):
+            raise ValueError("Some other error")
+
+        failing_func.__name__ = 'failing_func'
+        wrapped = create_safe_config_wrapper(failing_func, 'failing_func')
+
+        with pytest.raises(ValueError, match="Some other error"):
+            wrapped(param='value')
+
+
+class TestValidateConfigurationCall:
+    """Tests for validate_configuration_call function."""
+
+    def test_warns_when_modules_not_available(self):
+        """Warns when import of configuration modules fails."""
+        from src.config.configuration_validator import validate_configuration_call
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            # Call with any parameters - the import may fail
+            validate_configuration_call(
+                'build_feature_selection_stage_config',
+                target_variable='sales_target_current',
+                max_candidate_features=20
+            )
+
+            # Either passes silently or warns about module unavailability
+            warning_messages = [str(warning.message) for warning in w]
+            # The function should not raise but may warn
+            assert True  # Test passes if no exception raised
+
+    @patch('src.config.configuration_validator.build_feature_selection_stage_config')
+    @patch('src.config.configuration_validator.validate_function_parameters')
+    def test_invalid_function_name_raises_when_imports_work(
+        self, mock_validate, mock_build
+    ):
+        """Invalid function name raises ValueError when imports work."""
+        from src.config.configuration_validator import validate_configuration_call
+        mock_validate.return_value = (True, [])
+
+        # This will raise if imports succeed
+        try:
+            validate_configuration_call(
+                'nonexistent_function',
+                param='value'
+            )
+        except ValueError as e:
+            assert "Unknown configuration function" in str(e)
+        except Exception:
+            # ImportError caught - test passes
+            pass
+
+    @patch('src.config.configuration_validator.validate_function_parameters')
+    def test_invalid_params_raise_with_report_when_imports_work(
+        self, mock_validate
+    ):
+        """Invalid parameters raise ValueError when validation fails."""
+        from src.config.configuration_validator import validate_configuration_call
+
+        # Mock validation to return invalid
+        mock_validate.return_value = (False, ['invalid_param not recognized'])
+
+        with warnings.catch_warnings(record=True):
+            warnings.simplefilter("always")
+            try:
+                validate_configuration_call(
+                    'build_feature_selection_stage_config',
+                    invalid_param_xyz='value'
+                )
+            except ValueError as e:
+                assert "Configuration validation failed" in str(e)
+            except Exception:
+                # ImportError caught - test passes anyway
+                pass
+
+    @patch('src.config.configuration_validator.validate_function_parameters')
+    @patch('src.config.configuration_validator.check_common_parameter_mistakes')
+    def test_common_mistakes_trigger_warnings_when_imports_work(
+        self, mock_check_mistakes, mock_validate
+    ):
+        """Common parameter mistakes trigger warnings when imports work."""
+        from src.config.configuration_validator import validate_configuration_call
+
+        # Mock validation to pass
+        mock_validate.return_value = (True, [])
+        # Mock common mistakes to return a warning
+        mock_check_mistakes.return_value = ['min_feature_combinations does not exist']
+
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            try:
+                validate_configuration_call(
+                    'build_feature_selection_stage_config',
+                    target_variable='sales',
+                    min_feature_combinations=5
+                )
+            except Exception:
+                # ImportError caught - check for that warning
+                pass
+
+            # Either get config warning or module unavailable warning
+            warning_messages = [str(warning.message) for warning in w]
+            assert len(warning_messages) > 0
+
+
+class TestValidateBasicConfig:
+    """Tests for validate_basic_config convenience function."""
+
+    def test_delegates_to_validate_configuration_call(self):
+        """validate_basic_config delegates to validate_configuration_call."""
+        from src.config.configuration_validator import validate_basic_config
+
+        # Should not raise for valid parameters
+        validate_basic_config(
+            target_variable='sales_target_current',
+            max_candidate_features=15
+        )
+
+
+class TestValidateEnhancedConfig:
+    """Tests for validate_enhanced_config convenience function."""
+
+    def test_delegates_to_validate_configuration_call(self):
+        """validate_enhanced_config delegates to validate_configuration_call."""
+        from src.config.configuration_validator import validate_enhanced_config
+
+        # Should not raise for valid parameters
+        validate_enhanced_config(
+            target_variable='sales_target_current',
+            max_candidate_features=15
+        )

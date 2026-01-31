@@ -1,0 +1,25 @@
+{
+  "analysis_date": "2026-01-30",
+  "model_r2": 0.63712543970409,
+  "model_mape": 13.593098809121642,
+  "benchmark_r2": 0.547649716457075,
+  "benchmark_mape": 15.912708603436071,
+  "mape_improvement_pct": 14.577089621395755,
+  "r2_improvement_pct": 16.338130114603654,
+  "n_forecasts": 161,
+  "bootstrap_samples": 100,
+  "features_used": [
+    "prudential_rate_current",
+    "competitor_mid_t2",
+    "competitor_top5_t3"
+  ],
+  "target_variable": "sales_target_current",
+  "forecast_date_range": {
+    "start": "2022-10-30",
+    "end": "2025-11-23"
+  },
+  "atomic_operations": true,
+  "vectorization_ready": true,
+  "validation_status": "FAILED",
+  "mathematical_equivalence": false
+}

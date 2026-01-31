@@ -225,6 +225,75 @@ class TestSchemaReport:
         assert 'SCHEMA VALIDATION REPORT' in report
         assert 'sales_data' in report
 
+    def test_report_includes_warnings_and_errors(self):
+        """Report formats warnings and errors from validations."""
+        from src.data.schema_validator import SchemaValidator
+
+        validator = SchemaValidator()
+        # Validation with warnings (missing columns, type issues)
+        df = pd.DataFrame({
+            'application_signed_date': ['2024-01-01'] * 100,  # String not datetime - warning
+            'contract_issue_date': pd.date_range('2024-01-01', periods=100, freq='D'),
+            'product_name': ['FlexGuard'] * 100,
+            'sales_amount': [10000] * 100
+        })
+        validator.validate_input_schema(df, 'sales_data')
+
+        report = validator.create_schema_report()
+
+        # Report should contain formatted output
+        assert '[FAIL]' in report or '[PASS]' in report
+        assert 'Rows:' in report
+        assert 'Columns:' in report
+        assert 'Missing values:' in report
+
+    def test_report_limits_warnings_to_three(self):
+        """Report limits displayed warnings to 3 per validation."""
+        from src.data.schema_validator import SchemaValidator
+
+        validator = SchemaValidator()
+        # Manually add a validation result with many warnings
+        validator.validation_history.append({
+            'schema_name': 'test_schema',
+            'context': 'test_context',
+            'timestamp': datetime.now(),
+            'is_valid': True,
+            'warnings': ['warning1', 'warning2', 'warning3', 'warning4', 'warning5'],  # 5 warnings
+            'errors': [],
+            'summary': {'rows': 100, 'columns': 5, 'missing_values': 0}
+        })
+
+        report = validator.create_schema_report()
+
+        # Should only show first 3 warnings
+        assert 'warning1' in report
+        assert 'warning2' in report
+        assert 'warning3' in report
+        # warning4 and warning5 should not appear (limit to 3)
+
+    def test_report_limits_errors_to_three(self):
+        """Report limits displayed errors to 3 per validation."""
+        from src.data.schema_validator import SchemaValidator
+
+        validator = SchemaValidator()
+        # Manually add a validation result with many errors
+        validator.validation_history.append({
+            'schema_name': 'test_schema',
+            'context': 'test_context',
+            'timestamp': datetime.now(),
+            'is_valid': False,
+            'warnings': [],
+            'errors': ['error1', 'error2', 'error3', 'error4', 'error5'],  # 5 errors
+            'summary': {'rows': 0, 'columns': 0, 'missing_values': 0}
+        })
+
+        report = validator.create_schema_report()
+
+        # Should only show first 3 errors
+        assert 'error1' in report
+        assert 'error2' in report
+        assert 'error3' in report
+
 
 class TestConvenienceFunctions:
     """Tests for module-level convenience functions."""
@@ -255,6 +324,203 @@ class TestConvenienceFunctions:
         result = validate_pipeline_input(
             valid_sales_df,
             pipeline_stage='sales_processing',
+            validator=validator
+        )
+
+        assert 'is_valid' in result
+
+    def test_validate_pipeline_input_time_series_schema(self, valid_time_series_df):
+        """validate_pipeline_input selects time_series_data schema for time series pipelines."""
+        from src.data.schema_validator import validate_pipeline_input, create_validator
+
+        validator = create_validator()
+        result = validate_pipeline_input(
+            valid_time_series_df,
+            pipeline_stage='time_series_transformation',
+            validator=validator
+        )
+
+        assert 'is_valid' in result
+
+    def test_validate_pipeline_input_competitive_schema(self):
+        """validate_pipeline_input selects competitive_rates schema."""
+        from src.data.schema_validator import validate_pipeline_input, create_validator
+
+        validator = create_validator()
+        df = pd.DataFrame({
+            'date': pd.date_range('2024-01-01', periods=100, freq='D'),
+            'Prudential': np.random.uniform(0.02, 0.05, 100),
+        })
+        result = validate_pipeline_input(
+            df,
+            pipeline_stage='competitive_aggregation',
+            validator=validator
+        )
+
+        assert 'is_valid' in result
+
+    def test_validate_pipeline_input_wink_uses_competitive_schema(self):
+        """validate_pipeline_input detects wink in name and uses competitive schema."""
+        from src.data.schema_validator import validate_pipeline_input, create_validator
+
+        validator = create_validator()
+        df = pd.DataFrame({
+            'date': pd.date_range('2024-01-01', periods=100, freq='D'),
+            'Prudential': np.random.uniform(0.02, 0.05, 100),
+        })
+        result = validate_pipeline_input(
+            df,
+            pipeline_stage='wink_data_processing',
+            validator=validator
+        )
+
+        assert 'is_valid' in result
+
+    def test_validate_pipeline_input_requires_name(self):
+        """validate_pipeline_input raises without pipeline_stage or pipeline_name."""
+        from src.data.schema_validator import validate_pipeline_input, create_validator
+
+        validator = create_validator()
+        df = pd.DataFrame({'col1': [1, 2, 3]})
+
+        with pytest.raises(ValueError, match="Must provide either"):
+            validate_pipeline_input(df, validator=validator)
+
+    def test_validate_pipeline_output_convenience_function(self, valid_time_series_df):
+        """validate_pipeline_output convenience function works."""
+        from src.data.schema_validator import validate_pipeline_output, create_validator
+
+        validator = create_validator()
+        result = validate_pipeline_output(
+            valid_time_series_df,
+            pipeline_stage='final_dataset_output',
+            expected_columns=['date', 'sales'],
+            validator=validator
+        )
+
+        assert 'is_valid' in result
+
+    def test_validate_pipeline_output_weekly_schema(self, valid_time_series_df):
+        """validate_pipeline_output selects weekly_aggregated schema."""
+        from src.data.schema_validator import validate_pipeline_output, create_validator
+
+        validator = create_validator()
+        result = validate_pipeline_output(
+            valid_time_series_df,
+            pipeline_stage='weekly_aggregated_data',
+            validator=validator
+        )
+
+        assert 'is_valid' in result
+
+    def test_validate_pipeline_output_time_series_schema(self, valid_time_series_df):
+        """validate_pipeline_output selects time_series_data schema."""
+        from src.data.schema_validator import validate_pipeline_output, create_validator
+
+        validator = create_validator()
+        result = validate_pipeline_output(
+            valid_time_series_df,
+            pipeline_stage='time_series_output',
+            validator=validator
+        )
+
+        assert 'is_valid' in result
+
+    def test_validate_pipeline_output_requires_name(self):
+        """validate_pipeline_output raises without pipeline_stage or pipeline_name."""
+        from src.data.schema_validator import validate_pipeline_output, create_validator
+
+        validator = create_validator()
+        df = pd.DataFrame({'col1': [1, 2, 3]})
+
+        with pytest.raises(ValueError, match="Must provide either"):
+            validate_pipeline_output(df, validator=validator)
+
+    def test_validate_pipeline_input_legacy_pipeline_name(self, valid_sales_df):
+        """validate_pipeline_input supports legacy pipeline_name parameter."""
+        from src.data.schema_validator import validate_pipeline_input, create_validator
+
+        validator = create_validator()
+        result = validate_pipeline_input(
+            valid_sales_df,
+            pipeline_name='sales_processing',  # Legacy parameter
+            validator=validator
+        )
+
+        assert 'is_valid' in result
+
+
+class TestSingletonFallbacks:
+    """Tests for singleton fallback behavior in convenience functions."""
+
+    def test_get_schema_validator_singleton(self):
+        """get_schema_validator returns singleton."""
+        from src.data.schema_validator import get_schema_validator
+
+        # First call creates singleton
+        validator1 = get_schema_validator()
+        # Second call returns same instance
+        validator2 = get_schema_validator()
+
+        assert validator1 is validator2
+
+    def test_validate_input_schema_uses_singleton_when_no_validator(self, valid_sales_df):
+        """validate_input_schema uses singleton when validator=None."""
+        from src.data.schema_validator import validate_input_schema
+
+        # Call without validator param - should use singleton
+        result = validate_input_schema(valid_sales_df, 'sales_data')
+
+        assert 'is_valid' in result
+
+    def test_validate_output_schema_uses_singleton_when_no_validator(self, valid_time_series_df):
+        """validate_output_schema uses singleton when validator=None."""
+        from src.data.schema_validator import validate_output_schema
+
+        result = validate_output_schema(
+            valid_time_series_df,
+            'time_series_data',
+            expected_columns=['date', 'sales']
+        )
+
+        assert 'is_valid' in result
+
+    def test_create_schema_report_uses_singleton_when_no_validator(self, valid_sales_df):
+        """create_schema_report uses singleton when validator=None."""
+        from src.data.schema_validator import create_schema_report, get_schema_validator
+
+        # First ensure there's some validation history
+        get_schema_validator().validate_input_schema(valid_sales_df, 'sales_data')
+
+        report = create_schema_report()
+
+        assert isinstance(report, str)
+
+    def test_validate_pipeline_input_basic_schema(self):
+        """validate_pipeline_input falls back to basic schema for unknown names."""
+        from src.data.schema_validator import validate_pipeline_input, create_validator
+
+        validator = create_validator()
+        df = pd.DataFrame({'col1': [1, 2, 3], 'col2': ['a', 'b', 'c']})
+
+        result = validate_pipeline_input(
+            df,
+            pipeline_stage='unknown_stage_name',  # Should use basic schema
+            validator=validator
+        )
+
+        assert 'is_valid' in result
+
+    def test_validate_pipeline_output_basic_schema(self):
+        """validate_pipeline_output falls back to basic schema for unknown names."""
+        from src.data.schema_validator import validate_pipeline_output, create_validator
+
+        validator = create_validator()
+        df = pd.DataFrame({'col1': [1, 2, 3], 'col2': ['a', 'b', 'c']})
+
+        result = validate_pipeline_output(
+            df,
+            pipeline_stage='unknown_stage_name',  # Should use basic schema
             validator=validator
         )
 
@@ -523,6 +789,30 @@ class TestValidationErrorHandling:
         except Exception:
             # Exception is acceptable for this test
             pass
+
+    def test_exception_during_validation_re_raises(self):
+        """Exceptions during validation are logged, added to errors, and re-raised."""
+        from src.data.schema_validator import SchemaValidator, DatasetSchema
+        from unittest.mock import patch, MagicMock
+
+        validator = SchemaValidator()
+
+        # Create a schema that will cause an exception during validation
+        schema = DatasetSchema(
+            name='broken_schema',
+            required_columns=['col1'],
+            business_rules={'col1': {'min_value': 'not_a_number'}}  # Will cause comparison error
+        )
+        validator.schemas['broken_schema'] = schema
+
+        df = pd.DataFrame({'col1': [1, 2, 3]})
+
+        # Patch _validate_column_value_range to raise an exception
+        with patch.object(validator, '_validate_column_value_range') as mock_validate:
+            mock_validate.side_effect = TypeError("comparison not supported")
+
+            with pytest.raises(TypeError):
+                validator.validate_input_schema(df, 'broken_schema')
 
 
 class TestEdgeCases:

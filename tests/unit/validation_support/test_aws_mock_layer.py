@@ -384,3 +384,178 @@ class TestEdgeCases:
         )
 
         assert 'Credentials' in result
+
+
+# =============================================================================
+# Tests: Mock Data Loaders
+# =============================================================================
+
+
+class TestCreateMockDataLoaders:
+    """Tests for _create_mock_data_loaders function."""
+
+    def test_creates_all_required_loaders(self, temp_fixture_dir):
+        """Test that all required mock loaders are created."""
+        from src.validation_support.aws_mock_layer import _create_mock_data_loaders
+
+        resource = OfflineS3Resource(temp_fixture_dir)
+        loaders = _create_mock_data_loaders(resource, temp_fixture_dir)
+
+        assert 'discover_and_load_sales_data' in loaders
+        assert 'discover_and_load_wink_data' in loaders
+        assert 'load_market_share_weights_from_s3' in loaders
+        assert 'download_s3_parquet_with_optional_date_suffix' in loaders
+
+    def test_mock_sales_loader_returns_dataframe(self, temp_fixture_dir):
+        """Test mock sales data loader returns DataFrame."""
+        from src.validation_support.aws_mock_layer import _create_mock_data_loaders
+
+        resource = OfflineS3Resource(temp_fixture_dir)
+        loaders = _create_mock_data_loaders(resource, temp_fixture_dir)
+
+        df = loaders['discover_and_load_sales_data'](None, None, 'bucket')
+        assert isinstance(df, pd.DataFrame)
+
+    def test_mock_wink_loader_returns_dataframe(self, temp_fixture_dir):
+        """Test mock WINK data loader returns DataFrame."""
+        from src.validation_support.aws_mock_layer import _create_mock_data_loaders
+
+        resource = OfflineS3Resource(temp_fixture_dir)
+        loaders = _create_mock_data_loaders(resource, temp_fixture_dir)
+
+        df = loaders['discover_and_load_wink_data'](None, None, 'bucket')
+        assert isinstance(df, pd.DataFrame)
+
+    def test_mock_market_weights_loader_returns_dataframe(self, temp_fixture_dir):
+        """Test mock market weights loader returns DataFrame."""
+        from src.validation_support.aws_mock_layer import _create_mock_data_loaders
+
+        resource = OfflineS3Resource(temp_fixture_dir)
+        loaders = _create_mock_data_loaders(resource, temp_fixture_dir)
+
+        df = loaders['load_market_share_weights_from_s3']('any-path')
+        assert isinstance(df, pd.DataFrame)
+
+    def test_mock_economic_loader_returns_dataframe(self, temp_fixture_dir):
+        """Test mock economic indicator loader returns DataFrame."""
+        from src.validation_support.aws_mock_layer import _create_mock_data_loaders
+
+        resource = OfflineS3Resource(temp_fixture_dir)
+        loaders = _create_mock_data_loaders(resource, temp_fixture_dir)
+
+        df = loaders['download_s3_parquet_with_optional_date_suffix'](
+            'bucket', 'MACRO_ECONOMIC_DATA/DGS5_index/', None
+        )
+        assert isinstance(df, pd.DataFrame)
+
+    def test_mock_economic_loader_handles_vixcls(self, temp_fixture_dir):
+        """Test mock economic loader handles VIXCLS prefix."""
+        from src.validation_support.aws_mock_layer import _create_mock_data_loaders
+
+        resource = OfflineS3Resource(temp_fixture_dir)
+        loaders = _create_mock_data_loaders(resource, temp_fixture_dir)
+
+        df = loaders['download_s3_parquet_with_optional_date_suffix'](
+            'bucket', 'MACRO_ECONOMIC_DATA/VIXCLS_index/', None
+        )
+        assert isinstance(df, pd.DataFrame)
+
+    def test_mock_economic_loader_handles_cpi(self, temp_fixture_dir):
+        """Test mock economic loader handles CPI prefix."""
+        from src.validation_support.aws_mock_layer import _create_mock_data_loaders
+
+        resource = OfflineS3Resource(temp_fixture_dir)
+        loaders = _create_mock_data_loaders(resource, temp_fixture_dir)
+
+        df = loaders['download_s3_parquet_with_optional_date_suffix'](
+            'bucket', 'MACRO_ECONOMIC_DATA/cpi_scaled/', None
+        )
+        assert isinstance(df, pd.DataFrame)
+
+    def test_mock_economic_loader_raises_for_unknown(self, temp_fixture_dir):
+        """Test mock economic loader raises error for unknown prefix."""
+        from src.validation_support.aws_mock_layer import _create_mock_data_loaders
+
+        resource = OfflineS3Resource(temp_fixture_dir)
+        loaders = _create_mock_data_loaders(resource, temp_fixture_dir)
+
+        with pytest.raises(FileNotFoundError, match="No fixture for S3 prefix"):
+            loaders['download_s3_parquet_with_optional_date_suffix'](
+                'bucket', 'UNKNOWN/prefix/', None
+            )
+
+
+# =============================================================================
+# Tests: Setup Functions
+# =============================================================================
+
+
+class TestSetupOfflineEnvironment:
+    """Tests for setup_offline_environment function."""
+
+    def test_sets_environment_variable(self, temp_fixture_dir):
+        """Test that OFFLINE_MODE env variable is set."""
+        from src.validation_support.aws_mock_layer import setup_offline_environment
+
+        # Clear environment first
+        if 'OFFLINE_MODE' in os.environ:
+            del os.environ['OFFLINE_MODE']
+
+        setup_offline_environment(str(temp_fixture_dir))
+
+        assert os.environ.get('OFFLINE_MODE') == '1'
+
+    def test_returns_offline_s3_resource(self, temp_fixture_dir):
+        """Test that function returns OfflineS3Resource."""
+        from src.validation_support.aws_mock_layer import setup_offline_environment
+
+        result = setup_offline_environment(str(temp_fixture_dir))
+
+        assert isinstance(result, OfflineS3Resource)
+
+    def test_prints_confirmation(self, temp_fixture_dir, capsys):
+        """Test that confirmation message is printed."""
+        from src.validation_support.aws_mock_layer import setup_offline_environment
+
+        setup_offline_environment(str(temp_fixture_dir))
+
+        captured = capsys.readouterr()
+        assert '[OK]' in captured.out
+        assert 'Offline environment configured' in captured.out
+
+
+class TestPrintOfflineConfirmation:
+    """Tests for _print_offline_confirmation function."""
+
+    def test_prints_basic_info(self, temp_fixture_dir, capsys):
+        """Test basic info is printed."""
+        from src.validation_support.aws_mock_layer import _print_offline_confirmation
+
+        resource = OfflineS3Resource(temp_fixture_dir)
+        _print_offline_confirmation(temp_fixture_dir, resource)
+
+        captured = capsys.readouterr()
+        assert '[OK]' in captured.out
+        assert 'Offline environment configured' in captured.out
+
+    def test_prints_metadata_when_available(self, temp_fixture_dir, capsys):
+        """Test metadata is printed when available."""
+        from src.validation_support.aws_mock_layer import _print_offline_confirmation
+
+        resource = OfflineS3Resource(temp_fixture_dir)
+        _print_offline_confirmation(temp_fixture_dir, resource)
+
+        captured = capsys.readouterr()
+        assert 'Fixture metadata' in captured.out
+        assert 'Capture date' in captured.out
+
+    def test_prints_without_metadata(self, incomplete_fixture_dir, capsys):
+        """Test prints correctly without metadata."""
+        from src.validation_support.aws_mock_layer import _print_offline_confirmation
+
+        resource = OfflineS3Resource(incomplete_fixture_dir)
+        _print_offline_confirmation(incomplete_fixture_dir, resource)
+
+        captured = capsys.readouterr()
+        assert '[OK]' in captured.out
+        # Should not crash when metadata is None

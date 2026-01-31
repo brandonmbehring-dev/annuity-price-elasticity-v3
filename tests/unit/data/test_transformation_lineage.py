@@ -294,6 +294,20 @@ class TestLineageExport:
             lineage.export_lineage_documentation('output.md')
 
 
+class TestImportChecks:
+    """Tests for optional import handling."""
+
+    def test_mlflow_availability_flag_exists(self):
+        """MLFLOW_AVAILABLE flag is defined."""
+        from src.data.transformation_lineage import MLFLOW_AVAILABLE
+        assert isinstance(MLFLOW_AVAILABLE, bool)
+
+    def test_graphviz_availability_flag_exists(self):
+        """GRAPHVIZ_AVAILABLE flag is defined."""
+        from src.data.transformation_lineage import GRAPHVIZ_AVAILABLE
+        assert isinstance(GRAPHVIZ_AVAILABLE, bool)
+
+
 class TestPipelineFinalization:
     """Tests for pipeline finalization."""
 
@@ -349,3 +363,165 @@ class TestPipelineFinalization:
         step = lineage.pipeline_lineage.transformation_steps[0]
         assert step.input_shape[0] == 100
         assert step.output_shape[0] == 50
+
+
+class TestRecordTransformationStep:
+    """Tests for record_transformation_step method edge cases."""
+
+    def test_record_requires_start_transformation(self, sample_input_df, sample_output_df):
+        """Recording without starting transformation raises ValueError."""
+        from src.data.transformation_lineage import TransformationLineage
+
+        lineage = TransformationLineage('test')
+
+        with pytest.raises(ValueError, match="Must call start_transformation"):
+            lineage.record_transformation_step(
+                step_name='test',
+                input_df=sample_input_df,
+                output_df=sample_output_df
+            )
+
+    def test_record_with_quality_metrics(self, sample_input_df, sample_output_df):
+        """Records quality metrics when provided."""
+        from src.data.transformation_lineage import TransformationLineage
+
+        lineage = TransformationLineage('test')
+        lineage.start_transformation('stage1')
+
+        step = lineage.record_transformation_step(
+            step_name='quality_step',
+            input_df=sample_input_df,
+            output_df=sample_output_df,
+            quality_before=85.0,
+            quality_after=92.0
+        )
+
+        lineage.end_transformation()
+
+        assert step.data_quality_before == 85.0
+        assert step.data_quality_after == 92.0
+
+    def test_record_with_mathematical_validation(self, sample_input_df, sample_output_df):
+        """Records mathematical validation parameters."""
+        from src.data.transformation_lineage import TransformationLineage
+
+        lineage = TransformationLineage('test')
+        lineage.start_transformation('stage1')
+
+        step = lineage.record_transformation_step(
+            step_name='validated_step',
+            input_df=sample_input_df,
+            output_df=sample_output_df,
+            equivalence_validated=True,
+            equivalence_tolerance=1e-12,
+            max_numerical_diff=1e-15
+        )
+
+        lineage.end_transformation()
+
+        assert step.mathematical_equivalence_validated is True
+        assert step.equivalence_tolerance == 1e-12
+        assert step.max_numerical_difference == 1e-15
+
+
+class TestDataFlowAscii:
+    """Tests for ASCII data flow representation."""
+
+    def test_generate_empty_flow(self):
+        """Handles empty transformation steps."""
+        from src.data.transformation_lineage import TransformationLineage
+
+        lineage = TransformationLineage('test')
+        flow = lineage._generate_data_flow_ascii()
+
+        assert 'No transformation steps recorded' in flow
+
+    def test_generate_flow_with_steps(self, sample_input_df, sample_output_df):
+        """Generates ASCII flow diagram with steps."""
+        from src.data.transformation_lineage import TransformationLineage
+
+        lineage = TransformationLineage('test')
+        lineage.start_transformation('preprocessing')
+
+        lineage.record_transformation_step(
+            step_name='transform_data',
+            input_df=sample_input_df,
+            output_df=sample_output_df,
+            quality_after=95.0
+        )
+
+        lineage.end_transformation()
+
+        flow = lineage._generate_data_flow_ascii()
+
+        assert 'Raw Data' in flow
+        assert 'transform_data' in flow
+        assert '↓' in flow
+
+
+class TestConfigurationHash:
+    """Tests for configuration hash calculation."""
+
+    def test_calculate_configuration_hash(self):
+        """Calculates consistent configuration hash."""
+        from src.data.transformation_lineage import TransformationLineage
+
+        lineage = TransformationLineage('test')
+        lineage.start_transformation('stage1', configuration={'param': 'value'})
+
+        hash1 = lineage._calculate_configuration_hash('test_step')
+        hash2 = lineage._calculate_configuration_hash('test_step')
+
+        assert hash1 == hash2
+        assert len(hash1) == 32  # MD5 hex length
+
+    def test_configuration_hash_fallback_on_error(self):
+        """Returns fallback hash on serialization error."""
+        from src.data.transformation_lineage import TransformationLineage
+
+        lineage = TransformationLineage('test')
+        lineage.start_transformation('stage1')
+        # Add non-serializable configuration
+        lineage.pipeline_lineage.configuration['stage1'] = {'func': lambda x: x}
+
+        hash_result = lineage._calculate_configuration_hash('test_step')
+
+        assert hash_result == 'config_hash_calculation_failed'
+
+
+class TestDataFrameHash:
+    """Tests for DataFrame hash edge cases."""
+
+    def test_hash_handles_empty_dataframe(self):
+        """Handles empty DataFrame for hashing."""
+        from src.data.transformation_lineage import TransformationLineage
+
+        lineage = TransformationLineage('test')
+        df = pd.DataFrame()
+
+        hash_result = lineage._calculate_dataframe_hash(df)
+
+        # Should return a valid hash (not fail)
+        assert isinstance(hash_result, str)
+        assert len(hash_result) == 32
+
+
+class TestConvenienceFunction:
+    """Tests for module-level convenience function."""
+
+    def test_track_pipeline_transformation(self, sample_input_df, sample_output_df):
+        """track_pipeline_transformation convenience function."""
+        from src.data.transformation_lineage import track_pipeline_transformation
+
+        step = track_pipeline_transformation(
+            pipeline_name='test_pipeline',
+            stage_name='test_stage',
+            step_name='test_step',
+            input_df=sample_input_df,
+            output_df=sample_output_df,
+            business_context='Test transformation',
+            configuration={'param': 'value'}
+        )
+
+        assert step.step_name == 'test_step'
+        assert step.pipeline_stage == 'test_stage'

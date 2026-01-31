@@ -283,24 +283,209 @@ class TestRunShuffledTargetTest:
         result = run_shuffled_target_test(model, X, y, n_shuffles=2)
         assert result.status == GateStatus.PASS
 
-    @pytest.mark.skip(reason="Complex model mocking - covered by integration tests")
     def test_leaky_model_halts(self, sample_data):
-        """Model that succeeds on shuffled target should halt.
+        """Model that succeeds on shuffled target should halt."""
+        from sklearn.linear_model import LinearRegression
 
-        NOTE: This test is skipped because proper mocking of model copying
-        for the shuffled target test is complex. The behavior is tested
-        in integration tests with real models.
-        """
         X, y = sample_data
 
-        # The shuffled target test creates model copies using:
-        # model_copy = model.__class__(**model.get_params())
-        # Properly mocking this requires a more sophisticated approach
-        model = MagicMock()
-        model.get_params.return_value = {}
-        model.__class__ = MagicMock
-        model.fit.return_value = model
-        model.score.return_value = 0.80  # High score = leakage!
+        # Create a leaky scenario - mock the model copy to always return high score
+        class LeakyModel:
+            """Model that performs well on shuffled target (leaky)."""
 
+            def get_params(self):
+                return {}
+
+            def fit(self, X, y):
+                return self
+
+            def score(self, X, y):
+                return 0.80  # High score = leakage!
+
+        model = LeakyModel()
         result = run_shuffled_target_test(model, X, y, n_shuffles=2)
         assert result.status == GateStatus.HALT
+        assert "performs too well" in result.message
+
+    def test_shuffle_failure_returns_warning(self, sample_data):
+        """If all shuffle iterations fail, returns warning."""
+        X, y = sample_data
+
+        class FailingModel:
+            """Model that fails during fit."""
+
+            def get_params(self):
+                return {}
+
+            def fit(self, X, y):
+                raise RuntimeError("Fit failed")
+
+        model = FailingModel()
+        result = run_shuffled_target_test(model, X, y, n_shuffles=2)
+        assert result.status == GateStatus.WARN
+        assert "Could not run" in result.message
+
+
+class TestCheckImprovementThresholdExtended:
+    """Extended tests for check_improvement_threshold edge cases."""
+
+    def test_zero_baseline_warns(self):
+        """Zero baseline should return warning."""
+        result = check_improvement_threshold(
+            baseline_metric=0.0,
+            new_metric=0.15,
+        )
+        assert result.status == GateStatus.WARN
+        assert "zero baseline" in result.message.lower()
+
+    def test_lower_is_better_mode(self):
+        """Test higher_is_better=False (e.g., for MAE)."""
+        # Improvement means LOWER is better
+        # baseline=0.20, new=0.10 → 50% improvement
+        result = check_improvement_threshold(
+            baseline_metric=0.20,
+            new_metric=0.10,
+            higher_is_better=False,
+        )
+        assert result.status == GateStatus.HALT
+        assert result.metric_value == pytest.approx(0.5)
+
+
+class TestLeakageReportString:
+    """Tests for LeakageReport string representation."""
+
+    def test_str_representation_with_gates(self):
+        """String representation should include all gate results."""
+        report = LeakageReport(
+            gates=[
+                GateResult("Gate1", GateStatus.PASS, "OK"),
+                GateResult("Gate2", GateStatus.HALT, "Failed"),
+            ],
+            model_name="TestModel",
+            dataset_name="TestData",
+            timestamp="2022-01-01T00:00:00",
+        )
+        report_str = str(report)
+
+        assert "Leakage Validation Report" in report_str
+        assert "TestModel" in report_str
+        assert "TestData" in report_str
+        assert "[PASS]" in report_str
+        assert "[HALT]" in report_str
+        assert "FAILED" in report_str
+
+    def test_str_representation_passed(self):
+        """String representation shows PASSED when no halts."""
+        report = LeakageReport(
+            gates=[
+                GateResult("Gate1", GateStatus.PASS, "OK"),
+                GateResult("Gate2", GateStatus.WARN, "Warning"),
+            ]
+        )
+        report_str = str(report)
+        assert "PASSED" in report_str
+
+
+class TestRunAllGates:
+    """Tests for run_all_gates orchestration function."""
+
+    def test_run_all_gates_with_feature_names(self):
+        """run_all_gates should check lag-0 features."""
+        from src.validation.leakage_gates import run_all_gates
+
+        report = run_all_gates(
+            feature_names=["competitor_rate_t1", "prudential_rate"],
+        )
+
+        assert isinstance(report, LeakageReport)
+        assert len(report.gates) >= 1
+        assert any(g.gate_name == "Lag-0 Feature Detection" for g in report.gates)
+
+    def test_run_all_gates_with_r_squared(self):
+        """run_all_gates should check R-squared threshold."""
+        from src.validation.leakage_gates import run_all_gates
+
+        report = run_all_gates(
+            r_squared=0.15,
+        )
+
+        assert any(g.gate_name == "R-Squared Threshold" for g in report.gates)
+
+    def test_run_all_gates_with_improvement(self):
+        """run_all_gates should check improvement when baseline provided."""
+        from src.validation.leakage_gates import run_all_gates
+
+        report = run_all_gates(
+            r_squared=0.15,
+            baseline_r_squared=0.10,
+        )
+
+        assert any(g.gate_name == "Improvement Threshold" for g in report.gates)
+
+    def test_run_all_gates_with_model(self):
+        """run_all_gates should run shuffled target test when model provided."""
+        from src.validation.leakage_gates import run_all_gates
+
+        # Simple model for testing
+        class SimpleModel:
+            def get_params(self):
+                return {}
+
+            def fit(self, X, y):
+                return self
+
+            def score(self, X, y):
+                return 0.02
+
+        np.random.seed(42)
+        X = pd.DataFrame({"a": np.random.randn(50), "b": np.random.randn(50)})
+        y = pd.Series(np.random.randn(50))
+
+        report = run_all_gates(
+            model=SimpleModel(),
+            X=X,
+            y=y,
+        )
+
+        assert any(g.gate_name == "Shuffled Target Test" for g in report.gates)
+
+    def test_run_all_gates_extracts_features_from_X(self):
+        """run_all_gates should extract feature names from X if not provided."""
+        from src.validation.leakage_gates import run_all_gates
+
+        X = pd.DataFrame({
+            "competitor_rate_t1": [1, 2, 3],
+            "prudential_rate": [4, 5, 6],
+        })
+
+        report = run_all_gates(X=X)
+
+        assert any(g.gate_name == "Lag-0 Feature Detection" for g in report.gates)
+
+    def test_run_all_gates_with_temporal_boundary(self):
+        """run_all_gates should check temporal boundary when dates provided."""
+        from src.validation.leakage_gates import run_all_gates
+
+        train_dates = pd.to_datetime(["2022-01-01", "2022-06-01"])
+        test_dates = pd.to_datetime(["2022-07-01", "2022-12-01"])
+
+        report = run_all_gates(
+            train_dates=train_dates,
+            test_dates=test_dates,
+        )
+
+        assert any(g.gate_name == "Temporal Boundary Check" for g in report.gates)
+
+    def test_run_all_gates_report_metadata(self):
+        """run_all_gates should populate report metadata."""
+        from src.validation.leakage_gates import run_all_gates
+
+        report = run_all_gates(
+            model_name="MyModel",
+            dataset_name="MyData",
+            feature_names=["feature1"],
+        )
+
+        assert report.model_name == "MyModel"
+        assert report.dataset_name == "MyData"
+        assert report.timestamp != ""

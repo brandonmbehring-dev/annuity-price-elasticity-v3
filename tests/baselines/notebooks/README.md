@@ -6,21 +6,29 @@ Comprehensive intermediate output baselines for regression testing of all RILA n
 
 ```
 notebooks/
-├── nb00_data_pipeline/         # Symlink to ../aws_mode/ (existing baselines)
-├── nb01_price_elasticity/      # NB01 intermediate outputs
-│   ├── 01_data_prep/           # Training data, feature matrices
-│   ├── 02_bootstrap_model/     # Model coefficients, baseline forecast
-│   ├── 03_rate_scenarios/      # Rate options, dollar/pct changes
-│   ├── 04_confidence_intervals/# CI outputs
-│   ├── 05_export/              # BI export, metadata
-│   └── capture_metadata.json
-├── nb02_forecasting/           # NB02 intermediate outputs
-│   ├── 01_data_prep/           # Training/test features
-│   ├── 02_model_training/      # Ridge params, CV scores
-│   ├── 03_predictions/         # Predictions, intervals
-│   ├── 04_metrics/             # Model/benchmark metrics
-│   ├── 05_export/              # Tableau export
-│   └── capture_metadata.json
+├── rila_6y20b/                     # 6Y20B product baselines
+│   ├── nb00_data_pipeline/
+│   │   ├── final_dataset.parquet   # (252, 562) final features
+│   │   ├── weekly_aggregated.parquet
+│   │   └── capture_metadata.json
+│   ├── nb01_price_elasticity/
+│   │   ├── 01_data_prep/           # Training data, feature matrices
+│   │   ├── 02_bootstrap_model/     # Model coefficients, baseline forecast
+│   │   ├── 03_rate_scenarios/      # Rate options, dollar/pct changes
+│   │   ├── 04_confidence_intervals/
+│   │   ├── 05_export/
+│   │   └── capture_metadata.json
+│   └── nb02_forecasting/
+│       ├── forecast_results.parquet
+│       ├── performance_metrics.json
+│       └── capture_metadata.json
+├── rila_1y10b/                     # 1Y10B product baselines (mirror structure)
+│   ├── nb00_data_pipeline/
+│   ├── nb01_price_elasticity/
+│   └── nb02_forecasting/
+├── nb00_data_pipeline/             # LEGACY - kept for compatibility
+├── nb01_price_elasticity/          # LEGACY - migrated to rila_6y20b/
+├── nb02_forecasting/               # LEGACY - migrated to rila_6y20b/
 └── README.md
 ```
 
@@ -29,14 +37,14 @@ notebooks/
 Run the capture script to generate baselines from notebook execution:
 
 ```bash
-# Full capture (all notebooks)
-python scripts/capture_notebook_baselines.py
+# Full capture (all products, all notebooks)
+python scripts/capture_notebook_baselines.py --all
+
+# Specific product
+python scripts/capture_notebook_baselines.py --product 6Y20B
 
 # Specific notebook
-python scripts/capture_notebook_baselines.py --notebook nb01
-
-# Convert existing pickles to parquet
-python scripts/capture_notebook_baselines.py --convert-pickles
+python scripts/capture_notebook_baselines.py --product 6Y20B --notebook nb01
 ```
 
 ## Format Standards
@@ -45,31 +53,33 @@ python scripts/capture_notebook_baselines.py --convert-pickles
 - **Arrays**: NumPy `.npy` format
 - **Config/Metadata**: JSON format
 - **Precision**: All numeric values validated at 1e-12
+- **Random Seed**: Fixed seed=42 for bit-identical bootstrap results
 
 ## Reproducibility Requirements
 
 1. **Fixed Random Seed**: All stochastic operations use `random_state=42`
 2. **Deterministic Operations**: NaN handling, sorting order preserved
 3. **Environment Lock**: Python 3.13, pandas 2.x, numpy 2.x
+4. **Fixture-Based**: All baselines captured from fixture data (CI-compatible)
 
-## Relationship to Existing Baselines
+## Products Supported
 
-| Location | Content | Status |
-|----------|---------|--------|
-| `baselines/aws_mode/` | NB00 stages 01-10 | AUTHORITATIVE |
-| `baselines/nb01/` | NB01 final outputs | AUTHORITATIVE |
-| `baselines/nb02/` | NB02 final outputs | AUTHORITATIVE |
-| `baselines/notebooks/` | Consolidated + intermediates | NEW |
-| `notebooks/tests/reference_outputs/` | Legacy pickles | DEPRECATED |
+| Product | Type | Buffer | Term | Status |
+|---------|------|--------|------|--------|
+| 6Y20B | RILA | 20% | 6 years | ✅ Complete |
+| 1Y10B | RILA | 10% | 1 year | ⏳ Pending |
 
 ## Validation Tests
 
 ```bash
 # Run notebook output equivalence tests
-pytest tests/test_notebook_output_equivalence.py -v
+pytest tests/integration/test_notebook_equivalence.py -v
 
 # Run with detailed diff on failure
-pytest tests/test_notebook_output_equivalence.py -v --tb=long
+pytest tests/integration/test_notebook_equivalence.py -v --tb=long
+
+# Full test-all including equivalence
+make test-all
 ```
 
 ## Capture Metadata Schema
@@ -79,24 +89,27 @@ Each notebook directory includes `capture_metadata.json`:
 ```json
 {
   "notebook": "nb01_price_elasticity",
-  "capture_timestamp": "2026-01-16T15:40:51.638375",
+  "product": "6Y20B",
+  "capture_timestamp": "2026-01-30T15:40:51.638375",
   "random_seed": 42,
   "python_version": "3.13",
   "pandas_version": "2.2.0",
+  "numpy_version": "2.0.0",
   "outputs": {
-    "filtered_data": {"shape": [159, 599], "columns": ["date", "sales", ...]},
+    "filtered_data": {"shape": [159, 599], "dtype_summary": {...}},
     "model_coefficients": {"shape": [100, 4], "columns": ["coef_0", ...]}
   }
 }
 ```
 
-## Adding New Baselines
+## Success Criteria
 
-1. Modify notebook to export intermediate output
-2. Add capture logic to `scripts/capture_notebook_baselines.py`
-3. Add fixture to `tests/conftest.py`
-4. Add test case to `tests/test_notebook_output_equivalence.py`
-5. Re-run capture script
+| Metric | Target |
+|--------|--------|
+| 6Y20B R² | 0.63712543970409 ± 1e-12 |
+| 6Y20B MAPE | 13.593098809121642 ± 1e-12 |
+| Bootstrap seed | 42 (bit-identical) |
+| All numeric values | ± 1e-12 tolerance |
 
 ---
-Generated: 2026-01-16
+Generated: 2026-01-30

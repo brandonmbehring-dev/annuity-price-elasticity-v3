@@ -1,0 +1,44 @@
+{
+  "execution_timestamp": "2025-11-20T19:05:59.587708",
+  "current_date": "2025-11-20",
+  "current_date_of_mature_data": "2025-09-21",
+  "version": "v2_1",
+  "n_estimators": 1000,
+  "weight_decay_factor": 0.99,
+  "ridge_alpha": 1.0,
+  "random_state": 42,
+  "competitor_rate_adjustment": 0,
+  "sales_multiplier": 13.0,
+  "momentum_lookback_periods": 3,
+  "target_variable": "sales_target_current",
+  "features": [
+    "competitor_mid_t2",
+    "competitor_top5_t2",
+    "prudential_rate_current",
+    "prudential_rate_t3"
+  ],
+  "rate_options_range": [
+    0.0,
+    4.5
+  ],
+  "rate_options_count": 19,
+  "baseline_forecast_shape": [
+    1000
+  ],
+  "df_dollars_shape": [
+    1000,
+    19
+  ],
+  "df_pct_change_shape": [
+    1000,
+    19
+  ],
+  "filtered_data_shape": [
+    159,
+    599
+  ],
+  "rates_data_shape": [
+    2710,
+    25
+  ]
+}
