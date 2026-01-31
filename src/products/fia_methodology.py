@@ -37,6 +37,7 @@ class FIAMethodology:
 
     @property
     def product_type(self) -> str:
+        """Return 'fia' product type identifier."""
         return "fia"
 
     def get_constraint_rules(self) -> List[ConstraintRule]:

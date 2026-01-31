@@ -29,8 +29,12 @@ try:
     DISPLAY_AVAILABLE = True
 except ImportError:
     DISPLAY_AVAILABLE = False
-    def display(x: Any) -> None: print(x)
-    def HTML(x: str) -> str: return x
+    def display(x: Any) -> None:
+        """Fallback display function when IPython unavailable."""
+        print(x)
+    def HTML(x: str) -> str:
+        """Fallback HTML wrapper when IPython unavailable."""
+        return x
 
 # Import advanced stability analysis
 try:
@@ -41,6 +45,7 @@ try:
 except ImportError:
     STABILITY_ANALYSIS_AVAILABLE = False
     def run_advanced_stability_analysis(*args: Any, **kwargs: Any) -> Dict[str, Any]:
+        """Raise ImportError when stability analysis module unavailable."""
         raise ImportError("Bootstrap stability analysis not available")
 
 

@@ -307,6 +307,7 @@ def create_safe_config_wrapper(
         Wrapped function with validation
     """
     def wrapped_config_function(**kwargs: Any) -> Any:
+        """Validate config args then delegate to original function."""
         try:
             # Validate before calling
             validate_configuration_call(func_name, **kwargs)

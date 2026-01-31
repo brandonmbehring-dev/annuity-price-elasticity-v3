@@ -30,6 +30,7 @@ except ImportError:
 
     @dataclass
     class BootstrapResult:
+        """Fallback BootstrapResult when types module unavailable."""
         model_name: str
         model_features: str
         bootstrap_aics: List[float]

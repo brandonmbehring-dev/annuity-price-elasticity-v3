@@ -60,6 +60,7 @@ class LocalAdapter(DataAdapterBase):
 
     @property
     def source_type(self) -> str:
+        """Return 'local' as the data source identifier."""
         return "local"
 
     @property

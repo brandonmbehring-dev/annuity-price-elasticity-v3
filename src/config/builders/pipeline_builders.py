@@ -382,10 +382,10 @@ def _build_final_features_config(
         'holiday_column': 'holiday',
         'holiday_start_day': holiday_start_day,
         'holiday_end_day': holiday_end_day,
-        'prudential_rate_column': 'prudential_rate_t0',
+        'prudential_rate_column': 'prudential_rate_current',
         'competitor_rate_column': 'competitor_weighted_t1',
         'spread_column': 'Spread',
-        'log_transform_source_column': 'sales_target_contract_t0',
+        'log_transform_source_column': 'sales_target_contract_current',
         'log_transform_target_column': 'sales_log',
         'mature_data_cutoff_date': current_date_of_mature_data
     })

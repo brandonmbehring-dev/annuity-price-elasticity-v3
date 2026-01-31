@@ -47,6 +47,7 @@ class RILAMethodology:
 
     @property
     def product_type(self) -> str:
+        """Return 'rila' product type identifier."""
         return "rila"
 
     def get_constraint_rules(self) -> List[ConstraintRule]:

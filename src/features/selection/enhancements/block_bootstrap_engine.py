@@ -280,6 +280,12 @@ def _fit_bootstrap_model(formula: str, bootstrap_sample: pd.DataFrame) -> Option
         # Formula references non-existent column
         logger.warning(f"Bootstrap model formula error: {e}")
         return None
+    except Exception as e:
+        # Catch-all for patsy errors and other formula-related issues
+        if "PatsyError" in type(e).__name__ or "NameError" in str(e):
+            logger.debug(f"Bootstrap model formula error: {e}")
+            return None
+        raise  # Re-raise unexpected exceptions
 
 
 def _run_bootstrap_iterations(formula: str, temporal_blocks: List[pd.DataFrame],

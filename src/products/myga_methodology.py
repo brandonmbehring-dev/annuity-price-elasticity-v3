@@ -38,6 +38,7 @@ class MYGAMethodology:
 
     @property
     def product_type(self) -> str:
+        """Return 'myga' product type identifier."""
         return "myga"
 
     def get_constraint_rules(self) -> List[ConstraintRule]:

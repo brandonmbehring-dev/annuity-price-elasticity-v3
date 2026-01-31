@@ -101,6 +101,7 @@ class FixtureAdapter(DataAdapterBase):
 
     @property
     def source_type(self) -> str:
+        """Return 'fixture' as the data source identifier."""
         return "fixture"
 
     @property

@@ -67,6 +67,7 @@ class S3Adapter(DataAdapterBase):
 
     @property
     def source_type(self) -> str:
+        """Return 'aws' as the data source identifier."""
         return "aws"
 
     def _ensure_connection(self) -> None:

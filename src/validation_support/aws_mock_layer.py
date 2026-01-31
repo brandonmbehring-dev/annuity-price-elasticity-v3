@@ -104,7 +104,8 @@ class OfflineS3Resource:
         if fixture_file and fixture_file.exists():
             # Return mock object with key attribute
             class MockS3Object:
-                def __init__(self, key):
+                """Mock S3 object for fixture-based testing."""
+                def __init__(self, key: str):
                     self.key = key
 
             return [MockS3Object(str(fixture_file))]

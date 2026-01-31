@@ -427,7 +427,7 @@ def save_visualization_files(
     Creates presentation-ready PNG files for executive reporting and regulatory documentation.
     """
     output_path = Path(output_dir)
-    output_path.mkdir(exist_ok=True)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     # Save files with exact naming convention from original
     pct_filename = f"{file_prefix}_Sample_{current_date}.png"
@@ -555,7 +555,7 @@ def export_csv_files(
 ) -> Dict[str, Path]:
     """Export all CSV files for BI team consumption with bootstrap and confidence interval data."""
     output_path = Path(output_dir)
-    output_path.mkdir(exist_ok=True)
+    output_path.mkdir(parents=True, exist_ok=True)
 
     # Prepare bootstrap exports
     df_pct_change_export, df_dollars_export = _prepare_bootstrap_exports(df_pct_change, df_dollars, current_time)

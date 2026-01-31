@@ -48,10 +48,12 @@ class WeightedAggregation(AggregationStrategyBase):
 
     @property
     def requires_weights(self) -> bool:
+        """Return True, as weighted aggregation requires market share weights."""
         return True
 
     @property
     def strategy_name(self) -> str:
+        """Return strategy identifier 'weighted'."""
         return "weighted"
 
     def aggregate(
@@ -149,15 +151,17 @@ class TopNAggregation(AggregationStrategyBase):
 
     @property
     def requires_weights(self) -> bool:
+        """Return False, as top-N uses rate ranking not weights."""
         return False
 
     @property
     def strategy_name(self) -> str:
+        """Return strategy identifier 'top_n'."""
         return "top_n"
 
     @property
     def n_competitors(self) -> int:
-        """Number of competitors to include."""
+        """Return configured number of top competitors to include."""
         return self._n_competitors
 
     def aggregate(
@@ -188,7 +192,8 @@ class TopNAggregation(AggregationStrategyBase):
         company_data = self._handle_missing_values(result, available)[available]
 
         # For each row, get top N values and compute mean
-        def top_n_mean(row):
+        def top_n_mean(row: pd.Series) -> float:
+            """Compute mean of top N values in a row."""
             valid_values = row.dropna()
             if len(valid_values) == 0:
                 return np.nan
@@ -228,15 +233,17 @@ class FirmLevelAggregation(AggregationStrategyBase):
 
     @property
     def requires_weights(self) -> bool:
+        """Return False, as firm-level uses direct aggregation not weights."""
         return False
 
     @property
     def strategy_name(self) -> str:
+        """Return strategy identifier 'firm_level'."""
         return "firm_level"
 
     @property
     def aggregation_method(self) -> str:
-        """Method used to combine firms."""
+        """Return configured aggregation method (mean/median/max/min)."""
         return self._aggregation_method
 
     def aggregate(
@@ -296,10 +303,12 @@ class MedianAggregation(AggregationStrategyBase):
 
     @property
     def requires_weights(self) -> bool:
+        """Return False, as median uses direct calculation not weights."""
         return False
 
     @property
     def strategy_name(self) -> str:
+        """Return strategy identifier 'median'."""
         return "median"
 
     def aggregate(

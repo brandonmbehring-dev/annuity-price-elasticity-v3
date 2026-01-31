@@ -46,6 +46,7 @@ class ForecastingConfigValidated(BaseModel):
 
     @validator('n_bootstrap_samples')
     def validate_bootstrap_samples(cls, v: int) -> int:
+        """Validate bootstrap samples meet statistical requirements."""
         if v < 10:
             raise ValueError('Bootstrap samples should be >= 10 for statistical validity')
         if v > 500:
@@ -55,12 +56,14 @@ class ForecastingConfigValidated(BaseModel):
 
     @validator('ridge_alpha')
     def validate_ridge_alpha(cls, v: float) -> float:
+        """Validate ridge regularization parameter is reasonable."""
         if v > 10:
             import warnings
             warnings.warn(f'Ridge alpha {v} is high and may cause underfitting')
         return v
 
     class Config:
+        """Pydantic config: forbid extra fields, validate on assignment."""
         extra = "forbid"  # Prevent configuration typos
         validate_assignment = True  # Validate on attribute changes
 
@@ -93,6 +96,7 @@ class BootstrapModelConfigValidated(BaseModel):
     )
 
     class Config:
+        """Pydantic config: forbid extra fields."""
         extra = "forbid"
 
 
@@ -124,12 +128,14 @@ class CrossValidationConfigValidated(BaseModel):
 
     @validator('end_cutoff')
     def validate_end_cutoff(cls, v: Optional[int], values: Dict[str, Any]) -> Optional[int]:
+        """Validate end_cutoff is after start_cutoff when specified."""
         if v is not None and 'start_cutoff' in values:
             if v <= values['start_cutoff']:
                 raise ValueError('end_cutoff must be greater than start_cutoff')
         return v
 
     class Config:
+        """Pydantic config: forbid extra fields."""
         extra = "forbid"
 
 
