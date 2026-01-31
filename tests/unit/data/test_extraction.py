@@ -66,14 +66,24 @@ class TestCreateStsClient:
         )
 
     def test_create_sts_client_invalid_url_raises(self):
-        """create_sts_client should raise ValueError for invalid URL."""
+        """create_sts_client should raise ValueError for invalid URL.
+
+        Business impact: Using non-HTTPS STS endpoints exposes credentials
+        in transit. Fail-fast prevents security misconfiguration that could
+        compromise production data access.
+        """
         config = {'sts_endpoint_url': 'http://invalid.com'}  # Must be https
 
         with pytest.raises(ValueError, match="Invalid STS endpoint URL"):
             create_sts_client(config)
 
     def test_create_sts_client_empty_url_raises(self):
-        """create_sts_client should raise ValueError for empty URL."""
+        """create_sts_client should raise ValueError for empty URL.
+
+        Business impact: Empty endpoint would cause silent failures in
+        authentication, preventing access to sales and competitive rate data
+        needed for elasticity estimation.
+        """
         config = {'sts_endpoint_url': ''}
 
         with pytest.raises(ValueError, match="Invalid STS endpoint URL"):
@@ -108,7 +118,12 @@ class TestAssumeIamRole:
         )
 
     def test_assume_role_empty_arn_raises(self):
-        """assume_iam_role should raise ValueError for empty role_arn."""
+        """assume_iam_role should raise ValueError for empty role_arn.
+
+        Business impact: Missing role ARN prevents data access entirely.
+        Failing fast with clear error enables rapid diagnosis rather than
+        cryptic AWS errors downstream in the pipeline.
+        """
         mock_sts = MagicMock()
         config = {'role_arn': '', 'xid': 'test'}
 
@@ -116,7 +131,12 @@ class TestAssumeIamRole:
             assume_iam_role(mock_sts, config)
 
     def test_assume_role_failure_raises(self):
-        """assume_iam_role should raise ValueError on STS failure."""
+        """assume_iam_role should raise ValueError on STS failure.
+
+        Business impact: Authentication failures must be surfaced immediately.
+        Silent fallback would cause missing data, leading to biased elasticity
+        estimates or complete pipeline failure.
+        """
         mock_sts = MagicMock()
         mock_sts.assume_role.side_effect = Exception("Access denied")
 

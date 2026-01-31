@@ -2,6 +2,14 @@
 
 Append-only log documenting WHY major decisions were made.
 
+**Decision Entry Format** (v2):
+- **Context**: Why this decision was needed
+- **Decision**: What was decided
+- **Alternatives**: Other options considered (and why rejected)
+- **Rationale**: Why this choice
+- **Risk**: What could go wrong
+- **Validation**: How we know it's right
+
 ---
 
 ## 2026-01-24: Code Quality Improvement Plan Scope Revision
@@ -65,12 +73,25 @@ Append-only log documenting WHY major decisions were made.
 
 ## 2026-01-24: Leakage Gate Thresholds
 
+**Context**: Need automated gates to detect data leakage during model development.
+
 **Decision**: Conservative thresholds for automated leakage gates:
-- HALT if R2 > 0.1 (unusually high for this domain)
+- HALT if R² > 0.95 (unusually high for this domain)
 - HALT if improvement > 20% over baseline
 - HALT if any lag-0 competitor feature detected
 
-**Rationale**: Better to investigate false positives than miss real leakage. Domain knowledge says R2 > 0.3 is suspicious.
+**Alternatives**:
+- Looser thresholds (R² > 0.98): Rejected - too permissive, misses subtle leakage
+- No automated gates (manual review only): Rejected - inconsistent enforcement
+
+**Rationale**: Better to investigate false positives than miss real leakage. Domain knowledge says R² > 0.85 warrants investigation.
+
+**Risk**: False positives could slow development. Mitigated by clear escalation path (investigate, document, override with approval).
+
+**Validation**:
+- Shuffled target test (AUC ~0.50 expected)
+- Production model R² = 78.37% (well below threshold)
+- Gate catches known leaky features in anti-pattern tests
 
 ---
 
@@ -99,7 +120,18 @@ Append-only log documenting WHY major decisions were made.
 - FIA patterns: `_lag_0`
 - Abbreviated: `comp_*`, `c_*` prefixes
 
+**Alternatives**:
+- Product-specific detection: Rejected - violates DRY, risk of inconsistency
+- Regex-based detection: Partially adopted - patterns compiled for performance
+
 **Rationale**: Causal identification requires no simultaneous competitor features regardless of naming convention.
+
+**Risk**: New naming conventions in future products could bypass detection. Mitigated by comprehensive anti-pattern test suite (`tests/anti_patterns/test_lag0_competitor_detection.py`) covering 30+ pattern variations.
+
+**Validation**:
+- 70+ parameterized tests verify pattern detection
+- Case-insensitive matching covers edge cases
+- Production pipelines pass with lagged features only
 
 ---
 

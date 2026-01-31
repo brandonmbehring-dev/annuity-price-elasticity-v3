@@ -31,6 +31,13 @@ repos:
       - id: ruff
         args: ['--fix']
 
+  # Docstring coverage (start at 60%, ramp to 85%)
+  - repo: https://github.com/econchick/interrogate
+    rev: 1.5.0
+    hooks:
+      - id: interrogate
+        args: ['-vv', '--fail-under=60', '--exclude=tests', '--exclude=notebooks']
+
   # Local verification hooks
   - repo: local
     hooks:

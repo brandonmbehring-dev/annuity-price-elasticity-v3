@@ -57,6 +57,8 @@ Key insight: Cap rate is a **YIELD** (customer benefit), NOT a price. Expect a *
 
 ### Model Validator?
 → [Validation Guidelines](docs/methodology/validation_guidelines.md)
+→ [Validation Evidence](docs/validation/VALIDATION_EVIDENCE.md) - Mathematical proof of model validity
+→ [Common Pitfalls](docs/guides/COMMON_PITFALLS.md) - 5 critical leakage bugs to avoid
 > [Leakage Checklist](docs/practices/LEAKAGE_CHECKLIST.md) (MANDATORY)
 → [Model Card](docs/governance/MODEL_CARD.md) - Model documentation for governance
 → [Specification Freeze](docs/governance/SPECIFICATION.md) - Critical thresholds
@@ -65,6 +67,7 @@ Key insight: Cap rate is a **YIELD** (customer benefit), NOT a price. Expect a *
 ### Model Developer?
 → [Architecture Overview](docs/architecture/MULTI_PRODUCT_DESIGN.md)
 → [API Reference](docs/api/API_REFERENCE.md)
+→ [Testing Strategy](docs/development/TESTING_STRATEGY.md) - 6-layer validation architecture
 → [Coding Standards](docs/development/CODING_STANDARDS.md)
 → [Testing Guide](docs/development/TESTING_GUIDE.md)
 
@@ -78,6 +81,27 @@ Key insight: Cap rate is a **YIELD** (customer benefit), NOT a price. Expect a *
 → [docs/README.md](docs/README.md) - Full navigation of all 64+ markdown files
 
 ---
+
+## Problem Statement
+
+**Why price elasticity for annuities?**
+
+Insurance companies face a critical challenge: **How much do cap rate changes actually affect sales?**
+
+Without rigorous elasticity estimates, pricing teams operate blind:
+- Set rates too high → lose margin unnecessarily
+- Set rates too low → lose sales to competitors
+- React to competitors → but by how much?
+
+This system provides **causal, not correlational** answers:
+
+| Question | Traditional Approach | Our Approach |
+|----------|---------------------|--------------|
+| "How do rate changes affect sales?" | Naive correlation | Causal identification with lag structure |
+| "What's the competitor effect?" | Same-period comparison | 2-week lagged response (causally valid) |
+| "How confident are we?" | Point estimates | 95% CI with 94.4% coverage |
+
+**Key insight**: Cap rate is a **YIELD** (customer benefit), not a price. Expect **positive** own-rate coefficients.
 
 ## Overview
 
@@ -645,6 +669,43 @@ The `_archive_refactoring/` directory contains validation artifacts from the V1�
 - Implementation tracking and production readiness documentation
 
 These files are preserved for historical reference only. See `_archive_refactoring/README.md` for details.
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| `ModuleNotFoundError: src` | Run from repo root, ensure `pip install -e .` |
+| Fixture data missing | Run `make setup-notebook-fixtures` |
+| AWS credentials expired | Re-authenticate with STS, check ROLE_ARN |
+| Negative own-rate coefficient | Check feature selection; may indicate leakage |
+| R² unexpectedly high (>0.95) | Likely data leakage; run `make leakage-audit` |
+
+### Diagnostic Commands
+
+```bash
+# Verify installation
+python -c "from src.notebooks import create_interface; print('OK')"
+
+# Run leakage gates
+pytest tests/anti_patterns/ -v
+
+# Check fixture integrity
+pytest tests/fixtures/test_fixture_validity.py -v
+
+# Quick smoke test
+make quick-check
+```
+
+### Getting Help
+
+- **Documentation Index**: [docs/README.md](docs/README.md)
+- **Common Pitfalls**: [docs/guides/COMMON_PITFALLS.md](docs/guides/COMMON_PITFALLS.md)
+- **Leakage Checklist**: [knowledge/practices/LEAKAGE_CHECKLIST.md](knowledge/practices/LEAKAGE_CHECKLIST.md)
+- **AI Methodology**: [docs/methodology/AI_COLLABORATION_METHODOLOGY.md](docs/methodology/AI_COLLABORATION_METHODOLOGY.md)
 
 ---
 
