@@ -20,30 +20,29 @@ Usage:
 
 from __future__ import annotations
 
-from typing import Optional, Dict, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    from src.features.selection.support.regression_diagnostics import ComprehensiveDiagnostics
     from src.models.forecasting_types import ForecastingResults
 from pathlib import Path
+
 import pandas as pd
 
-from src.core.protocols import DataSourceAdapter, AggregationStrategy
-from src.core.types import (
-    AWSConfig,
-    InferenceConfig,
-    FeatureConfig,
-    InferenceResults,
-)
-from src.features.selection_types import FeatureSelectionResults
 from src.config.product_config import (
-    get_product_config,
-    get_default_product,
     ProductConfig,
+    get_product_config,
+)
+from src.core.protocols import AggregationStrategy, DataSourceAdapter
+from src.core.types import (
+    FeatureConfig,
+    InferenceConfig,
+    InferenceResults,
 )
 from src.data.adapters import get_adapter
 from src.features.aggregation import get_strategy
+from src.features.selection_types import FeatureSelectionResults
 from src.products import get_methodology
-
 
 # =============================================================================
 # LEGACY OUTPUT MAPPING (Feature Naming Unification 2026-01-26)
@@ -52,36 +51,35 @@ from src.products import get_methodology
 # For downstream compatibility, final output remaps to legacy names.
 # Decision: Breaking change internally, legacy names in output only.
 
-LEGACY_OUTPUT_MAPPING: Dict[str, str] = {
+LEGACY_OUTPUT_MAPPING: dict[str, str] = {
     # Own-rate features: _t0 → _current
-    'prudential_rate_t0': 'prudential_rate_current',
-    'prudential_rate.t0': 'prudential_rate.current',
+    "prudential_rate_t0": "prudential_rate_current",
+    "prudential_rate.t0": "prudential_rate.current",
     # Competitor features: competitor_weighted → competitor_mid
-    'competitor_weighted_t0': 'competitor_mid_current',
-    'competitor_weighted_t1': 'competitor_mid_t1',
-    'competitor_weighted_t2': 'competitor_mid_t2',
-    'competitor_weighted_t3': 'competitor_mid_t3',
-    'competitor_weighted_t4': 'competitor_mid_t4',
-    'competitor_weighted_t5': 'competitor_mid_t5',
-    'competitor_weighted.t0': 'competitor_mid.current',
-    'competitor_weighted.t1': 'competitor_mid.t1',
-    'competitor_weighted.t2': 'competitor_mid.t2',
-    'competitor_weighted.t3': 'competitor_mid.t3',
+    "competitor_weighted_t0": "competitor_mid_current",
+    "competitor_weighted_t1": "competitor_mid_t1",
+    "competitor_weighted_t2": "competitor_mid_t2",
+    "competitor_weighted_t3": "competitor_mid_t3",
+    "competitor_weighted_t4": "competitor_mid_t4",
+    "competitor_weighted_t5": "competitor_mid_t5",
+    "competitor_weighted.t0": "competitor_mid.current",
+    "competitor_weighted.t1": "competitor_mid.t1",
+    "competitor_weighted.t2": "competitor_mid.t2",
+    "competitor_weighted.t3": "competitor_mid.t3",
     # Sales targets: _t0 → _current
-    'sales_target_t0': 'sales_target_current',
-    'sales_volume_t0': 'sales_volume_current',
-    'sales_target_contract_t0': 'sales_target_contract_current',
+    "sales_target_t0": "sales_target_current",
+    "sales_volume_t0": "sales_volume_current",
+    "sales_target_contract_t0": "sales_target_contract_current",
 }
 
 # Inverse mapping: legacy → internal (for loading data from fixtures/production)
 # Generated from LEGACY_OUTPUT_MAPPING
-LEGACY_INPUT_MAPPING: Dict[str, str] = {v: k for k, v in LEGACY_OUTPUT_MAPPING.items()}
+LEGACY_INPUT_MAPPING: dict[str, str] = {v: k for k, v in LEGACY_OUTPUT_MAPPING.items()}
 
 
 def _remap_to_legacy_names(
-    data: Dict[str, Any],
-    mapping: Dict[str, str] = LEGACY_OUTPUT_MAPPING
-) -> Dict[str, Any]:
+    data: dict[str, Any], mapping: dict[str, str] = LEGACY_OUTPUT_MAPPING
+) -> dict[str, Any]:
     """Remap internal feature names to legacy names for output compatibility.
 
     Parameters
@@ -96,10 +94,7 @@ def _remap_to_legacy_names(
     Dict[str, Any]
         Dictionary with legacy feature names
     """
-    return {
-        mapping.get(k, k): v
-        for k, v in data.items()
-    }
+    return {mapping.get(k, k): v for k, v in data.items()}
 
 
 def _normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
@@ -122,19 +117,18 @@ def _normalize_column_names(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         DataFrame with normalized column names
     """
-    import re
 
     rename_map = {}
     for col in df.columns:
         new_col = col
 
         # _current → _t0 (but not inside derived_ interaction features)
-        if col.endswith('_current'):
-            new_col = col[:-8] + '_t0'
+        if col.endswith("_current"):
+            new_col = col[:-8] + "_t0"
 
         # competitor_mid → competitor_weighted
-        if 'competitor_mid' in new_col:
-            new_col = new_col.replace('competitor_mid', 'competitor_weighted')
+        if "competitor_mid" in new_col:
+            new_col = new_col.replace("competitor_mid", "competitor_weighted")
 
         if new_col != col:
             rename_map[col] = new_col
@@ -193,8 +187,8 @@ class UnifiedNotebookInterface:
         self,
         product_code: str,
         data_source: str = "aws",
-        adapter: Optional[DataSourceAdapter] = None,
-        adapter_kwargs: Optional[Dict[str, Any]] = None,
+        adapter: DataSourceAdapter | None = None,
+        adapter_kwargs: dict[str, Any] | None = None,
     ):
         # Load product configuration
         self._product = get_product_config(product_code)
@@ -225,7 +219,7 @@ class UnifiedNotebookInterface:
 
         # State tracking
         self._data_loaded = False
-        self._data: Optional[pd.DataFrame] = None
+        self._data: pd.DataFrame | None = None
 
     @property
     def product(self) -> ProductConfig:
@@ -247,9 +241,7 @@ class UnifiedNotebookInterface:
         """Product methodology (constraint rules)."""
         return self._methodology
 
-    def _create_adapter(
-        self, data_source: str, kwargs: Dict[str, Any]
-    ) -> DataSourceAdapter:
+    def _create_adapter(self, data_source: str, kwargs: dict[str, Any]) -> DataSourceAdapter:
         """Create data adapter based on data source type.
 
         Parameters
@@ -282,9 +274,7 @@ class UnifiedNotebookInterface:
             return get_adapter("local", data_dir=kwargs["data_dir"])
         elif data_source == "fixture":
             if "fixtures_dir" not in kwargs:
-                kwargs["fixtures_dir"] = Path(
-                    f"tests/fixtures/{self._product.product_type}"
-                )
+                kwargs["fixtures_dir"] = Path(f"tests/fixtures/{self._product.product_type}")
             return get_adapter("fixture", fixtures_dir=kwargs["fixtures_dir"])
         else:
             raise ValueError(f"Unknown data source: {data_source}")
@@ -306,8 +296,8 @@ class UnifiedNotebookInterface:
 
     def load_data(
         self,
-        start_date: Optional[str] = None,
-        product_filter: Optional[str] = None,
+        start_date: str | None = None,
+        product_filter: str | None = None,
     ) -> pd.DataFrame:
         """Load and prepare all required data.
 
@@ -340,9 +330,7 @@ class UnifiedNotebookInterface:
             weights_df = self._adapter.load_market_weights()
 
         # Merge data sources (raw I/O handling)
-        self._data = self._merge_data_sources(
-            sales_df, rates_df, weights_df
-        )
+        self._data = self._merge_data_sources(sales_df, rates_df, weights_df)
 
         # Normalize column names (legacy → internal naming convention)
         # Feature Naming Unification (2026-01-26)
@@ -352,7 +340,7 @@ class UnifiedNotebookInterface:
 
         return self._data
 
-    def _build_pipeline_configs(self) -> Dict[str, Any]:
+    def _build_pipeline_configs(self) -> dict[str, Any]:
         """Build pipeline configurations from product config.
 
         Uses the canonical config builder to generate all 9 pipeline stage
@@ -373,12 +361,12 @@ class UnifiedNotebookInterface:
         self,
         sales_df: pd.DataFrame,
         rates_df: pd.DataFrame,
-        weights_df: Optional[pd.DataFrame],
+        weights_df: pd.DataFrame | None,
     ) -> pd.DataFrame:
         """Merge and transform data sources through the full 10-stage pipeline.
 
-        Implements the complete data processing pipeline from raw inputs to
-        the final weekly modeling dataset with 598 engineered features.
+        Implements fail-fast processing: each stage either succeeds or raises
+        a PipelineStageError with clear diagnostics. No silent data corruption.
 
         Pipeline Stages:
         1. Product filtering - Filter to specific product (e.g., 6Y20B)
@@ -405,200 +393,453 @@ class UnifiedNotebookInterface:
         -------
         pd.DataFrame
             Final weekly modeling dataset with all engineered features
-        """
-        from src.data import pipelines
 
+        Raises
+        ------
+        PipelineStageError
+            If any stage fails, with stage number and actionable diagnostics
+        """
         # Build pipeline configs from product
         configs = self._build_pipeline_configs()
 
-        # =================================================================
-        # Stage 1: Product Filtering
-        # =================================================================
-        try:
-            df_filtered = pipelines.apply_product_filters(
-                sales_df, configs['product_filter']
-            )
-        except Exception as e:
-            # If filtering fails (e.g., fixture doesn't have expected columns),
-            # fall back to using the data as-is
-            import logging
-            logging.getLogger(__name__).warning(
-                f"Product filtering skipped: {e}. Using raw sales data."
-            )
-            df_filtered = sales_df.copy()
+        # Execute 10-stage pipeline with fail-fast semantics
+        df = self._stage_1_filter_product(sales_df, configs)
+        df = self._stage_2_cleanup_sales(df, configs)
+        df_sales_app, df_sales_contract = self._stage_3_create_time_series(df, configs)
+        df_rates = self._stage_4_process_wink_rates(rates_df, configs)
+        df_rates = self._stage_5_apply_market_weights(df_rates, weights_df)
+        df = self._stage_6_integrate_data(df_rates, df_sales_app, df_sales_contract, configs)
+        df = self._stage_7_create_competitive_features(df, configs)
+        df = self._stage_8_aggregate_weekly(df, configs)
+        df = self._stage_9_create_lag_features(df, configs)
+        df = self._stage_10_final_preparation(df, configs)
 
-        # =================================================================
-        # Stage 2: Sales Cleanup
-        # =================================================================
-        try:
-            df_clean = pipelines.apply_sales_data_cleanup(
-                df_filtered, configs['sales_cleanup']
-            )
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"Sales cleanup skipped: {e}. Using filtered data."
-            )
-            df_clean = df_filtered.copy()
+        return df
 
-        # =================================================================
-        # Stage 3: Time Series Creation (Application + Contract dates)
-        # =================================================================
+    def _stage_1_filter_product(self, df: pd.DataFrame, configs: dict[str, Any]) -> pd.DataFrame:
+        """Stage 1: Filter to target product.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Raw sales data
+        configs : Dict[str, Any]
+            Pipeline configurations
+
+        Returns
+        -------
+        pd.DataFrame
+            Filtered to target product only
+
+        Raises
+        ------
+        PipelineStageError
+            If product filtering fails
+        """
+        from src.core.exceptions import PipelineStageError
+        from src.data import pipelines
+
+        try:
+            return pipelines.apply_product_filters(df, configs["product_filter"])
+        except Exception as e:
+            raise PipelineStageError(
+                message=str(e),
+                stage_number=1,
+                stage_name="Product Filtering",
+                business_impact="Cannot filter sales data to target product",
+                required_action=(
+                    f"Verify product code '{self._product.product_code}' exists in data. "
+                    f"Check column names match expected schema."
+                ),
+            ) from e
+
+    def _stage_2_cleanup_sales(self, df: pd.DataFrame, configs: dict[str, Any]) -> pd.DataFrame:
+        """Stage 2: Clean and validate sales data.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Product-filtered sales data
+        configs : Dict[str, Any]
+            Pipeline configurations
+
+        Returns
+        -------
+        pd.DataFrame
+            Cleaned sales data
+
+        Raises
+        ------
+        PipelineStageError
+            If sales cleanup fails
+        """
+        from src.core.exceptions import PipelineStageError
+        from src.data import pipelines
+
+        try:
+            return pipelines.apply_sales_data_cleanup(df, configs["sales_cleanup"])
+        except Exception as e:
+            raise PipelineStageError(
+                message=str(e),
+                stage_number=2,
+                stage_name="Sales Cleanup",
+                business_impact="Cannot clean sales data for analysis",
+                required_action="Review data quality and cleanup configuration",
+            ) from e
+
+    def _stage_3_create_time_series(self, df: pd.DataFrame, configs: dict[str, Any]) -> tuple:
+        """Stage 3: Create application and contract date time series.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Cleaned sales data
+        configs : Dict[str, Any]
+            Pipeline configurations
+
+        Returns
+        -------
+        tuple
+            (df_sales_app, df_sales_contract) time series DataFrames
+
+        Raises
+        ------
+        PipelineStageError
+            If time series creation fails
+        """
+        from src.core.exceptions import PipelineStageError
+        from src.data import pipelines
+
         try:
             # Application date time series
-            app_config = configs['time_series'].copy()
-            app_config['date_column'] = 'application_signed_date'
-            app_config['value_column'] = 'contract_initial_premium_amount'
-            app_config['alias_value_col'] = 'sales'
-            df_sales_app = pipelines.apply_application_time_series(
-                df_clean, app_config
-            )
+            app_config = configs["time_series"].copy()
+            app_config["date_column"] = "application_signed_date"
+            app_config["value_column"] = "contract_initial_premium_amount"
+            app_config["alias_value_col"] = "sales"
+            df_sales_app = pipelines.apply_application_time_series(df, app_config)
 
             # Contract date time series
-            contract_config = configs['time_series'].copy()
-            contract_config['date_column'] = 'contract_issue_date'
-            contract_config['value_column'] = 'contract_initial_premium_amount'
-            contract_config['alias_value_col'] = 'sales_by_contract_date'
-            df_sales_contract = pipelines.apply_contract_time_series(
-                df_clean, contract_config
-            )
-        except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"Time series creation skipped: {e}. Pipeline incomplete."
-            )
-            # Return early with whatever we have
-            return df_clean
+            contract_config = configs["time_series"].copy()
+            contract_config["date_column"] = "contract_issue_date"
+            contract_config["value_column"] = "contract_initial_premium_amount"
+            contract_config["alias_value_col"] = "sales_by_contract_date"
+            df_sales_contract = pipelines.apply_contract_time_series(df, contract_config)
 
-        # =================================================================
-        # Stage 4: WINK Rate Processing
-        # =================================================================
+            return df_sales_app, df_sales_contract
+
+        except Exception as e:
+            raise PipelineStageError(
+                message=str(e),
+                stage_number=3,
+                stage_name="Time Series Creation",
+                business_impact="Cannot create weekly sales time series",
+                required_action=(
+                    "Verify 'application_signed_date' and 'contract_issue_date' columns exist. "
+                    "Check date formats are parseable."
+                ),
+            ) from e
+
+    def _stage_4_process_wink_rates(
+        self, df: pd.DataFrame, configs: dict[str, Any]
+    ) -> pd.DataFrame:
+        """Stage 4: Process WINK competitive rate data.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Raw competitive rate data
+        configs : Dict[str, Any]
+            Pipeline configurations
+
+        Returns
+        -------
+        pd.DataFrame
+            Processed competitive rates
+
+        Raises
+        ------
+        PipelineStageError
+            If WINK processing fails
+        """
+        from src.core.exceptions import PipelineStageError
+        from src.data import pipelines
+
         try:
-            df_rates_processed = pipelines.apply_wink_rate_processing(
-                rates_df, configs['wink_processing']
-            )
+            return pipelines.apply_wink_rate_processing(df, configs["wink_processing"])
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"WINK processing skipped: {e}. Using raw rates."
-            )
-            df_rates_processed = rates_df.copy()
+            raise PipelineStageError(
+                message=str(e),
+                stage_number=4,
+                stage_name="WINK Rate Processing",
+                business_impact="Cannot process competitive rate data",
+                required_action="Verify WINK data format and required columns",
+            ) from e
 
-        # =================================================================
-        # Stage 5: Market Share Weighting
-        # =================================================================
-        if weights_df is not None:
-            try:
-                df_rates_weighted = pipelines.apply_market_share_weighting(
-                    df_rates_processed, weights_df
-                )
-            except Exception as e:
-                import logging
-                logging.getLogger(__name__).warning(
-                    f"Market share weighting skipped: {e}."
-                )
-                df_rates_weighted = df_rates_processed.copy()
-        else:
-            df_rates_weighted = df_rates_processed.copy()
+    def _stage_5_apply_market_weights(
+        self, df: pd.DataFrame, weights_df: pd.DataFrame | None
+    ) -> pd.DataFrame:
+        """Stage 5: Apply market share weighting to rates.
 
-        # =================================================================
-        # Stage 6: Data Integration
-        # =================================================================
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Processed competitive rates
+        weights_df : Optional[pd.DataFrame]
+            Market share weights (None skips weighting)
+
+        Returns
+        -------
+        pd.DataFrame
+            Weighted competitive rates (or unweighted if weights_df is None)
+
+        Raises
+        ------
+        PipelineStageError
+            If market share weighting fails
+        """
+        from src.core.exceptions import PipelineStageError
+        from src.data import pipelines
+
+        if weights_df is None:
+            return df.copy()
+
+        try:
+            return pipelines.apply_market_share_weighting(df, weights_df)
+        except Exception as e:
+            raise PipelineStageError(
+                message=str(e),
+                stage_number=5,
+                stage_name="Market Share Weighting",
+                business_impact="Cannot apply market share weights to competitor rates",
+                required_action="Verify market share data has matching company identifiers",
+            ) from e
+
+    def _stage_6_integrate_data(
+        self,
+        df_rates: pd.DataFrame,
+        df_sales_app: pd.DataFrame,
+        df_sales_contract: pd.DataFrame,
+        configs: dict[str, Any],
+    ) -> pd.DataFrame:
+        """Stage 6: Integrate all data sources (rates, sales, macro).
+
+        Parameters
+        ----------
+        df_rates : pd.DataFrame
+            Weighted competitive rates
+        df_sales_app : pd.DataFrame
+            Application date sales time series
+        df_sales_contract : pd.DataFrame
+            Contract date sales time series
+        configs : Dict[str, Any]
+            Pipeline configurations
+
+        Returns
+        -------
+        pd.DataFrame
+            Integrated dataset
+
+        Raises
+        ------
+        PipelineStageError
+            If data integration fails
+        """
+        from src.core.exceptions import PipelineStageError
+        from src.data import pipelines
+
         try:
             # Load macro data for integration
             macro_df = self._adapter.load_macro_data()
 
             # Build data sources dict
             data_sources = {
-                'sales': df_sales_app,
-                'sales_contract': df_sales_contract,
+                "sales": df_sales_app,
+                "sales_contract": df_sales_contract,
             }
 
             # Add macro data if available
             if macro_df is not None and not macro_df.empty:
-                # Handle different macro data formats
-                if 'DGS5' in macro_df.columns:
-                    data_sources['dgs5'] = macro_df[['date', 'DGS5']].copy() \
-                        if 'date' in macro_df.columns else macro_df
-                if 'VIXCLS' in macro_df.columns:
-                    data_sources['vixcls'] = macro_df[['date', 'VIXCLS']].copy() \
-                        if 'date' in macro_df.columns else macro_df
-                if 'cpi_scaled' in macro_df.columns:
-                    data_sources['cpi'] = macro_df[['date', 'cpi_scaled']].copy() \
-                        if 'date' in macro_df.columns else macro_df
+                if "DGS5" in macro_df.columns:
+                    data_sources["dgs5"] = (
+                        macro_df[["date", "DGS5"]].copy()
+                        if "date" in macro_df.columns
+                        else macro_df
+                    )
+                if "VIXCLS" in macro_df.columns:
+                    data_sources["vixcls"] = (
+                        macro_df[["date", "VIXCLS"]].copy()
+                        if "date" in macro_df.columns
+                        else macro_df
+                    )
+                if "cpi_scaled" in macro_df.columns:
+                    data_sources["cpi"] = (
+                        macro_df[["date", "cpi_scaled"]].copy()
+                        if "date" in macro_df.columns
+                        else macro_df
+                    )
 
-            df_integrated = pipelines.apply_data_integration(
-                df_rates_weighted, data_sources, configs['data_integration']
+            return pipelines.apply_data_integration(
+                df_rates, data_sources, configs["data_integration"]
             )
+
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"Data integration skipped: {e}. Pipeline incomplete."
-            )
-            return df_rates_weighted
+            raise PipelineStageError(
+                message=str(e),
+                stage_number=6,
+                stage_name="Data Integration",
+                business_impact="Cannot merge rates, sales, and macro data",
+                required_action=(
+                    "Verify date columns align across all data sources. "
+                    "Check for missing date ranges."
+                ),
+            ) from e
 
-        # =================================================================
-        # Stage 7: Competitive Features
-        # =================================================================
+    def _stage_7_create_competitive_features(
+        self, df: pd.DataFrame, configs: dict[str, Any]
+    ) -> pd.DataFrame:
+        """Stage 7: Create competitive analysis features.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Integrated dataset
+        configs : Dict[str, Any]
+            Pipeline configurations
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataset with competitive features
+
+        Raises
+        ------
+        PipelineStageError
+            If competitive feature creation fails
+        """
+        from src.core.exceptions import PipelineStageError
+        from src.data import pipelines
+
         try:
-            df_competitive = pipelines.apply_competitive_features(
-                df_integrated, configs['competitive']
-            )
+            return pipelines.apply_competitive_features(df, configs["competitive"])
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"Competitive features skipped: {e}."
-            )
-            df_competitive = df_integrated.copy()
+            raise PipelineStageError(
+                message=str(e),
+                stage_number=7,
+                stage_name="Competitive Features",
+                business_impact="Cannot create competitive analysis features",
+                required_action="Verify rate columns exist for competitive feature calculation",
+            ) from e
 
-        # =================================================================
-        # Stage 8: Weekly Aggregation
-        # =================================================================
+    def _stage_8_aggregate_weekly(self, df: pd.DataFrame, configs: dict[str, Any]) -> pd.DataFrame:
+        """Stage 8: Aggregate data to weekly frequency.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataset with competitive features
+        configs : Dict[str, Any]
+            Pipeline configurations
+
+        Returns
+        -------
+        pd.DataFrame
+            Weekly aggregated dataset
+
+        Raises
+        ------
+        PipelineStageError
+            If weekly aggregation fails
+        """
+        from src.core.exceptions import PipelineStageError
+        from src.data import pipelines
+
         try:
-            df_weekly = pipelines.apply_weekly_aggregation(
-                df_competitive, configs['weekly_aggregation']
-            )
+            return pipelines.apply_weekly_aggregation(df, configs["weekly_aggregation"])
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"Weekly aggregation skipped: {e}."
-            )
-            df_weekly = df_competitive.copy()
+            raise PipelineStageError(
+                message=str(e),
+                stage_number=8,
+                stage_name="Weekly Aggregation",
+                business_impact="Cannot aggregate data to weekly frequency",
+                required_action="Verify date column exists and is properly formatted",
+            ) from e
 
-        # =================================================================
-        # Stage 9: Lag and Polynomial Features
-        # =================================================================
+    def _stage_9_create_lag_features(
+        self, df: pd.DataFrame, configs: dict[str, Any]
+    ) -> pd.DataFrame:
+        """Stage 9: Create lag and polynomial features.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Weekly aggregated dataset
+        configs : Dict[str, Any]
+            Pipeline configurations
+
+        Returns
+        -------
+        pd.DataFrame
+            Dataset with lag and polynomial features
+
+        Raises
+        ------
+        PipelineStageError
+            If lag feature creation fails
+        """
+        from src.core.exceptions import PipelineStageError
+        from src.data import pipelines
+
         try:
-            df_lagged = pipelines.apply_lag_and_polynomial_features(
-                df_weekly, configs['lag_features']
-            )
+            return pipelines.apply_lag_and_polynomial_features(df, configs["lag_features"])
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"Lag features skipped: {e}."
-            )
-            df_lagged = df_weekly.copy()
+            raise PipelineStageError(
+                message=str(e),
+                stage_number=9,
+                stage_name="Lag Features",
+                business_impact="Cannot create lag features for time series analysis",
+                required_action="Verify sufficient data points exist for requested lag depth",
+            ) from e
 
-        # =================================================================
-        # Stage 10: Final Feature Preparation
-        # =================================================================
+    def _stage_10_final_preparation(
+        self, df: pd.DataFrame, configs: dict[str, Any]
+    ) -> pd.DataFrame:
+        """Stage 10: Final feature preparation and cleanup.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Dataset with lag features
+        configs : Dict[str, Any]
+            Pipeline configurations
+
+        Returns
+        -------
+        pd.DataFrame
+            Final modeling dataset
+
+        Raises
+        ------
+        PipelineStageError
+            If final preparation fails
+        """
+        from src.core.exceptions import PipelineStageError
+        from src.data import pipelines
+
         try:
-            df_final = pipelines.apply_final_feature_preparation(
-                df_lagged, configs['final_features']
-            )
+            return pipelines.apply_final_feature_preparation(df, configs["final_features"])
         except Exception as e:
-            import logging
-            logging.getLogger(__name__).warning(
-                f"Final preparation skipped: {e}."
-            )
-            df_final = df_lagged.copy()
-
-        return df_final
+            raise PipelineStageError(
+                message=str(e),
+                stage_number=10,
+                stage_name="Final Preparation",
+                business_impact="Cannot complete final feature engineering",
+                required_action="Review final feature configuration and data completeness",
+            ) from e
 
     def _prepare_analysis_data(
         self,
         data: pd.DataFrame,
-        feature_candidates: Optional[list] = None,
+        feature_candidates: list | None = None,
     ) -> pd.DataFrame:
         """Validate data and prepare feature subset for analysis.
 
@@ -627,6 +868,7 @@ class UnifiedNotebookInterface:
             If critical validation fails (missing required columns, lag-0 features)
         """
         import logging
+
         logger = logging.getLogger(__name__)
         result = data.copy()
 
@@ -643,10 +885,7 @@ class UnifiedNotebookInterface:
 
         # 2. Enforce no lag-0 competitors in feature candidates
         if feature_candidates:
-            lag_zero = [
-                f for f in feature_candidates
-                if self._is_competitor_lag_zero(f)
-            ]
+            lag_zero = [f for f in feature_candidates if self._is_competitor_lag_zero(f)]
             if lag_zero:
                 raise ValueError(
                     f"Lag-0 competitor features detected: {lag_zero}. "
@@ -663,8 +902,8 @@ class UnifiedNotebookInterface:
 
     def run_feature_selection(
         self,
-        data: Optional[pd.DataFrame] = None,
-        config: Optional[FeatureConfig] = None,
+        data: pd.DataFrame | None = None,
+        config: FeatureConfig | None = None,
     ) -> FeatureSelectionResults:
         """Run feature selection algorithm.
 
@@ -682,9 +921,7 @@ class UnifiedNotebookInterface:
         """
         if data is None:
             if not self._data_loaded:
-                raise ValueError(
-                    "No data available. Call load_data() first or provide data."
-                )
+                raise ValueError("No data available. Call load_data() first or provide data.")
             data = self._data
         else:
             # Normalize column names for data passed directly
@@ -712,7 +949,7 @@ class UnifiedNotebookInterface:
         # Return dataclass directly
         return results
 
-    def _get_target_column(self, config: Optional[FeatureConfig] = None) -> str:
+    def _get_target_column(self, config: FeatureConfig | None = None) -> str:
         """Get target column from config or product defaults.
 
         Parameters
@@ -736,7 +973,7 @@ class UnifiedNotebookInterface:
         return "sales_target_t0"
 
     def _get_candidate_features(
-        self, data: pd.DataFrame, config: Optional[FeatureConfig] = None
+        self, data: pd.DataFrame, config: FeatureConfig | None = None
     ) -> list:
         """Get candidate features from config or auto-detect from data.
 
@@ -760,16 +997,16 @@ class UnifiedNotebookInterface:
         target = self._get_target_column(config)
 
         return [
-            col for col in data.columns
-            if any(kw in col.lower() for kw in rate_keywords)
-            and col != target
+            col
+            for col in data.columns
+            if any(kw in col.lower() for kw in rate_keywords) and col != target
         ]
 
     def run_inference(
         self,
-        data: Optional[pd.DataFrame] = None,
-        config: Optional[InferenceConfig] = None,
-        features: Optional[list] = None,
+        data: pd.DataFrame | None = None,
+        config: InferenceConfig | None = None,
+        features: list | None = None,
     ) -> InferenceResults:
         """Run price elasticity inference.
 
@@ -804,9 +1041,7 @@ class UnifiedNotebookInterface:
         model_results = self.execute_model_training(data, config, features)
         return self.package_inference_results(model_results, config, features)
 
-    def validate_inference_data(
-        self, data: Optional[pd.DataFrame]
-    ) -> pd.DataFrame:
+    def validate_inference_data(self, data: pd.DataFrame | None) -> pd.DataFrame:
         """Validate data availability and return validated DataFrame.
 
         Parameters
@@ -826,18 +1061,14 @@ class UnifiedNotebookInterface:
         """
         if data is None:
             if not self._data_loaded:
-                raise ValueError(
-                    "No data available. Call load_data() first or provide data."
-                )
+                raise ValueError("No data available. Call load_data() first or provide data.")
             return self._data
 
         # Normalize column names for data passed directly
         # Feature Naming Unification (2026-01-26)
         return _normalize_column_names(data)
 
-    def build_inference_config(
-        self, config: Optional[InferenceConfig]
-    ) -> InferenceConfig:
+    def build_inference_config(self, config: InferenceConfig | None) -> InferenceConfig:
         """Build inference configuration with defaults.
 
         Parameters
@@ -858,7 +1089,7 @@ class UnifiedNotebookInterface:
         self,
         data: pd.DataFrame,
         config: InferenceConfig,
-        features: Optional[list],
+        features: list | None,
     ) -> list:
         """Get features for inference and validate methodology compliance.
 
@@ -899,9 +1130,7 @@ class UnifiedNotebookInterface:
                 f"Ensure data contains all required features."
             )
         if target_variable not in data.columns:
-            raise ValueError(
-                f"Target column '{target_variable}' not found in data."
-            )
+            raise ValueError(f"Target column '{target_variable}' not found in data.")
 
         return features
 
@@ -910,7 +1139,7 @@ class UnifiedNotebookInterface:
         data: pd.DataFrame,
         config: InferenceConfig,
         features: list,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Execute model training via center_baseline.
 
         Parameters
@@ -960,9 +1189,7 @@ class UnifiedNotebookInterface:
             "cutoff_date": training_cutoff_date,
         }
 
-    def _resolve_training_cutoff(
-        self, data: pd.DataFrame, config: InferenceConfig
-    ) -> Optional[str]:
+    def _resolve_training_cutoff(self, data: pd.DataFrame, config: InferenceConfig) -> str | None:
         """Resolve training cutoff date from config or auto-detect.
 
         Parameters
@@ -989,7 +1216,7 @@ class UnifiedNotebookInterface:
                 break
 
         if date_col is None:
-            datetime_cols = data.select_dtypes(include=['datetime64']).columns
+            datetime_cols = data.select_dtypes(include=["datetime64"]).columns
             if len(datetime_cols) > 0:
                 date_col = datetime_cols[0]
 
@@ -1003,7 +1230,7 @@ class UnifiedNotebookInterface:
 
     def package_inference_results(
         self,
-        model_results: Dict[str, Any],
+        model_results: dict[str, Any],
         config: InferenceConfig,
         features: list,
     ) -> InferenceResults:
@@ -1024,6 +1251,7 @@ class UnifiedNotebookInterface:
             Complete inference results dictionary with diagnostics_summary
         """
         import logging
+
         import numpy as np
 
         logger = logging.getLogger(__name__)
@@ -1038,9 +1266,7 @@ class UnifiedNotebookInterface:
         # Calculate model fit metrics (need data for this)
         # Note: We access _data since it was validated earlier
         data = self._data if self._data_loaded else pd.DataFrame()
-        model_fit = self._calculate_model_fit(
-            data, trained_model, features, target_variable
-        )
+        model_fit = self._calculate_model_fit(data, trained_model, features, target_variable)
 
         # Run lightweight diagnostics (Durbin-Watson, VIF)
         # Addresses Issue #5: Diagnostics never called in pipeline
@@ -1055,22 +1281,16 @@ class UnifiedNotebookInterface:
 
         # Calculate elasticity point estimate
         # Note: Uses unified naming (P_rate_t0), will be remapped in output
-        own_rate_col = config.get(
-            "own_rate_column",
-            f"{self._product.own_rate_prefix}_rate_t0"
-        )
+        own_rate_col = config.get("own_rate_column", f"{self._product.own_rate_prefix}_rate_t0")
         elasticity_point = coefficients.get(own_rate_col, 0.0)
 
         # Extract bootstrap confidence intervals from bagging estimators
         # Decision: Bootstrap CIs ONLY (never parametric). Warn if unavailable.
-        confidence_intervals: Dict[str, Dict[str, tuple]] = {}
+        confidence_intervals: dict[str, dict[str, tuple]] = {}
         elasticity_ci = (0.0, 0.0)
 
-        if hasattr(trained_model, 'estimators_'):
-            all_coefs = [
-                est.coef_ for est in trained_model.estimators_
-                if hasattr(est, 'coef_')
-            ]
+        if hasattr(trained_model, "estimators_"):
+            all_coefs = [est.coef_ for est in trained_model.estimators_ if hasattr(est, "coef_")]
             if all_coefs:
                 coef_array = np.array(all_coefs)
                 # Compute CIs at multiple confidence levels
@@ -1082,7 +1302,7 @@ class UnifiedNotebookInterface:
                     confidence_intervals[level_key] = {
                         feat: (
                             float(np.quantile(coef_array[:, i], lower_q)),
-                            float(np.quantile(coef_array[:, i], upper_q))
+                            float(np.quantile(coef_array[:, i], upper_q)),
                         )
                         for i, feat in enumerate(features)
                     }
@@ -1092,7 +1312,7 @@ class UnifiedNotebookInterface:
                     idx = features.index(own_rate_col)
                     elasticity_ci = (
                         float(np.quantile(coef_array[:, idx], 0.025)),
-                        float(np.quantile(coef_array[:, idx], 0.975))
+                        float(np.quantile(coef_array[:, idx], 0.975)),
                     )
             else:
                 logger.warning(
@@ -1123,9 +1343,7 @@ class UnifiedNotebookInterface:
             "diagnostics_summary": diagnostics_summary,
         }
 
-    def _get_inference_features(
-        self, data: pd.DataFrame, config: InferenceConfig
-    ) -> list:
+    def _get_inference_features(self, data: pd.DataFrame, config: InferenceConfig) -> list:
         """Get features for inference from config or auto-detect.
 
         Auto-detection includes:
@@ -1168,28 +1386,26 @@ class UnifiedNotebookInterface:
         # Competitor lag features (NOT lag-0 to avoid leakage)
         # Note: _t0 is current period, so excluded alongside _current for backward compat
         competitor_features = [
-            col for col in data.columns
+            col
+            for col in data.columns
             if "competitor" in col.lower()
             and "_t" in col.lower()  # Has lag suffix
             and "_t0" not in col.lower()  # Not lag-0 (current period)
             and "_current" not in col.lower()  # Legacy current also excluded
-        ][:3]  # Limit to 3 competitor features
+        ][
+            :3
+        ]  # Limit to 3 competitor features
 
         features = own_rate_features + competitor_features
 
         # Fallback defaults if auto-detection failed
         # Uses unified naming (will be remapped to legacy in output)
         if not features:
-            return [
-                "prudential_rate_t0",
-                "competitor_weighted_t2"
-            ]
+            return ["prudential_rate_t0", "competitor_weighted_t2"]
 
         return features
 
-    def _extract_model_coefficients(
-        self, model, features: list
-    ) -> Dict[str, float]:
+    def _extract_model_coefficients(self, model, features: list) -> dict[str, float]:
         """Extract average coefficients from bagging ensemble.
 
         For BaggingRegressor, averages coefficients across all estimators.
@@ -1210,19 +1426,19 @@ class UnifiedNotebookInterface:
         import numpy as np
 
         # BaggingRegressor stores base estimators
-        if hasattr(model, 'estimators_'):
+        if hasattr(model, "estimators_"):
             all_coefs = []
             for estimator in model.estimators_:
-                if hasattr(estimator, 'coef_'):
+                if hasattr(estimator, "coef_"):
                     all_coefs.append(estimator.coef_)
 
             if all_coefs:
                 avg_coefs = np.mean(all_coefs, axis=0)
-                return dict(zip(features, avg_coefs.tolist()))
+                return dict(zip(features, avg_coefs.tolist(), strict=False))
 
         # Fallback for single models
-        if hasattr(model, 'coef_'):
-            return dict(zip(features, model.coef_.tolist()))
+        if hasattr(model, "coef_"):
+            return dict(zip(features, model.coef_.tolist(), strict=False))
 
         return {}
 
@@ -1232,7 +1448,7 @@ class UnifiedNotebookInterface:
         model,
         features: list,
         target_variable: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Calculate model fit metrics on BOTH raw and log scales.
 
         The model is trained on log1p(y), so predictions are in log scale.
@@ -1261,8 +1477,9 @@ class UnifiedNotebookInterface:
             - n_samples, transform_used, note
         """
         import logging
+
         import numpy as np
-        from sklearn.metrics import r2_score, mean_absolute_error
+        from sklearn.metrics import mean_absolute_error, r2_score
 
         logger = logging.getLogger(__name__)
 
@@ -1288,12 +1505,14 @@ class UnifiedNotebookInterface:
             if nonzero_mask.sum() > 0:
                 mape_raw = float(
                     np.mean(
-                        np.abs((y_raw[nonzero_mask] - y_pred_raw[nonzero_mask])
-                               / y_raw[nonzero_mask])
-                    ) * 100
+                        np.abs(
+                            (y_raw[nonzero_mask] - y_pred_raw[nonzero_mask]) / y_raw[nonzero_mask]
+                        )
+                    )
+                    * 100
                 )
             else:
-                mape_raw = float('nan')
+                mape_raw = float("nan")
 
             # Log scale metrics (model's native scale)
             r2_log = r2_score(y_log, y_pred_log)
@@ -1310,13 +1529,10 @@ class UnifiedNotebookInterface:
                 # Metadata
                 "n_samples": len(y_raw),
                 "transform_used": "log1p",
-                "note": (
-                    "Raw metrics are in original units; "
-                    "log metrics match training scale"
-                ),
+                "note": ("Raw metrics are in original units; " "log metrics match training scale"),
                 # Backward compatibility: keep legacy keys
                 "r_squared": float(r2_log),  # Legacy: log scale
-                "mae": float(mae_log),       # Legacy: log scale
+                "mae": float(mae_log),  # Legacy: log scale
             }
         except (ValueError, KeyError, AttributeError) as e:
             logger.warning(f"Could not calculate model fit: {e}")
@@ -1392,9 +1608,9 @@ class UnifiedNotebookInterface:
 
     def run_forecasting(
         self,
-        data: Optional[pd.DataFrame] = None,
-        config: Optional[Dict[str, Any]] = None,
-    ) -> "ForecastingResults":
+        data: pd.DataFrame | None = None,
+        config: dict[str, Any] | None = None,
+    ) -> ForecastingResults:
         """Run time series forecasting pipeline.
 
         Corresponds to notebook 02_time_series_forecasting_refactored.
@@ -1430,15 +1646,13 @@ class UnifiedNotebookInterface:
         >>> results = interface.run_forecasting(df)
         >>> print(f"MAPE Improvement: {results.mape_improvement:.1f}%")
         """
-        from src.models.forecasting_types import ForecastingResults
-        from src.models.forecasting_orchestrator import run_forecasting_pipeline
         from src.config.forecasting_builders import build_forecasting_stage_config
+        from src.models.forecasting_orchestrator import run_forecasting_pipeline
+        from src.models.forecasting_types import ForecastingResults
 
         if data is None:
             if not self._data_loaded:
-                raise ValueError(
-                    "No data available. Call load_data() first or provide data."
-                )
+                raise ValueError("No data available. Call load_data() first or provide data.")
             data = self._data
 
         # Build forecasting configuration with overrides
@@ -1469,13 +1683,12 @@ class UnifiedNotebookInterface:
             )
         except Exception as e:
             raise RuntimeError(
-                f"Forecasting pipeline failed: {e}. "
-                f"Check data quality and configuration."
+                f"Forecasting pipeline failed: {e}. " f"Check data quality and configuration."
             ) from e
 
         return ForecastingResults.from_pipeline_output(pipeline_output)
 
-    def _get_default_forecasting_config(self) -> Dict[str, Any]:
+    def _get_default_forecasting_config(self) -> dict[str, Any]:
         """Get default forecasting configuration for product."""
         return {
             "bootstrap_samples": 1000,
@@ -1488,7 +1701,7 @@ class UnifiedNotebookInterface:
     def _validate_methodology_compliance(
         self,
         data: pd.DataFrame,
-        features: Optional[list] = None,
+        features: list | None = None,
     ) -> None:
         """Validate data/features comply with methodology constraints.
 
@@ -1506,6 +1719,7 @@ class UnifiedNotebookInterface:
             If features parameter contains lag-0 competitor features
         """
         import logging
+
         logger = logging.getLogger(__name__)
 
         rules = self._methodology.get_constraint_rules()
@@ -1515,10 +1729,7 @@ class UnifiedNotebookInterface:
                 if features is not None:
                     # Strict check on specified features
                     # Catches both RILA (_t0, _current) and FIA (_lag_0) patterns
-                    lag_zero_features = [
-                        f for f in features
-                        if self._is_competitor_lag_zero(f)
-                    ]
+                    lag_zero_features = [f for f in features if self._is_competitor_lag_zero(f)]
                     if lag_zero_features:
                         raise ValueError(
                             f"CRITICAL: Lag-0 competitor features in model: {lag_zero_features}. "
@@ -1527,10 +1738,7 @@ class UnifiedNotebookInterface:
                         )
                 else:
                     # Advisory warning for lag-0 columns in data
-                    lag_zero_cols = [
-                        c for c in data.columns
-                        if self._is_competitor_lag_zero(c)
-                    ]
+                    lag_zero_cols = [c for c in data.columns if self._is_competitor_lag_zero(c)]
                     if lag_zero_cols:
                         logger.warning(
                             f"Data contains {len(lag_zero_cols)} lag-0 competitor columns. "
@@ -1541,7 +1749,7 @@ class UnifiedNotebookInterface:
         self,
         results: InferenceResults,
         format: str = "excel",
-        name: Optional[str] = None,
+        name: str | None = None,
     ) -> str:
         """Export inference results.
 
@@ -1566,10 +1774,12 @@ class UnifiedNotebookInterface:
             name = f"inference_results_{self._product.product_code}_{timestamp}"
 
         # Convert results to DataFrame for export
-        results_df = pd.DataFrame({
-            "coefficient": list(results["coefficients"].values()),
-            "feature": list(results["coefficients"].keys()),
-        })
+        results_df = pd.DataFrame(
+            {
+                "coefficient": list(results["coefficients"].values()),
+                "feature": list(results["coefficients"].keys()),
+            }
+        )
 
         return self._adapter.save_output(results_df, name, format)
 
@@ -1579,7 +1789,7 @@ class UnifiedNotebookInterface:
         data: pd.DataFrame,
         features: list,
         target_variable: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Run lightweight diagnostics for auto-integration with run_inference().
 
@@ -1604,7 +1814,7 @@ class UnifiedNotebookInterface:
             Lightweight diagnostics summary with warnings
         """
         import logging
-        import numpy as np
+
         logger = logging.getLogger(__name__)
 
         warnings_list = []
@@ -1621,9 +1831,7 @@ class UnifiedNotebookInterface:
             y = data.loc[X.index, target_variable]
 
             if len(X) < 20:
-                warnings_list.append(
-                    "WARN: Insufficient data for diagnostics (n < 20)"
-                )
+                warnings_list.append("WARN: Insufficient data for diagnostics (n < 20)")
                 return diagnostics
 
             y_pred = model.predict(X)
@@ -1632,6 +1840,7 @@ class UnifiedNotebookInterface:
             # Durbin-Watson test for autocorrelation
             try:
                 from statsmodels.stats.stattools import durbin_watson
+
                 dw_stat = durbin_watson(residuals)
                 diagnostics["durbin_watson"] = float(dw_stat)
 
@@ -1660,7 +1869,7 @@ class UnifiedNotebookInterface:
                 X_check = X_check.assign(const=1)
 
                 vif_issues = []
-                for idx, col in enumerate(check_features):
+                for col in check_features:
                     col_idx = X_check.columns.get_loc(col)
                     vif = variance_inflation_factor(X_check.values, col_idx)
                     if vif > 10:
@@ -1684,10 +1893,10 @@ class UnifiedNotebookInterface:
     def generate_diagnostic_report(
         self,
         model,
-        data: Optional[pd.DataFrame] = None,
-        features: Optional[list] = None,
-        target_variable: Optional[str] = None,
-    ) -> "ComprehensiveDiagnostics":
+        data: pd.DataFrame | None = None,
+        features: list | None = None,
+        target_variable: str | None = None,
+    ) -> ComprehensiveDiagnostics:
         """
         Generate comprehensive diagnostic report for model assumption validation.
 
@@ -1733,14 +1942,11 @@ class UnifiedNotebookInterface:
         """
         from src.features.selection.support.regression_diagnostics import (
             comprehensive_diagnostic_suite,
-            ComprehensiveDiagnostics,
         )
 
         if data is None:
             if not self._data_loaded:
-                raise ValueError(
-                    "No data available. Call load_data() first or provide data."
-                )
+                raise ValueError("No data available. Call load_data() first or provide data.")
             data = self._data
 
         if target_variable is None:
@@ -1748,8 +1954,8 @@ class UnifiedNotebookInterface:
 
         if features is None:
             # Try to get features from model
-            if hasattr(model, 'params'):
-                features = [f for f in model.params.index if f != 'Intercept']
+            if hasattr(model, "params"):
+                features = [f for f in model.params.index if f != "Intercept"]
             else:
                 raise ValueError(
                     "Features not specified and cannot be inferred from model. "
@@ -1757,7 +1963,7 @@ class UnifiedNotebookInterface:
                 )
 
         # Validate model has required attributes for comprehensive diagnostics
-        if not hasattr(model, 'resid'):
+        if not hasattr(model, "resid"):
             raise ValueError(
                 "Model must be a statsmodels OLS model with .resid attribute. "
                 "Use statsmodels.formula.api.ols() to fit the model for diagnostics."
@@ -1774,13 +1980,11 @@ class UnifiedNotebookInterface:
         """Get economic constraint rules for the product type."""
         return self._methodology.get_constraint_rules()
 
-    def get_coefficient_signs(self) -> Dict[str, str]:
+    def get_coefficient_signs(self) -> dict[str, str]:
         """Get expected coefficient signs."""
         return self._methodology.get_coefficient_signs()
 
-    def validate_coefficients(
-        self, coefficients: Dict[str, float]
-    ) -> Dict[str, Any]:
+    def validate_coefficients(self, coefficients: dict[str, float]) -> dict[str, Any]:
         """Validate model coefficients against economic constraints.
 
         Uses unified regex patterns to avoid false positives from substring
@@ -1803,8 +2007,7 @@ class UnifiedNotebookInterface:
         from src.validation.coefficient_patterns import validate_all_coefficients
 
         return validate_all_coefficients(
-            coefficients,
-            product_type=self._product.product_type.upper()
+            coefficients, product_type=self._product.product_type.upper()
         )
 
 

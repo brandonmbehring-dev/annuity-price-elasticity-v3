@@ -104,12 +104,15 @@ markers = [
     "baseline: marks baseline validation tests",
     "notebook: marks notebook execution tests",
     "property: marks property-based tests (Hypothesis)",
-    "leakage: marks leakage detection tests",
+    "leakage: marks leakage detection tests (lag-0, temporal boundaries, buffer control)",
+    "parity: marks parity/equivalence tests (mathematical precision validation)",
+    "regression: marks regression tests (baseline comparison)",
     "performance: marks performance baseline tests (timing)",
     "memory: marks memory baseline tests",
     "known_answer: marks known-answer tests validating against literature/golden values",
     "monte_carlo: marks Monte Carlo simulation tests",
     "adversarial: marks adversarial/edge case stress tests",
+    "calibration: marks calibration tests (CI coverage, bootstrap stability)",
 ]
 
 [tool.coverage.run]

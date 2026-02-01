@@ -12,6 +12,11 @@
     "competitor_top5_t3": -0.0284,
     "sales_target_contract_t5": 0.0156
   },
+  "coefficient_signs": {
+    "prudential_rate_current": "positive",
+    "competitor_mid_t2": "negative",
+    "competitor_top5_t3": "negative"
+  },
   "performance_metrics": {
     "r_squared": 0.7837,
     "mape": 0.1274,

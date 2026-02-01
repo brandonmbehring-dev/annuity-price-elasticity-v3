@@ -19,8 +19,6 @@ Usage:
     )
 """
 
-from typing import Optional
-
 
 class ElasticityBaseError(Exception):
     """Base exception with business context for all elasticity errors.
@@ -38,8 +36,8 @@ class ElasticityBaseError(Exception):
     def __init__(
         self,
         message: str,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.message = message
         self.business_impact = business_impact or "Unknown business impact"
@@ -104,9 +102,9 @@ class DataLoadError(DataError):
     def __init__(
         self,
         message: str,
-        source: Optional[str] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        source: str | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.source = source
         business_impact = business_impact or "Pipeline cannot proceed without data"
@@ -123,9 +121,9 @@ class DataValidationError(DataError):
     def __init__(
         self,
         message: str,
-        validation_type: Optional[str] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        validation_type: str | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.validation_type = validation_type
         business_impact = business_impact or "Invalid data may produce incorrect results"
@@ -139,16 +137,44 @@ class DataSchemaError(DataError):
     def __init__(
         self,
         message: str,
-        expected_schema: Optional[str] = None,
-        actual_schema: Optional[str] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        expected_schema: str | None = None,
+        actual_schema: str | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.expected_schema = expected_schema
         self.actual_schema = actual_schema
         business_impact = business_impact or "Data structure mismatch prevents processing"
         required_action = required_action or "Verify data source schema matches expected"
         super().__init__(message, business_impact, required_action)
+
+
+class PipelineStageError(DataError):
+    """Raised when a data pipeline stage fails.
+
+    Used for fail-fast error handling in the 10-stage merge pipeline.
+    Includes stage number and name for clear diagnostics.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        stage_number: int,
+        stage_name: str,
+        business_impact: str | None = None,
+        required_action: str | None = None,
+    ):
+        self.stage_number = stage_number
+        self.stage_name = stage_name
+        business_impact = (
+            business_impact or f"Pipeline halted at stage {stage_number}: {stage_name}"
+        )
+        required_action = required_action or "Check data quality and configuration for this stage"
+        super().__init__(
+            f"Stage {stage_number} ({stage_name}) failed: {message}",
+            business_impact,
+            required_action,
+        )
 
 
 # =============================================================================
@@ -214,9 +240,9 @@ class AutocorrelationTestError(DiagnosticError):
     def __init__(
         self,
         message: str,
-        test_name: Optional[str] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        test_name: str | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.test_name = test_name
         business_impact = business_impact or "Cannot verify time series assumptions"
@@ -233,9 +259,9 @@ class HeteroscedasticityTestError(DiagnosticError):
     def __init__(
         self,
         message: str,
-        test_name: Optional[str] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        test_name: str | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.test_name = test_name
         business_impact = business_impact or "Standard errors may be unreliable"
@@ -252,9 +278,9 @@ class NormalityTestError(DiagnosticError):
     def __init__(
         self,
         message: str,
-        test_name: Optional[str] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        test_name: str | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.test_name = test_name
         business_impact = business_impact or "Confidence intervals may be unreliable"
@@ -268,9 +294,9 @@ class MulticollinearityError(DiagnosticError):
     def __init__(
         self,
         message: str,
-        vif_values: Optional[dict] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        vif_values: dict | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.vif_values = vif_values
         business_impact = business_impact or "Coefficient estimates may be unstable"
@@ -337,12 +363,12 @@ class ConstraintViolationError(ModelError):
     def __init__(
         self,
         message: str,
-        constraint_type: Optional[str] = None,
-        feature_name: Optional[str] = None,
-        expected_sign: Optional[str] = None,
-        actual_sign: Optional[str] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        constraint_type: str | None = None,
+        feature_name: str | None = None,
+        expected_sign: str | None = None,
+        actual_sign: str | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.constraint_type = constraint_type
         self.feature_name = feature_name
@@ -359,9 +385,9 @@ class ModelConvergenceError(ModelError):
     def __init__(
         self,
         message: str,
-        n_iterations: Optional[int] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        n_iterations: int | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.n_iterations = n_iterations
         business_impact = business_impact or "Cannot produce reliable estimates"
@@ -375,9 +401,9 @@ class FeatureSelectionError(ModelError):
     def __init__(
         self,
         message: str,
-        n_features_attempted: Optional[int] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        n_features_attempted: int | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.n_features_attempted = n_features_attempted
         business_impact = business_impact or "Cannot identify optimal feature set"
@@ -444,9 +470,9 @@ class PlotGenerationError(VisualizationError):
     def __init__(
         self,
         message: str,
-        plot_type: Optional[str] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        plot_type: str | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.plot_type = plot_type
         business_impact = business_impact or "Cannot generate visual output"
@@ -460,10 +486,10 @@ class ExportError(VisualizationError):
     def __init__(
         self,
         message: str,
-        export_format: Optional[str] = None,
-        file_path: Optional[str] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        export_format: str | None = None,
+        file_path: str | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.export_format = export_format
         self.file_path = file_path
@@ -529,9 +555,9 @@ class InvalidConfigError(ConfigurationError):
     def __init__(
         self,
         message: str,
-        config_key: Optional[str] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        config_key: str | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.config_key = config_key
         business_impact = business_impact or "Pipeline cannot run with invalid config"
@@ -545,10 +571,10 @@ class ProductNotFoundError(ConfigurationError):
     def __init__(
         self,
         message: str,
-        product_type: Optional[str] = None,
-        available_products: Optional[list] = None,
-        business_impact: Optional[str] = None,
-        required_action: Optional[str] = None,
+        product_type: str | None = None,
+        available_products: list | None = None,
+        business_impact: str | None = None,
+        required_action: str | None = None,
     ):
         self.product_type = product_type
         self.available_products = available_products
@@ -565,6 +591,7 @@ __all__ = [
     "DataLoadError",
     "DataValidationError",
     "DataSchemaError",
+    "PipelineStageError",
     # Diagnostic layer
     "DiagnosticError",
     "AutocorrelationTestError",

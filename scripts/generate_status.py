@@ -1,24 +1,36 @@
 #!/usr/bin/env python3
 """
-Generate status metrics for CLAUDE.md header.
+Generate status metrics for project documentation (CLAUDE.md, README.md).
 
 Auto-generates:
-- Test pass rate
+- Test pass rate and count
 - Coverage percentage
+- Test quality breakdown (from test_inventory.json)
 - Leakage gate status
 - Last updated timestamp
+
+Resolves Metrics Drift Issue:
+- Single source of truth for test/coverage metrics
+- Updates both CLAUDE.md and README.md consistently
+- Reads from actual test runs and .coverage file
 
 Usage:
     python scripts/generate_status.py           # Print status
     python scripts/generate_status.py --update  # Update CLAUDE.md
+    python scripts/generate_status.py --readme  # Update README.md
+    python scripts/generate_status.py --all     # Update all docs
+    python scripts/generate_status.py --json    # Output JSON for CI
 """
 
 import argparse
+import json
 import re
 import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).parent.parent
 
 
 def run_command(cmd: list[str], timeout: int = 120) -> tuple[int, str, str]:
@@ -29,13 +41,25 @@ def run_command(cmd: list[str], timeout: int = 120) -> tuple[int, str, str]:
             capture_output=True,
             text=True,
             timeout=timeout,
-            cwd=Path(__file__).parent.parent,
+            cwd=PROJECT_ROOT,
         )
         return result.returncode, result.stdout, result.stderr
     except subprocess.TimeoutExpired:
         return 1, "", "Command timed out"
     except FileNotFoundError:
         return 1, "", f"Command not found: {cmd[0]}"
+
+
+def get_test_count_fast() -> int:
+    """Get test count via pytest collection (fast, no execution)."""
+    exit_code, stdout, stderr = run_command(["python", "-m", "pytest", "--collect-only", "-q"])
+    # Parse "N tests collected" or count lines
+    output = stdout + stderr
+    match = re.search(r"(\d+) tests? collected", output.lower())
+    if match:
+        return int(match.group(1))
+    # Fallback: count test items
+    return len([line for line in stdout.split("\n") if "::" in line])
 
 
 def get_test_metrics() -> dict:
@@ -75,20 +99,53 @@ def get_test_metrics() -> dict:
     }
 
 
-def get_coverage_metrics() -> dict:
-    """Run coverage and extract percentage."""
-    exit_code, stdout, stderr = run_command(
-        ["python", "-m", "pytest", "--cov=src", "--cov-report=term", "-q", "--tb=no"],
-        timeout=300,
-    )
+def get_test_quality_breakdown() -> dict:
+    """Load test quality breakdown from test_inventory.json if available."""
+    inventory_path = PROJECT_ROOT / "docs/test_quality/test_inventory.json"
+    if not inventory_path.exists():
+        return {}
 
-    output = stdout + stderr
+    try:
+        with open(inventory_path) as f:
+            data = json.load(f)
+        return {
+            "meaningful_pct": data.get("quality_breakdown", {}).get("A_meaningful", 0),
+            "shallow_pct": data.get("quality_breakdown", {}).get("B_shallow", 0),
+            "over_mocked_pct": data.get("quality_breakdown", {}).get("C_over_mocked", 0),
+            "tautological_pct": data.get("quality_breakdown", {}).get("D_tautological", 0),
+        }
+    except (json.JSONDecodeError, KeyError):
+        return {}
 
-    # Parse coverage output for total percentage
-    # Format: "TOTAL    12345   1234    90%"
-    match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", output)
-    if match:
-        return {"coverage_percent": int(match.group(1))}
+
+def get_coverage_metrics(run_tests: bool = True) -> dict:
+    """Get coverage metrics from .coverage file or by running tests.
+
+    Parameters
+    ----------
+    run_tests : bool
+        If True, run pytest with coverage. If False, read from .coverage file.
+    """
+    if run_tests:
+        exit_code, stdout, stderr = run_command(
+            ["python", "-m", "pytest", "--cov=src", "--cov-report=term", "-q", "--tb=no"],
+            timeout=300,
+        )
+        output = stdout + stderr
+
+        # Parse coverage output for total percentage
+        # Format: "TOTAL    12345   1234    90%"
+        match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", output)
+        if match:
+            return {"coverage_percent": int(match.group(1))}
+
+    # Try to read from existing .coverage file
+    coverage_file = PROJECT_ROOT / ".coverage"
+    if coverage_file.exists():
+        exit_code, stdout, stderr = run_command(["python", "-m", "coverage", "report"])
+        match = re.search(r"TOTAL\s+\d+\s+\d+\s+(\d+)%", stdout)
+        if match:
+            return {"coverage_percent": int(match.group(1))}
 
     return {"coverage_percent": None}
 
@@ -96,7 +153,7 @@ def get_coverage_metrics() -> dict:
 def get_leakage_gate_status() -> str:
     """Check leakage gate status."""
     exit_code, stdout, stderr = run_command(
-        ["python", "-m", "pytest", "tests/test_leakage_gates.py", "-v", "--tb=short"]
+        ["python", "-m", "pytest", "-m", "leakage", "-q", "--tb=no"]
     )
 
     if exit_code == 0:
@@ -107,31 +164,93 @@ def get_leakage_gate_status() -> str:
         return "FAILED"
 
 
-def generate_status_table(test_metrics: dict, coverage: dict, leakage_status: str) -> str:
-    """Generate markdown status table."""
+def generate_status_table(
+    test_metrics: dict,
+    coverage: dict,
+    leakage_status: str,
+    quality_breakdown: dict = None,
+) -> str:
+    """Generate markdown status table for CLAUDE.md."""
     coverage_pct = coverage.get("coverage_percent")
     coverage_str = f"{coverage_pct}%" if coverage_pct else "N/A"
 
-    pass_rate = test_metrics.get("pass_rate", 0)
     passed = test_metrics.get("passed", 0)
-    failed = test_metrics.get("failed", 0)
+    _failed = test_metrics.get("failed", 0)  # Reserved for future use
 
     timestamp = datetime.now().strftime("%Y-%m-%d")
+
+    # Include quality breakdown if available
+    quality_note = ""
+    if quality_breakdown and quality_breakdown.get("meaningful_pct"):
+        quality_note = f"; {quality_breakdown['meaningful_pct']:.0f}% meaningful"
 
     return f"""| Checkpoint | Status | Notes |
 |------------|--------|-------|
 | Exploration complete | DONE | Multi-product architecture validated |
 | Core functionality | DONE | DI patterns, adapters, strategies implemented |
-| Test coverage | {coverage_str} | {passed} tests; priority: core modules >60%, infrastructure can be lower |
+| Test coverage | {coverage_str} | {passed} tests{quality_note}; priority: core modules >60%, infrastructure can be lower |
 | Leakage gate | {leakage_status} | Critical tests now BLOCKING (see audit 2026-01-26) |
 | Production deployment | PENDING | Awaiting P0 fixes from audit |
 
 _Last updated: {timestamp}_"""
 
 
+def generate_readme_status(
+    test_metrics: dict,
+    coverage: dict,
+    quality_breakdown: dict = None,
+) -> str:
+    """Generate status summary for README.md."""
+    coverage_pct = coverage.get("coverage_percent", "N/A")
+    passed = test_metrics.get("passed", 0)
+    failed = test_metrics.get("failed", 0)
+    total = passed + failed
+
+    timestamp = datetime.now().strftime("%Y-%m-%d")
+
+    lines = [
+        "## Current Status",
+        "",
+        "| Metric | Value | Source |",
+        "|--------|-------|--------|",
+        f"| Tests | {total:,} | `pytest --collect-only` |",
+        f"| Coverage | {coverage_pct}% | `.coverage` |",
+    ]
+
+    if quality_breakdown and quality_breakdown.get("meaningful_pct"):
+        lines.append(
+            f"| Meaningful Tests | {quality_breakdown['meaningful_pct']:.1f}% | `test_inventory.json` |"
+        )
+
+    lines.extend(
+        [
+            "",
+            f"_Auto-generated: {timestamp}_ | _Regenerate: `python scripts/generate_status.py`_",
+        ]
+    )
+
+    return "\n".join(lines)
+
+
+def generate_json_output(
+    test_metrics: dict,
+    coverage: dict,
+    leakage_status: str,
+    quality_breakdown: dict = None,
+) -> dict:
+    """Generate JSON output for CI integration."""
+    return {
+        "timestamp": datetime.now().isoformat(),
+        "tests": test_metrics,
+        "coverage": coverage,
+        "leakage_gate": leakage_status,
+        "quality_breakdown": quality_breakdown or {},
+    }
+
+
 def update_claude_md(status_table: str) -> bool:
     """Update CLAUDE.md with new status table."""
-    claude_md_path = Path(__file__).parent.parent / "CLAUDE.md"
+    claude_md_path = PROJECT_ROOT / "CLAUDE.md"
 
     if not claude_md_path.exists():
         print(f"ERROR: {claude_md_path} not found")
@@ -155,40 +274,79 @@ def update_claude_md(status_table: str) -> bool:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate status metrics for CLAUDE.md")
+    """CLI entry point for generating project status documentation."""
+    parser = argparse.ArgumentParser(
+        description="Generate status metrics for project documentation"
+    )
     parser.add_argument("--update", action="store_true", help="Update CLAUDE.md in place")
+    parser.add_argument("--readme", action="store_true", help="Generate README status section")
+    parser.add_argument("--all", action="store_true", help="Update all documentation files")
     parser.add_argument("--quick", action="store_true", help="Skip slow operations (coverage)")
+    parser.add_argument("--json", action="store_true", help="Output JSON for CI integration")
+    parser.add_argument("--no-run", action="store_true", help="Don't run tests, use cached data")
     args = parser.parse_args()
 
     print("Gathering metrics...")
 
-    # Always run test metrics
-    print("  Running tests...")
-    test_metrics = get_test_metrics()
-    print(f"    Tests: {test_metrics['passed']} passed, {test_metrics['failed']} failed")
+    # Get test metrics
+    if args.no_run:
+        print("  Using cached data (--no-run)...")
+        test_metrics = {"passed": 0, "failed": 0, "skipped": 0, "total": 0, "pass_rate": 0}
+        test_count = get_test_count_fast()
+        test_metrics["total"] = test_count
+        print(f"    Tests collected: {test_count}")
+    else:
+        print("  Running tests...")
+        test_metrics = get_test_metrics()
+        print(f"    Tests: {test_metrics['passed']} passed, {test_metrics['failed']} failed")
 
-    # Skip coverage if --quick
+    # Get test quality breakdown
+    quality_breakdown = get_test_quality_breakdown()
+    if quality_breakdown:
+        print(f"    Quality: {quality_breakdown.get('meaningful_pct', 0):.1f}% meaningful")
+
+    # Get coverage
     if args.quick:
-        coverage = {"coverage_percent": None}
-        print("  Skipping coverage (--quick)")
+        coverage = get_coverage_metrics(run_tests=False)
+        if coverage.get("coverage_percent"):
+            print(f"  Coverage (cached): {coverage['coverage_percent']}%")
+        else:
+            print("  Skipping coverage (--quick)")
+    elif args.no_run:
+        coverage = get_coverage_metrics(run_tests=False)
+        print(f"  Coverage (cached): {coverage.get('coverage_percent', 'N/A')}%")
     else:
         print("  Running coverage (this may take a few minutes)...")
-        coverage = get_coverage_metrics()
+        coverage = get_coverage_metrics(run_tests=True)
         print(f"    Coverage: {coverage.get('coverage_percent', 'N/A')}%")
 
     # Check leakage gates
-    print("  Checking leakage gates...")
-    leakage_status = get_leakage_gate_status()
-    print(f"    Leakage gate: {leakage_status}")
+    if args.no_run:
+        leakage_status = "UNKNOWN"
+    else:
+        print("  Checking leakage gates...")
+        leakage_status = get_leakage_gate_status()
+        print(f"    Leakage gate: {leakage_status}")
+
+    # JSON output for CI
+    if args.json:
+        output = generate_json_output(test_metrics, coverage, leakage_status, quality_breakdown)
+        print(json.dumps(output, indent=2))
+        return
 
     # Generate status table
-    status_table = generate_status_table(test_metrics, coverage, leakage_status)
+    status_table = generate_status_table(test_metrics, coverage, leakage_status, quality_breakdown)
 
     print("\n" + "=" * 60)
     print(status_table)
     print("=" * 60)
 
-    if args.update:
+    if args.readme or args.all:
+        readme_status = generate_readme_status(test_metrics, coverage, quality_breakdown)
+        print("\n--- README Status Section ---")
+        print(readme_status)
+
+    if args.update or args.all:
         if update_claude_md(status_table):
             print("\nCLAUDE.md updated successfully.")
         else:

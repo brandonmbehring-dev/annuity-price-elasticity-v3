@@ -46,11 +46,13 @@ import logging
 import sys
 import tempfile
 import time
+import warnings
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
-from unittest.mock import MagicMock, Mock, patch
-import warnings
+from typing import Any
+from unittest.mock import MagicMock, Mock
 
 import numpy as np
 import pandas as pd
@@ -60,10 +62,12 @@ import pytest
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-# Import src modules
-from src.config import config_builder
-from src.data.schema_validator import SchemaValidator
-from src.validation_support.mathematical_equivalence import MathematicalEquivalenceValidator
+# Import src modules (after sys.path setup)
+from src.config import config_builder  # noqa: E402
+from src.data.schema_validator import SchemaValidator  # noqa: E402
+from src.validation_support.mathematical_equivalence import (  # noqa: E402
+    MathematicalEquivalenceValidator,
+)
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -71,6 +75,57 @@ logger = logging.getLogger(__name__)
 
 # Suppress warnings in tests
 warnings.filterwarnings("ignore")
+
+
+# =============================================================================
+# TOLERANCE TIERS (Principled with Documented Rationale)
+# =============================================================================
+
+
+@dataclass(frozen=True)
+class ToleranceTiers:
+    """
+    Principled tolerance levels with documented rationale.
+
+    Each tier has a specific use case:
+    - strict: Mathematical equivalence during refactoring (bit-level)
+    - validation: Library precision bounds (numpy, scipy operations)
+    - integration: Workflow correctness (small numerical variations OK)
+    - retraining: Allow small variations from retraining with different seeds
+    - mc_standard: Monte Carlo with 1000 samples (1% variance)
+    - mc_large: Monte Carlo with 10000 samples (0.5% variance)
+
+    Usage:
+        from tests.conftest import TOLERANCES
+
+        # In tests:
+        assert abs(actual - expected) < TOLERANCES.validation
+        np.testing.assert_allclose(a, b, atol=TOLERANCES.integration)
+
+    Migration Pattern:
+        # Old:
+        TOLERANCE_NORMAL = 1e-6
+        assert abs(a - b) < TOLERANCE_NORMAL
+
+        # New:
+        assert abs(a - b) < TOLERANCES.validation
+    """
+
+    strict: float = 1e-12  # Mathematical equivalence during refactoring
+    validation: float = 1e-6  # Library precision (numpy, scipy)
+    integration: float = 1e-4  # Workflow correctness
+    retraining: float = 1e-3  # Retraining variations
+    mc_standard: float = 0.01  # 1% for 1000 bootstrap samples
+    mc_large: float = 0.005  # 0.5% for 10000 bootstrap samples
+
+    # Additional named tolerances for specific use cases
+    coefficient_sign: float = 0.0  # Signs must match exactly
+    r_squared_delta: float = 0.01  # 1% R² variation acceptable
+    mape_delta: float = 0.005  # 0.5% MAPE variation acceptable
+
+
+# Global tolerance instance for import
+TOLERANCES = ToleranceTiers()
 
 
 # =============================================================================
@@ -125,8 +180,8 @@ def raw_sales_data(fixtures_dir: Path) -> pd.DataFrame:
 
     # Validate fixture integrity
     assert len(df) > 1_000_000, f"Expected >1M rows, got {len(df)}"
-    assert 'application_signed_date' in df.columns, "Missing required column"
-    assert 'product_name' in df.columns, "Missing required column"
+    assert "application_signed_date" in df.columns, "Missing required column"
+    assert "product_name" in df.columns, "Missing required column"
 
     logger.info(f"[PASS] Loaded raw_sales_data: {df.shape}")
     return df
@@ -157,7 +212,7 @@ def raw_wink_data(fixtures_dir: Path) -> pd.DataFrame:
 
     # Validate fixture integrity
     assert len(df) > 1_000_000, f"Expected >1M rows, got {len(df)}"
-    assert 'date' in df.columns, "Missing required column"
+    assert "date" in df.columns, "Missing required column"
 
     logger.info(f"[PASS] Loaded raw_wink_data: {df.shape}")
     return df
@@ -216,7 +271,7 @@ def cleaned_sales_data(fixtures_dir: Path) -> pd.DataFrame:
 
     # Validate
     assert 50_000 < len(df) < 60_000, f"Expected 50-60K rows, got {len(df)}"
-    assert 'processing_days' in df.columns, "Missing processing_days column"
+    assert "processing_days" in df.columns, "Missing processing_days column"
 
     logger.info(f"[PASS] Loaded cleaned_sales_data: {df.shape}")
     return df
@@ -246,7 +301,7 @@ def daily_sales_timeseries(fixtures_dir: Path) -> pd.DataFrame:
 
     # Validate
     assert 1_700 < len(df) < 1_900, f"Expected 1700-1900 rows, got {len(df)}"
-    assert 'sales' in df.columns, "Missing sales column"
+    assert "sales" in df.columns, "Missing sales column"
 
     logger.info(f"[PASS] Loaded daily_sales_timeseries: {df.shape}")
     return df
@@ -276,7 +331,7 @@ def contract_sales_timeseries(fixtures_dir: Path) -> pd.DataFrame:
 
     # Validate
     assert 1_700 < len(df) < 1_900, f"Expected 1700-1900 rows, got {len(df)}"
-    assert 'sales_by_contract_date' in df.columns, "Missing sales_by_contract_date column"
+    assert "sales_by_contract_date" in df.columns, "Missing sales_by_contract_date column"
 
     logger.info(f"[PASS] Loaded contract_sales_timeseries: {df.shape}")
     return df
@@ -305,8 +360,8 @@ def wink_competitive_rates(fixtures_dir: Path) -> pd.DataFrame:
 
     # Validate
     assert 2_500 < len(df) < 3_000, f"Expected 2500-3000 rows, got {len(df)}"
-    assert 'Prudential' in df.columns, "Missing Prudential column"
-    assert 'date' in df.columns, "Missing date column"
+    assert "Prudential" in df.columns, "Missing Prudential column"
+    assert "date" in df.columns, "Missing date column"
 
     logger.info(f"[PASS] Loaded wink_competitive_rates: {df.shape}")
     return df
@@ -336,8 +391,8 @@ def market_weighted_rates(fixtures_dir: Path) -> pd.DataFrame:
 
     # Validate
     assert 2_500 < len(df) < 3_000, f"Expected 2500-3000 rows, got {len(df)}"
-    assert 'C_weighted_mean' in df.columns, "Missing C_weighted_mean column"
-    assert 'C_core' in df.columns, "Missing C_core column"
+    assert "C_weighted_mean" in df.columns, "Missing C_weighted_mean column"
+    assert "C_core" in df.columns, "Missing C_core column"
 
     logger.info(f"[PASS] Loaded market_weighted_rates: {df.shape}")
     return df
@@ -394,8 +449,8 @@ def daily_integrated_data(fixtures_dir: Path) -> pd.DataFrame:
 
     # Validate
     assert 1_700 < len(df) < 2_000, f"Expected 1700-2000 rows, got {len(df)}"
-    assert 'date' in df.columns, "Missing date column"
-    assert 'sales' in df.columns, "Missing sales column"
+    assert "date" in df.columns, "Missing date column"
+    assert "sales" in df.columns, "Missing sales column"
 
     logger.info(f"[PASS] Loaded daily_integrated_data: {df.shape}")
     return df
@@ -424,8 +479,8 @@ def competitive_features_data(fixtures_dir: Path) -> pd.DataFrame:
 
     # Validate
     assert 1_700 < len(df) < 2_000, f"Expected 1700-2000 rows, got {len(df)}"
-    assert 'C_median' in df.columns, "Missing C_median column"
-    assert 'C_top_5' in df.columns, "Missing C_top_5 column"
+    assert "C_median" in df.columns, "Missing C_median column"
+    assert "C_top_5" in df.columns, "Missing C_top_5 column"
 
     logger.info(f"[PASS] Loaded competitive_features_data: {df.shape}")
     return df
@@ -460,10 +515,10 @@ def final_weekly_dataset(fixtures_dir: Path) -> pd.DataFrame:
     # Validate (range expanded to 260 to accommodate extended analysis period starting 2021-02-01)
     assert 150 < len(df) < 260, f"Expected 150-260 rows, got {len(df)}"
     assert df.shape[1] > 500, f"Expected >500 columns, got {df.shape[1]}"
-    assert 'date' in df.columns, "Missing date column"
-    assert 'sales' in df.columns, "Missing sales column"
-    assert 'Spread' in df.columns, "Missing Spread column"
-    assert 'sales_log' in df.columns, "Missing sales_log column"
+    assert "date" in df.columns, "Missing date column"
+    assert "sales" in df.columns, "Missing sales column"
+    assert "Spread" in df.columns, "Missing Spread column"
+    assert "sales_log" in df.columns, "Missing sales_log column"
 
     logger.info(f"[PASS] Loaded final_weekly_dataset: {df.shape}")
     return df
@@ -475,7 +530,7 @@ def final_weekly_dataset(fixtures_dir: Path) -> pd.DataFrame:
 
 
 @pytest.fixture(scope="module")
-def aws_config() -> Dict[str, str]:
+def aws_config() -> dict[str, str]:
     """
     Mock AWS configuration for testing (no real credentials).
 
@@ -489,17 +544,17 @@ def aws_config() -> Dict[str, str]:
         Dictionary with AWS configuration keys
     """
     return {
-        'xid': "x259830",
-        'role_arn': "arn:aws:iam::159058241883:role/isg-usbie-annuity-CA-s3-sharing",
-        'sts_endpoint_url': "https://sts.us-east-1.amazonaws.com",
-        'source_bucket_name': "pruvpcaws031-east-isg-ie-lake",
-        'output_bucket_name': "cdo-annuity-364524684987-bucket",
-        'output_base_path': "ANN_Price_Elasticity_Data_Science"
+        "xid": "x259830",
+        "role_arn": "arn:aws:iam::159058241883:role/isg-usbie-annuity-CA-s3-sharing",
+        "sts_endpoint_url": "https://sts.us-east-1.amazonaws.com",
+        "source_bucket_name": "pruvpcaws031-east-isg-ie-lake",
+        "output_bucket_name": "cdo-annuity-364524684987-bucket",
+        "output_base_path": "ANN_Price_Elasticity_Data_Science",
     }
 
 
 @pytest.fixture(scope="module")
-def product_filter_config() -> Dict[str, Any]:
+def product_filter_config() -> dict[str, Any]:
     """
     FlexGuard 6Y 20% product filter configuration.
 
@@ -514,13 +569,13 @@ def product_filter_config() -> Dict[str, Any]:
         version=6,
         product_name="FlexGuard indexed variable annuity",
         term_filter="6Y",
-        buffer_rate_filter="20%"
+        buffer_rate_filter="20%",
     )
-    return configs['product_filter']
+    return configs["product_filter"]
 
 
 @pytest.fixture(scope="module")
-def sales_cleanup_config() -> Dict[str, Any]:
+def sales_cleanup_config() -> dict[str, Any]:
     """
     Sales data cleaning configuration.
 
@@ -532,11 +587,11 @@ def sales_cleanup_config() -> Dict[str, Any]:
         SalesCleanupConfig TypedDict
     """
     configs = config_builder.build_pipeline_configs(version=6)
-    return configs['sales_cleanup']
+    return configs["sales_cleanup"]
 
 
 @pytest.fixture(scope="module")
-def wink_processing_config() -> Dict[str, Any]:
+def wink_processing_config() -> dict[str, Any]:
     """
     WINK competitive rate processing configuration.
 
@@ -548,11 +603,11 @@ def wink_processing_config() -> Dict[str, Any]:
         WinkProcessingConfig TypedDict
     """
     configs = config_builder.build_pipeline_configs(version=6)
-    return configs['wink_processing']
+    return configs["wink_processing"]
 
 
 @pytest.fixture(scope="module")
-def competitive_config() -> Dict[str, Any]:
+def competitive_config() -> dict[str, Any]:
     """
     Competitive feature engineering configuration.
 
@@ -564,11 +619,11 @@ def competitive_config() -> Dict[str, Any]:
         CompetitiveConfig TypedDict
     """
     configs = config_builder.build_pipeline_configs(version=6)
-    return configs['competitive']
+    return configs["competitive"]
 
 
 @pytest.fixture(scope="module")
-def lag_feature_config() -> Dict[str, Any]:
+def lag_feature_config() -> dict[str, Any]:
     """
     Lag feature engineering configuration (13 lag configs).
 
@@ -580,11 +635,11 @@ def lag_feature_config() -> Dict[str, Any]:
         LagFeatureConfig TypedDict
     """
     configs = config_builder.build_pipeline_configs(version=6)
-    return configs['lag_features']
+    return configs["lag_features"]
 
 
 @pytest.fixture(scope="module")
-def feature_config() -> Dict[str, Any]:
+def feature_config() -> dict[str, Any]:
     """
     Final feature preparation configuration.
 
@@ -596,11 +651,11 @@ def feature_config() -> Dict[str, Any]:
         FeatureConfig TypedDict
     """
     configs = config_builder.build_pipeline_configs(version=6)
-    return configs['final_features']
+    return configs["final_features"]
 
 
 @pytest.fixture(scope="module")
-def forecasting_config() -> Dict[str, Any]:
+def forecasting_config() -> dict[str, Any]:
     """
     Bootstrap Ridge forecasting configuration.
 
@@ -611,17 +666,17 @@ def forecasting_config() -> Dict[str, Any]:
         ForecastingConfig with bootstrap parameters
     """
     return {
-        'n_bootstrap_samples': 100,  # Reduced for testing (production: 1000)
-        'ridge_alpha': 1.0,
-        'random_state': 42,
-        'weight_decay_factor': 0.95,
-        'min_training_cutoff': 30,
-        'exclude_holidays': True
+        "n_bootstrap_samples": 100,  # Reduced for testing (production: 1000)
+        "ridge_alpha": 1.0,
+        "random_state": 42,
+        "weight_decay_factor": 0.95,
+        "min_training_cutoff": 30,
+        "exclude_holidays": True,
     }
 
 
 @pytest.fixture(scope="module")
-def inference_config() -> Dict[str, Any]:
+def inference_config() -> dict[str, Any]:
     """
     Price elasticity inference configuration.
 
@@ -632,19 +687,19 @@ def inference_config() -> Dict[str, Any]:
         InferenceConfig with rate scenario parameters
     """
     return {
-        'n_estimators': 100,  # Reduced for testing (production: 1000)
-        'ridge_alpha': 1.0,
-        'random_state': 42,
-        'weight_decay_factor': 0.95,
-        'rate_min': 0.0,
-        'rate_max': 4.5,
-        'rate_steps': 19,
-        'confidence_level': 0.95
+        "n_estimators": 100,  # Reduced for testing (production: 1000)
+        "ridge_alpha": 1.0,
+        "random_state": 42,
+        "weight_decay_factor": 0.95,
+        "rate_min": 0.0,
+        "rate_max": 4.5,
+        "rate_steps": 19,
+        "confidence_level": 0.95,
     }
 
 
 @pytest.fixture(scope="module")
-def validation_config() -> Dict[str, float]:
+def validation_config() -> dict[str, float]:
     """
     Mathematical equivalence validation tolerances (per CLAUDE.md).
 
@@ -656,11 +711,11 @@ def validation_config() -> Dict[str, float]:
         Dictionary with tolerance settings
     """
     return {
-        'target_precision': 1e-12,  # CLAUDE.md requirement
-        'r2_tolerance': 1e-6,
-        'mape_tolerance': 1e-4,
-        'prediction_tolerance': 1e-6,
-        'acceptable_precision': 1e-8
+        "target_precision": 1e-12,  # CLAUDE.md requirement
+        "r2_tolerance": 1e-6,
+        "mape_tolerance": 1e-4,
+        "prediction_tolerance": 1e-6,
+        "acceptable_precision": 1e-8,
     }
 
 
@@ -688,22 +743,22 @@ def mock_s3_client(raw_sales_data: pd.DataFrame, raw_wink_data: pd.DataFrame):
 
     # Mock list_objects_v2 for sales data
     mock_client.list_objects_v2.return_value = {
-        'Contents': [
-            {'Key': 'access/ierpt/tde_sales_by_product_by_fund/file1.parquet'},
-            {'Key': 'access/ierpt/tde_sales_by_product_by_fund/file2.parquet'}
+        "Contents": [
+            {"Key": "access/ierpt/tde_sales_by_product_by_fund/file1.parquet"},
+            {"Key": "access/ierpt/tde_sales_by_product_by_fund/file2.parquet"},
         ],
-        'IsTruncated': False
+        "IsTruncated": False,
     }
 
     # Mock get_object for parquet data
     def mock_get_object(**kwargs):
         buffer = io.BytesIO()
-        if 'sales' in kwargs.get('Key', ''):
+        if "sales" in kwargs.get("Key", ""):
             raw_sales_data.to_parquet(buffer, index=False)
         else:
             raw_wink_data.to_parquet(buffer, index=False)
         buffer.seek(0)
-        return {'Body': Mock(read=lambda: buffer.getvalue())}
+        return {"Body": Mock(read=lambda: buffer.getvalue())}
 
     mock_client.get_object.side_effect = mock_get_object
 
@@ -732,12 +787,12 @@ def mock_s3_resource(raw_sales_data: pd.DataFrame, raw_wink_data: pd.DataFrame):
     def mock_Object(bucket, key):
         obj = Mock()
         buffer = io.BytesIO()
-        if 'sales' in key:
+        if "sales" in key:
             raw_sales_data.to_parquet(buffer, index=False)
         else:
             raw_wink_data.to_parquet(buffer, index=False)
         buffer.seek(0)
-        obj.get.return_value = {'Body': Mock(read=lambda: buffer.getvalue())}
+        obj.get.return_value = {"Body": Mock(read=lambda: buffer.getvalue())}
         return obj
 
     mock_resource.Object = Mock(side_effect=mock_Object)
@@ -774,11 +829,11 @@ def mock_sts_client():
     mock_sts = MagicMock()
 
     mock_sts.assume_role.return_value = {
-        'Credentials': {
-            'AccessKeyId': 'MOCK_ACCESS_KEY',
-            'SecretAccessKey': 'MOCK_SECRET_KEY',
-            'SessionToken': 'MOCK_SESSION_TOKEN',
-            'Expiration': datetime.now() + timedelta(hours=1)
+        "Credentials": {
+            "AccessKeyId": "MOCK_ACCESS_KEY",
+            "SecretAccessKey": "MOCK_SECRET_KEY",
+            "SessionToken": "MOCK_SESSION_TOKEN",
+            "Expiration": datetime.now() + timedelta(hours=1),
         }
     }
 
@@ -786,7 +841,7 @@ def mock_sts_client():
 
 
 @pytest.fixture
-def mock_aws_credentials() -> Dict[str, str]:
+def mock_aws_credentials() -> dict[str, str]:
     """
     Fake AWS credentials for testing.
 
@@ -797,15 +852,15 @@ def mock_aws_credentials() -> Dict[str, str]:
         Dictionary with mock AWS credentials
     """
     return {
-        'AccessKeyId': 'AKIAIOSFODNN7EXAMPLE',
-        'SecretAccessKey': 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY',
-        'SessionToken': 'AQoDYXdzEJr...<long token>...EXAMPLE',
-        'Expiration': (datetime.now() + timedelta(hours=1)).isoformat()
+        "AccessKeyId": "AKIAIOSFODNN7EXAMPLE",
+        "SecretAccessKey": "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY",
+        "SessionToken": "AQoDYXdzEJr...<long token>...EXAMPLE",
+        "Expiration": (datetime.now() + timedelta(hours=1)).isoformat(),
     }
 
 
 @pytest.fixture
-def mock_s3_objects() -> List[Dict[str, str]]:
+def mock_s3_objects() -> list[dict[str, str]]:
     """
     List of mocked S3 object keys for pagination testing.
 
@@ -816,7 +871,7 @@ def mock_s3_objects() -> List[Dict[str, str]]:
         List of S3 object metadata dictionaries
     """
     return [
-        {'Key': f'access/ierpt/tde_sales_by_product_by_fund/file{i}.parquet', 'Size': 1024000}
+        {"Key": f"access/ierpt/tde_sales_by_product_by_fund/file{i}.parquet", "Size": 1024000}
         for i in range(10)
     ]
 
@@ -843,7 +898,7 @@ def schema_validator() -> SchemaValidator:
 
 
 @pytest.fixture(scope="module")
-def baseline_aic_results(fixtures_dir: Path) -> Optional[pd.DataFrame]:
+def baseline_aic_results(fixtures_dir: Path) -> pd.DataFrame | None:
     """
     Reference AIC results for regression testing.
 
@@ -869,7 +924,7 @@ def baseline_aic_results(fixtures_dir: Path) -> Optional[pd.DataFrame]:
 
 
 @pytest.fixture(scope="module")
-def baseline_bootstrap_results(fixtures_dir: Path) -> Optional[Dict]:
+def baseline_bootstrap_results(fixtures_dir: Path) -> dict | None:
     """
     Reference bootstrap stability results for regression testing.
 
@@ -890,7 +945,7 @@ def baseline_bootstrap_results(fixtures_dir: Path) -> Optional[Dict]:
 
 
 @pytest.fixture(scope="module")
-def baseline_forecasting_metrics(fixtures_dir: Path) -> Dict[str, float]:
+def baseline_forecasting_metrics(fixtures_dir: Path) -> dict[str, float]:
     """
     Reference forecasting performance metrics for regression testing.
 
@@ -922,27 +977,27 @@ def baseline_forecasting_metrics(fixtures_dir: Path) -> Dict[str, float]:
     # Fallback values from fixture-based evaluation (NOT production)
     # See tests/reference_data/forecasting_baseline_metrics.json for documentation
     return {
-        'model_r2': -2.112464,  # Negative R² valid for limited fixture data
-        'model_mape': 0.460245,  # 46.02% as decimal
-        'benchmark_r2': 0.527586,
-        'benchmark_mape': 0.166881,  # 16.69% as decimal
-        'n_forecasts': 127,
-        'tolerance_r2': 1e-4,
-        'tolerance_mape': 1e-3,
-        'start_cutoff': 40,
-        'end_cutoff': 167,
-        'model_features': ['prudential_rate_current', 'competitor_mid_t2', 'competitor_top5_t3'],
-        'benchmark_features': ['sales_target_contract_t5'],
-        'target_variable': 'sales_target_current',
-        'model_sign_correction_config': {
-            'sign_correction_mask': np.array([False, True, True]),
-            'decay_rate': 0.98
-        }
+        "model_r2": -2.112464,  # Negative R² valid for limited fixture data
+        "model_mape": 0.460245,  # 46.02% as decimal
+        "benchmark_r2": 0.527586,
+        "benchmark_mape": 0.166881,  # 16.69% as decimal
+        "n_forecasts": 127,
+        "tolerance_r2": 1e-4,
+        "tolerance_mape": 1e-3,
+        "start_cutoff": 40,
+        "end_cutoff": 167,
+        "model_features": ["prudential_rate_current", "competitor_mid_t2", "competitor_top5_t3"],
+        "benchmark_features": ["sales_target_contract_t5"],
+        "target_variable": "sales_target_current",
+        "model_sign_correction_config": {
+            "sign_correction_mask": np.array([False, True, True]),
+            "decay_rate": 0.98,
+        },
     }
 
 
 @pytest.fixture(scope="module")
-def baseline_inference_outputs(fixtures_dir: Path) -> Optional[pd.DataFrame]:
+def baseline_inference_outputs(fixtures_dir: Path) -> pd.DataFrame | None:
     """
     Reference inference predictions for regression testing.
 
@@ -962,7 +1017,7 @@ def baseline_inference_outputs(fixtures_dir: Path) -> Optional[pd.DataFrame]:
 
 
 @pytest.fixture(scope="module")
-def mathematical_equivalence_checker(validation_config: Dict[str, float]) -> Callable:
+def mathematical_equivalence_checker(validation_config: dict[str, float]) -> Callable:
     """
     Function to check mathematical equivalence at 1e-12 precision (per CLAUDE.md).
 
@@ -976,15 +1031,10 @@ def mathematical_equivalence_checker(validation_config: Dict[str, float]) -> Cal
     Returns:
         Callable[[actual, expected], None] that asserts equivalence
     """
-    validator = MathematicalEquivalenceValidator(
-        precision=validation_config['target_precision']
-    )
+    _validator = MathematicalEquivalenceValidator(precision=validation_config["target_precision"])
 
     def check_equivalence(
-        actual: Any,
-        expected: Any,
-        name: str = "value",
-        tolerance: Optional[float] = None
+        actual: Any, expected: Any, name: str = "value", tolerance: float | None = None
     ) -> None:
         """
         Check mathematical equivalence between actual and expected values.
@@ -998,13 +1048,13 @@ def mathematical_equivalence_checker(validation_config: Dict[str, float]) -> Cal
         Raises:
             AssertionError: If values differ beyond tolerance
         """
-        tol = tolerance or validation_config['target_precision']
+        tol = tolerance or validation_config["target_precision"]
 
         if isinstance(actual, pd.DataFrame):
             pd.testing.assert_frame_equal(actual, expected, atol=tol, rtol=tol)
         elif isinstance(actual, np.ndarray):
             np.testing.assert_allclose(actual, expected, atol=tol, rtol=tol)
-        elif isinstance(actual, (int, float)):
+        elif isinstance(actual, int | float):
             diff = abs(actual - expected)
             assert diff <= tol, (
                 f"{name}: difference {diff} exceeds tolerance {tol}\n"
@@ -1052,11 +1102,7 @@ def sample_date_range() -> pd.DatetimeIndex:
     Returns:
         DatetimeIndex with weekly frequency
     """
-    return pd.date_range(
-        start='2022-01-01',
-        end='2023-12-31',
-        freq='W-SUN'
-    )
+    return pd.date_range(start="2022-01-01", end="2023-12-31", freq="W-SUN")
 
 
 @pytest.fixture
@@ -1079,19 +1125,21 @@ def small_test_dataset(sample_date_range: pd.DatetimeIndex) -> pd.DataFrame:
     n_rows = min(100, len(sample_date_range))
     dates = sample_date_range[:n_rows]
 
-    return pd.DataFrame({
-        'date': dates,
-        'sales': np.random.lognormal(mean=15, sigma=0.5, size=n_rows),
-        'Spread': np.random.normal(loc=0, scale=50, size=n_rows),
-        'sales_log': np.random.normal(loc=15, scale=0.5, size=n_rows),
-        'prudential_rate_current': np.random.uniform(2, 5, size=n_rows),
-        'competitor_mid_t1': np.random.uniform(2, 5, size=n_rows),
-        'competitor_mid_t2': np.random.uniform(2, 5, size=n_rows),
-        'DGS5': np.random.uniform(1, 4, size=n_rows),
-        'VIX': np.random.uniform(10, 30, size=n_rows),
-        'holiday': np.random.choice([0, 1], size=n_rows, p=[0.95, 0.05]),
-        'day_of_year': [d.dayofyear for d in dates]
-    })
+    return pd.DataFrame(
+        {
+            "date": dates,
+            "sales": np.random.lognormal(mean=15, sigma=0.5, size=n_rows),
+            "Spread": np.random.normal(loc=0, scale=50, size=n_rows),
+            "sales_log": np.random.normal(loc=15, scale=0.5, size=n_rows),
+            "prudential_rate_current": np.random.uniform(2, 5, size=n_rows),
+            "competitor_mid_t1": np.random.uniform(2, 5, size=n_rows),
+            "competitor_mid_t2": np.random.uniform(2, 5, size=n_rows),
+            "DGS5": np.random.uniform(1, 4, size=n_rows),
+            "VIX": np.random.uniform(10, 30, size=n_rows),
+            "holiday": np.random.choice([0, 1], size=n_rows, p=[0.95, 0.05]),
+            "day_of_year": [d.dayofyear for d in dates],
+        }
+    )
 
 
 @pytest.fixture
@@ -1114,18 +1162,20 @@ def edge_case_dataset() -> pd.DataFrame:
     Returns:
         DataFrame with shape (50, 10) containing edge cases
     """
-    return pd.DataFrame({
-        'date': pd.date_range('2022-01-01', periods=50, freq='W'),
-        'sales': [np.nan, 0, -100, 1e9, np.inf] + [1000] * 45,
-        'Spread': [np.nan, np.inf, -np.inf, 0, 1000] + [50] * 45,
-        'rate': [None, 0, -1, 100, 0.001] + [3.5] * 45,
-        'missing_heavy': [np.nan] * 45 + [1] * 5,
-        'all_zeros': [0] * 50,
-        'all_same': [42] * 50,
-        'high_variance': np.random.normal(0, 1000, 50),
-        'categorical': ['A', 'B', None, 'C', 'A'] * 10,
-        'outlier_flag': [1 if i in [0, 1, 2, 3, 4] else 0 for i in range(50)]
-    })
+    return pd.DataFrame(
+        {
+            "date": pd.date_range("2022-01-01", periods=50, freq="W"),
+            "sales": [np.nan, 0, -100, 1e9, np.inf] + [1000] * 45,
+            "Spread": [np.nan, np.inf, -np.inf, 0, 1000] + [50] * 45,
+            "rate": [None, 0, -1, 100, 0.001] + [3.5] * 45,
+            "missing_heavy": [np.nan] * 45 + [1] * 5,
+            "all_zeros": [0] * 50,
+            "all_same": [42] * 50,
+            "high_variance": np.random.normal(0, 1000, 50),
+            "categorical": ["A", "B", None, "C", "A"] * 10,
+            "outlier_flag": [1 if i in [0, 1, 2, 3, 4] else 0 for i in range(50)],
+        }
+    )
 
 
 @pytest.fixture
@@ -1140,6 +1190,7 @@ def performance_timer():
     Yields:
         Timer object with elapsed time in seconds
     """
+
     class Timer:
         def __init__(self):
             self.start_time = None
@@ -1183,7 +1234,11 @@ def capture_logs():
             logging.root.removeHandler(self.handler)
 
         def has_error(self, message: str) -> bool:
-            return any(message in str(record.msg) for record in self.records if record.levelno >= logging.ERROR)
+            return any(
+                message in str(record.msg)
+                for record in self.records
+                if record.levelno >= logging.ERROR
+            )
 
     return LogCapture()
 
@@ -1210,23 +1265,25 @@ def sample_rila_dataset() -> pd.DataFrame:
     np.random.seed(42)
     n_obs = 80
 
-    return pd.DataFrame({
-        'date': pd.date_range('2020-01-01', periods=n_obs, freq='W'),
-        'sales': np.random.lognormal(mean=15, sigma=0.5, size=n_obs),
-        'Spread': np.random.normal(loc=0, scale=50, size=n_obs),
-        'prudential_rate': np.random.uniform(2, 5, size=n_obs),
-        'competitor_mean': np.random.uniform(2, 5, size=n_obs),
-        'DGS5': np.random.uniform(1, 4, size=n_obs),
-        'VIX': np.random.uniform(10, 30, size=n_obs),
-        'feature_1': np.random.normal(0, 1, size=n_obs),
-        'feature_2': np.random.normal(0, 1, size=n_obs),
-        'feature_3': np.random.normal(0, 1, size=n_obs),
-        'feature_4': np.random.normal(0, 1, size=n_obs),
-        'feature_5': np.random.normal(0, 1, size=n_obs),
-        'feature_6': np.random.normal(0, 1, size=n_obs),
-        'feature_7': np.random.normal(0, 1, size=n_obs),
-        'feature_8': np.random.normal(0, 1, size=n_obs)
-    })
+    return pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-01", periods=n_obs, freq="W"),
+            "sales": np.random.lognormal(mean=15, sigma=0.5, size=n_obs),
+            "Spread": np.random.normal(loc=0, scale=50, size=n_obs),
+            "prudential_rate": np.random.uniform(2, 5, size=n_obs),
+            "competitor_mean": np.random.uniform(2, 5, size=n_obs),
+            "DGS5": np.random.uniform(1, 4, size=n_obs),
+            "VIX": np.random.uniform(10, 30, size=n_obs),
+            "feature_1": np.random.normal(0, 1, size=n_obs),
+            "feature_2": np.random.normal(0, 1, size=n_obs),
+            "feature_3": np.random.normal(0, 1, size=n_obs),
+            "feature_4": np.random.normal(0, 1, size=n_obs),
+            "feature_5": np.random.normal(0, 1, size=n_obs),
+            "feature_6": np.random.normal(0, 1, size=n_obs),
+            "feature_7": np.random.normal(0, 1, size=n_obs),
+            "feature_8": np.random.normal(0, 1, size=n_obs),
+        }
+    )
 
 
 @pytest.fixture
@@ -1249,19 +1306,21 @@ def realistic_rila_dataset() -> pd.DataFrame:
     spread = np.random.normal(0, 50, n_obs)
     sales = np.exp(15 - 0.01 * spread + np.random.normal(0, 0.3, n_obs))
 
-    df = pd.DataFrame({
-        'date': pd.date_range('2019-01-01', periods=n_obs, freq='W'),
-        'sales': sales,
-        'Spread': spread,
-        'prudential_rate': np.random.uniform(2, 5, n_obs),
-        'competitor_mean': np.random.uniform(2, 5, n_obs),
-        'DGS5': np.random.uniform(1, 4, n_obs),
-        'VIX': np.random.uniform(10, 30, n_obs)
-    })
+    df = pd.DataFrame(
+        {
+            "date": pd.date_range("2019-01-01", periods=n_obs, freq="W"),
+            "sales": sales,
+            "Spread": spread,
+            "prudential_rate": np.random.uniform(2, 5, n_obs),
+            "competitor_mean": np.random.uniform(2, 5, n_obs),
+            "DGS5": np.random.uniform(1, 4, n_obs),
+            "VIX": np.random.uniform(10, 30, n_obs),
+        }
+    )
 
     # Add 13 additional features
     for i in range(1, 14):
-        df[f'feature_{i}'] = np.random.normal(0, 1, n_obs)
+        df[f"feature_{i}"] = np.random.normal(0, 1, n_obs)
 
     return df
 
@@ -1285,28 +1344,30 @@ def problematic_dataset() -> pd.DataFrame:
     np.random.seed(42)
     n_obs = 100
 
-    df = pd.DataFrame({
-        'date': pd.date_range('2020-01-01', periods=n_obs, freq='W'),
-        'sales': np.random.lognormal(mean=15, sigma=0.5, size=n_obs),
-        'Spread': np.random.normal(loc=0, scale=50, size=n_obs),
-        'feature_1': np.random.normal(0, 1, size=n_obs),
-        'feature_2': np.random.normal(0, 1, size=n_obs),
-        'zero_variance': [1.0] * n_obs,  # Zero variance
-        'nearly_collinear_1': np.random.normal(0, 1, size=n_obs),
-    })
+    df = pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-01", periods=n_obs, freq="W"),
+            "sales": np.random.lognormal(mean=15, sigma=0.5, size=n_obs),
+            "Spread": np.random.normal(loc=0, scale=50, size=n_obs),
+            "feature_1": np.random.normal(0, 1, size=n_obs),
+            "feature_2": np.random.normal(0, 1, size=n_obs),
+            "zero_variance": [1.0] * n_obs,  # Zero variance
+            "nearly_collinear_1": np.random.normal(0, 1, size=n_obs),
+        }
+    )
 
     # Add perfectly collinear feature
-    df['nearly_collinear_2'] = df['nearly_collinear_1'] + np.random.normal(0, 0.01, size=n_obs)
+    df["nearly_collinear_2"] = df["nearly_collinear_1"] + np.random.normal(0, 0.01, size=n_obs)
 
     # Add missing values
-    df.loc[::10, 'feature_1'] = np.nan
-    df.loc[5::15, 'feature_2'] = np.nan
+    df.loc[::10, "feature_1"] = np.nan
+    df.loc[5::15, "feature_2"] = np.nan
 
     return df
 
 
 @pytest.fixture
-def candidate_features() -> List[str]:
+def candidate_features() -> list[str]:
     """
     Standard candidate feature list (migrated from test_notebook_interface.py).
 
@@ -1318,21 +1379,21 @@ def candidate_features() -> List[str]:
         List of candidate feature names
     """
     return [
-        'Spread',
-        'prudential_rate',
-        'competitor_mean',
-        'DGS5',
-        'VIX',
-        'feature_1',
-        'feature_2',
-        'feature_3',
-        'feature_4',
-        'feature_5'
+        "Spread",
+        "prudential_rate",
+        "competitor_mean",
+        "DGS5",
+        "VIX",
+        "feature_1",
+        "feature_2",
+        "feature_3",
+        "feature_4",
+        "feature_5",
     ]
 
 
 @pytest.fixture
-def aic_config() -> Dict[str, Any]:
+def aic_config() -> dict[str, Any]:
     """
     AIC engine configuration (migrated from test_aic_engine_regression.py).
 
@@ -1343,22 +1404,16 @@ def aic_config() -> Dict[str, Any]:
         AIC configuration dictionary
     """
     return {
-        'target_variable': 'sales',
-        'candidate_features': [
-            'Spread',
-            'prudential_rate',
-            'competitor_mean',
-            'DGS5',
-            'VIX'
-        ],
-        'selection_method': 'forward',
-        'max_features': 10,
-        'alpha': 0.05
+        "target_variable": "sales",
+        "candidate_features": ["Spread", "prudential_rate", "competitor_mean", "DGS5", "VIX"],
+        "selection_method": "forward",
+        "max_features": 10,
+        "alpha": 0.05,
     }
 
 
 @pytest.fixture(scope="module")
-def reference_aic_results() -> Dict[str, Any]:
+def reference_aic_results() -> dict[str, Any]:
     """
     Reference AIC results for regression testing (migrated from test_aic_engine_regression.py).
 
@@ -1369,10 +1424,10 @@ def reference_aic_results() -> Dict[str, Any]:
         Dictionary with expected AIC results
     """
     return {
-        'selected_features': ['Spread', 'DGS5', 'VIX'],
-        'aic_values': [250.5, 248.3, 247.1],
-        'r_squared': 0.652,
-        'n_features': 3
+        "selected_features": ["Spread", "DGS5", "VIX"],
+        "aic_values": [250.5, 248.3, 247.1],
+        "r_squared": 0.652,
+        "n_features": 3,
     }
 
 
@@ -1419,7 +1474,7 @@ def aws_mode_baselines_dir() -> Path:
 
 
 @pytest.fixture(scope="session")
-def nb00_baseline_outputs(aws_mode_baselines_dir: Path) -> Dict[str, pd.DataFrame]:
+def nb00_baseline_outputs(aws_mode_baselines_dir: Path) -> dict[str, pd.DataFrame]:
     """
     Load NB00 data pipeline baseline outputs (all 10 stages).
 
@@ -1434,17 +1489,17 @@ def nb00_baseline_outputs(aws_mode_baselines_dir: Path) -> Dict[str, pd.DataFram
         Dictionary mapping stage names to DataFrames
     """
     stage_files = {
-        'stage_01_filtered': '01_filtered_products.parquet',
-        'stage_02_cleaned': '02_cleaned_sales.parquet',
-        'stage_03a_daily': '03a_application_time_series.parquet',
-        'stage_03b_contract': '03b_contract_time_series.parquet',
-        'stage_04_wink': '04_wink_processed.parquet',
-        'stage_05_weighted': '05_market_weighted.parquet',
-        'stage_06_integrated': '06_integrated_daily.parquet',
-        'stage_07_competitive': '07_competitive_features.parquet',
-        'stage_08_weekly': '08_weekly_aggregated.parquet',
-        'stage_09_lag': '09_lag_features.parquet',
-        'stage_10_final': '10_final_dataset.parquet',
+        "stage_01_filtered": "01_filtered_products.parquet",
+        "stage_02_cleaned": "02_cleaned_sales.parquet",
+        "stage_03a_daily": "03a_application_time_series.parquet",
+        "stage_03b_contract": "03b_contract_time_series.parquet",
+        "stage_04_wink": "04_wink_processed.parquet",
+        "stage_05_weighted": "05_market_weighted.parquet",
+        "stage_06_integrated": "06_integrated_daily.parquet",
+        "stage_07_competitive": "07_competitive_features.parquet",
+        "stage_08_weekly": "08_weekly_aggregated.parquet",
+        "stage_09_lag": "09_lag_features.parquet",
+        "stage_10_final": "10_final_dataset.parquet",
     }
 
     outputs = {}
@@ -1460,7 +1515,7 @@ def nb00_baseline_outputs(aws_mode_baselines_dir: Path) -> Dict[str, pd.DataFram
 
 
 @pytest.fixture(scope="session")
-def nb01_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
+def nb01_baseline_outputs(notebook_baselines_dir: Path) -> dict[str, Any]:
     """
     Load NB01 price elasticity baseline outputs (15 intermediate outputs).
 
@@ -1478,13 +1533,13 @@ def nb01_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
     Returns:
         Dictionary mapping output names to DataFrames/arrays/metadata
     """
-    nb01_dir = notebook_baselines_dir / 'nb01_price_elasticity'
+    nb01_dir = notebook_baselines_dir / "nb01_price_elasticity"
 
     outputs = {}
 
     # Data Prep (01_data_prep/)
     data_prep_files = {
-        'filtered_data': '01_data_prep/filtered_data.parquet',
+        "filtered_data": "01_data_prep/filtered_data.parquet",
     }
     for name, path in data_prep_files.items():
         filepath = nb01_dir / path
@@ -1493,39 +1548,39 @@ def nb01_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
 
     # Bootstrap Model (02_bootstrap_model/)
     bootstrap_files = {
-        'baseline_forecast': '02_bootstrap_model/baseline_forecast.parquet',
-        'baseline_predictions': '02_bootstrap_model/baseline_predictions.npy',
+        "baseline_forecast": "02_bootstrap_model/baseline_forecast.parquet",
+        "baseline_predictions": "02_bootstrap_model/baseline_predictions.npy",
     }
     for name, path in bootstrap_files.items():
         filepath = nb01_dir / path
         if filepath.exists():
-            if path.endswith('.npy'):
+            if path.endswith(".npy"):
                 outputs[name] = np.load(filepath)
             else:
                 outputs[name] = pd.read_parquet(filepath)
 
     # Rate Scenarios (03_rate_scenarios/)
     rate_files = {
-        'rate_options': '03_rate_scenarios/rate_options.parquet',
-        'rate_scenarios': '03_rate_scenarios/rate_scenarios.npy',
-        'df_dollars': '03_rate_scenarios/df_dollars.parquet',
-        'df_pct_change': '03_rate_scenarios/df_pct_change.parquet',
-        'rate_adjustments_dollars': '03_rate_scenarios/rate_adjustments_dollars.parquet',
-        'rate_adjustments_pct': '03_rate_scenarios/rate_adjustments_pct.parquet',
+        "rate_options": "03_rate_scenarios/rate_options.parquet",
+        "rate_scenarios": "03_rate_scenarios/rate_scenarios.npy",
+        "df_dollars": "03_rate_scenarios/df_dollars.parquet",
+        "df_pct_change": "03_rate_scenarios/df_pct_change.parquet",
+        "rate_adjustments_dollars": "03_rate_scenarios/rate_adjustments_dollars.parquet",
+        "rate_adjustments_pct": "03_rate_scenarios/rate_adjustments_pct.parquet",
     }
     for name, path in rate_files.items():
         filepath = nb01_dir / path
         if filepath.exists():
-            if path.endswith('.npy'):
+            if path.endswith(".npy"):
                 outputs[name] = np.load(filepath)
             else:
                 outputs[name] = pd.read_parquet(filepath)
 
     # Confidence Intervals (04_confidence_intervals/)
     ci_files = {
-        'df_output_pct': '04_confidence_intervals/df_output_pct.parquet',
-        'df_output_dollar': '04_confidence_intervals/df_output_dollar.parquet',
-        'confidence_intervals': '04_confidence_intervals/confidence_intervals.parquet',
+        "df_output_pct": "04_confidence_intervals/df_output_pct.parquet",
+        "df_output_dollar": "04_confidence_intervals/df_output_dollar.parquet",
+        "confidence_intervals": "04_confidence_intervals/confidence_intervals.parquet",
     }
     for name, path in ci_files.items():
         filepath = nb01_dir / path
@@ -1534,8 +1589,8 @@ def nb01_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
 
     # Export (05_export/)
     export_files = {
-        'df_to_bi_melt': '05_export/df_to_bi_melt.parquet',
-        'bi_export_tableau': '05_export/bi_export_tableau.parquet',
+        "df_to_bi_melt": "05_export/df_to_bi_melt.parquet",
+        "bi_export_tableau": "05_export/bi_export_tableau.parquet",
     }
     for name, path in export_files.items():
         filepath = nb01_dir / path
@@ -1543,23 +1598,23 @@ def nb01_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
             outputs[name] = pd.read_parquet(filepath)
 
     # Metadata
-    metadata_path = nb01_dir / '05_export/inference_metadata.json'
+    metadata_path = nb01_dir / "05_export/inference_metadata.json"
     if metadata_path.exists():
         with open(metadata_path) as f:
-            outputs['inference_metadata'] = json.load(f)
+            outputs["inference_metadata"] = json.load(f)
 
     # Capture metadata
-    capture_meta_path = nb01_dir / 'capture_metadata.json'
+    capture_meta_path = nb01_dir / "capture_metadata.json"
     if capture_meta_path.exists():
         with open(capture_meta_path) as f:
-            outputs['_capture_metadata'] = json.load(f)
+            outputs["_capture_metadata"] = json.load(f)
 
     logger.info(f"[PASS] Loaded {len(outputs)} NB01 baseline outputs")
     return outputs
 
 
 @pytest.fixture(scope="session")
-def nb02_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
+def nb02_baseline_outputs(notebook_baselines_dir: Path) -> dict[str, Any]:
     """
     Load NB02 forecasting baseline outputs (12 intermediate outputs).
 
@@ -1576,21 +1631,21 @@ def nb02_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
     Returns:
         Dictionary mapping output names to DataFrames/arrays/metadata
     """
-    nb02_dir = notebook_baselines_dir / 'nb02_forecasting'
+    nb02_dir = notebook_baselines_dir / "nb02_forecasting"
 
     outputs = {}
 
     # Model Training (02_model_training/)
     training_files = {
-        'cv_scores': '02_model_training/cv_scores.parquet',
-        'forecasting_config': '02_model_training/forecasting_config.json',
-        'model_sign_correction_config': '02_model_training/model_sign_correction_config.json',
-        'benchmark_sign_correction_config': '02_model_training/benchmark_sign_correction_config.json',
+        "cv_scores": "02_model_training/cv_scores.parquet",
+        "forecasting_config": "02_model_training/forecasting_config.json",
+        "model_sign_correction_config": "02_model_training/model_sign_correction_config.json",
+        "benchmark_sign_correction_config": "02_model_training/benchmark_sign_correction_config.json",
     }
     for name, path in training_files.items():
         filepath = nb02_dir / path
         if filepath.exists():
-            if path.endswith('.json'):
+            if path.endswith(".json"):
                 with open(filepath) as f:
                     outputs[name] = json.load(f)
             else:
@@ -1598,7 +1653,7 @@ def nb02_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
 
     # Predictions (03_predictions/)
     prediction_files = {
-        'forecasting_predictions': '03_predictions/forecasting_predictions.parquet',
+        "forecasting_predictions": "03_predictions/forecasting_predictions.parquet",
     }
     for name, path in prediction_files.items():
         filepath = nb02_dir / path
@@ -1607,7 +1662,7 @@ def nb02_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
 
     # Metrics (04_metrics/)
     metric_files = {
-        'benchmark_results': '04_metrics/benchmark_results.parquet',
+        "benchmark_results": "04_metrics/benchmark_results.parquet",
     }
     for name, path in metric_files.items():
         filepath = nb02_dir / path
@@ -1615,17 +1670,17 @@ def nb02_baseline_outputs(notebook_baselines_dir: Path) -> Dict[str, Any]:
             outputs[name] = pd.read_parquet(filepath)
 
     # Capture metadata
-    capture_meta_path = nb02_dir / 'capture_metadata.json'
+    capture_meta_path = nb02_dir / "capture_metadata.json"
     if capture_meta_path.exists():
         with open(capture_meta_path) as f:
-            outputs['_capture_metadata'] = json.load(f)
+            outputs["_capture_metadata"] = json.load(f)
 
     logger.info(f"[PASS] Loaded {len(outputs)} NB02 baseline outputs")
     return outputs
 
 
 @pytest.fixture(scope="module")
-def notebook_precision_validator(validation_config: Dict[str, float]) -> Callable:
+def notebook_precision_validator(validation_config: dict[str, float]) -> Callable:
     """
     Specialized validator for notebook output equivalence at 1e-12 precision.
 
@@ -1641,11 +1696,9 @@ def notebook_precision_validator(validation_config: Dict[str, float]) -> Callabl
     Returns:
         Callable that validates equivalence and raises on mismatch
     """
+
     def validate_notebook_output(
-        actual: Any,
-        expected: Any,
-        output_name: str,
-        tolerance: float = None
+        actual: Any, expected: Any, output_name: str, tolerance: float = None
     ) -> bool:
         """
         Validate notebook output matches baseline at specified precision.
@@ -1659,7 +1712,7 @@ def notebook_precision_validator(validation_config: Dict[str, float]) -> Callabl
         Returns:
             True if equivalent, raises AssertionError otherwise
         """
-        tol = tolerance or validation_config['target_precision']
+        tol = tolerance or validation_config["target_precision"]
 
         # Handle None/missing
         if actual is None and expected is None:
@@ -1746,7 +1799,7 @@ def notebook_precision_validator(validation_config: Dict[str, float]) -> Callabl
             return True
 
         # Scalar comparison
-        if isinstance(expected, (int, float)):
+        if isinstance(expected, int | float):
             diff = abs(actual - expected)
             if diff > tol:
                 raise AssertionError(
@@ -1822,13 +1875,15 @@ def tiny_dataset():
     """
     np.random.seed(42)
 
-    return pd.DataFrame({
-        'own_cap_rate': np.random.uniform(0.05, 0.15, 20),
-        'competitor_avg_rate': np.random.uniform(0.04, 0.14, 20),
-        'vix': np.random.uniform(15, 35, 20),
-        'dgs5': np.random.uniform(2.5, 4.5, 20),
-        'sales': np.random.poisson(50, 20).astype(float)
-    })
+    return pd.DataFrame(
+        {
+            "own_cap_rate": np.random.uniform(0.05, 0.15, 20),
+            "competitor_avg_rate": np.random.uniform(0.04, 0.14, 20),
+            "vix": np.random.uniform(15, 35, 20),
+            "dgs5": np.random.uniform(2.5, 4.5, 20),
+            "sales": np.random.poisson(50, 20).astype(float),
+        }
+    )
 
 
 @pytest.fixture
@@ -1841,12 +1896,7 @@ def small_bootstrap_config():
     Returns:
         Configuration dict with minimal bootstrap samples
     """
-    return {
-        'n_bootstrap': 10,
-        'n_jobs': 1,
-        'random_state': 42,
-        'confidence_level': 0.95
-    }
+    return {"n_bootstrap": 10, "n_jobs": 1, "random_state": 42, "confidence_level": 0.95}
 
 
 @pytest.fixture
@@ -1863,20 +1913,22 @@ def small_inference_dataset():
     np.random.seed(42)
 
     n_weeks = 20
-    dates = pd.date_range('2024-01-01', periods=n_weeks, freq='W')
+    dates = pd.date_range("2024-01-01", periods=n_weeks, freq="W")
 
-    return pd.DataFrame({
-        'date': dates,
-        'sales': np.random.lognormal(15, 0.5, n_weeks),
-        'own_cap_rate': np.random.uniform(0.08, 0.12, n_weeks),
-        'competitor_mean': np.random.uniform(0.07, 0.11, n_weeks),
-        'dgs5': np.random.uniform(3, 4, n_weeks),
-        'vix': np.random.uniform(15, 25, n_weeks),
-        'spread': np.random.normal(0, 50, n_weeks),
-        'sales_log': np.log(np.random.lognormal(15, 0.5, n_weeks)),
-        'competitor_lag_1': np.random.uniform(0.07, 0.11, n_weeks),
-        'competitor_lag_2': np.random.uniform(0.07, 0.11, n_weeks)
-    })
+    return pd.DataFrame(
+        {
+            "date": dates,
+            "sales": np.random.lognormal(15, 0.5, n_weeks),
+            "own_cap_rate": np.random.uniform(0.08, 0.12, n_weeks),
+            "competitor_mean": np.random.uniform(0.07, 0.11, n_weeks),
+            "dgs5": np.random.uniform(3, 4, n_weeks),
+            "vix": np.random.uniform(15, 25, n_weeks),
+            "spread": np.random.normal(0, 50, n_weeks),
+            "sales_log": np.log(np.random.lognormal(15, 0.5, n_weeks)),
+            "competitor_lag_1": np.random.uniform(0.07, 0.11, n_weeks),
+            "competitor_lag_2": np.random.uniform(0.07, 0.11, n_weeks),
+        }
+    )
 
 
 # -----------------------------------------------------------------------------
@@ -1904,42 +1956,44 @@ def medium_dataset():
     np.random.seed(42)
 
     n_weeks = 100
-    dates = pd.date_range('2022-01-01', periods=n_weeks, freq='W')
+    dates = pd.date_range("2022-01-01", periods=n_weeks, freq="W")
 
     # Core features
-    df = pd.DataFrame({
-        'date': dates,
-        'sales': np.random.lognormal(15, 0.5, n_weeks),
-        'own_cap_rate': np.random.uniform(0.08, 0.12, n_weeks),
-        'competitor_mean': np.random.uniform(0.07, 0.11, n_weeks),
-        'competitor_median': np.random.uniform(0.07, 0.11, n_weeks),
-        'competitor_top_5': np.random.uniform(0.08, 0.12, n_weeks),
-        'dgs5': np.random.uniform(2.5, 4.5, n_weeks),
-        'vix': np.random.uniform(12, 35, n_weeks),
-        'spread': np.random.normal(0, 50, n_weeks),
-        'sales_log': np.log(np.random.lognormal(15, 0.5, n_weeks))
-    })
+    df = pd.DataFrame(
+        {
+            "date": dates,
+            "sales": np.random.lognormal(15, 0.5, n_weeks),
+            "own_cap_rate": np.random.uniform(0.08, 0.12, n_weeks),
+            "competitor_mean": np.random.uniform(0.07, 0.11, n_weeks),
+            "competitor_median": np.random.uniform(0.07, 0.11, n_weeks),
+            "competitor_top_5": np.random.uniform(0.08, 0.12, n_weeks),
+            "dgs5": np.random.uniform(2.5, 4.5, n_weeks),
+            "vix": np.random.uniform(12, 35, n_weeks),
+            "spread": np.random.normal(0, 50, n_weeks),
+            "sales_log": np.log(np.random.lognormal(15, 0.5, n_weeks)),
+        }
+    )
 
     # Add lag features (10 lags)
     for lag in range(1, 11):
-        df[f'own_cap_rate_lag_{lag}'] = np.random.uniform(0.08, 0.12, n_weeks)
-        df[f'competitor_mean_lag_{lag}'] = np.random.uniform(0.07, 0.11, n_weeks)
+        df[f"own_cap_rate_lag_{lag}"] = np.random.uniform(0.08, 0.12, n_weeks)
+        df[f"competitor_mean_lag_{lag}"] = np.random.uniform(0.07, 0.11, n_weeks)
 
     # Add polynomial features (10 features)
-    df['own_rate_squared'] = df['own_cap_rate'] ** 2
-    df['competitor_squared'] = df['competitor_mean'] ** 2
-    df['own_competitor_interaction'] = df['own_cap_rate'] * df['competitor_mean']
-    df['spread_squared'] = df['spread'] ** 2
-    df['vix_squared'] = df['vix'] ** 2
-    df['dgs5_squared'] = df['dgs5'] ** 2
-    df['sales_lag_1'] = np.random.lognormal(15, 0.5, n_weeks)
-    df['sales_lag_2'] = np.random.lognormal(15, 0.5, n_weeks)
-    df['holiday'] = np.random.choice([0, 1], n_weeks, p=[0.95, 0.05])
-    df['day_of_year'] = [d.dayofyear for d in dates]
+    df["own_rate_squared"] = df["own_cap_rate"] ** 2
+    df["competitor_squared"] = df["competitor_mean"] ** 2
+    df["own_competitor_interaction"] = df["own_cap_rate"] * df["competitor_mean"]
+    df["spread_squared"] = df["spread"] ** 2
+    df["vix_squared"] = df["vix"] ** 2
+    df["dgs5_squared"] = df["dgs5"] ** 2
+    df["sales_lag_1"] = np.random.lognormal(15, 0.5, n_weeks)
+    df["sales_lag_2"] = np.random.lognormal(15, 0.5, n_weeks)
+    df["holiday"] = np.random.choice([0, 1], n_weeks, p=[0.95, 0.05])
+    df["day_of_year"] = [d.dayofyear for d in dates]
 
     # Add macro features (10 features)
     for i in range(10):
-        df[f'macro_feature_{i}'] = np.random.normal(0, 1, n_weeks)
+        df[f"macro_feature_{i}"] = np.random.normal(0, 1, n_weeks)
 
     return df
 
@@ -1955,10 +2009,10 @@ def medium_bootstrap_config():
         Configuration dict with moderate bootstrap samples
     """
     return {
-        'n_bootstrap': 100,
-        'n_jobs': -1,  # Use all cores
-        'random_state': 42,
-        'confidence_level': 0.95
+        "n_bootstrap": 100,
+        "n_jobs": -1,  # Use all cores
+        "random_state": 42,
+        "confidence_level": 0.95,
     }
 
 
@@ -2017,12 +2071,12 @@ def production_bootstrap_config():
         Configuration dict with full production bootstrap samples
     """
     return {
-        'n_bootstrap': 10000,
-        'n_jobs': -1,
-        'random_state': 42,
-        'confidence_level': 0.95,
-        'weight_decay_factor': 0.95,
-        'min_training_cutoff': 30
+        "n_bootstrap": 10000,
+        "n_jobs": -1,
+        "random_state": 42,
+        "confidence_level": 0.95,
+        "weight_decay_factor": 0.95,
+        "min_training_cutoff": 30,
     }
 
 
@@ -2046,7 +2100,7 @@ def large_inference_dataset():
 
 
 @pytest.fixture(scope="module")
-def data_quality_edge_cases() -> Dict[str, pd.DataFrame]:
+def data_quality_edge_cases() -> dict[str, pd.DataFrame]:
     """
     Edge cases for data quality validation testing.
 
@@ -2067,45 +2121,49 @@ def data_quality_edge_cases() -> Dict[str, pd.DataFrame]:
     np.random.seed(42)
 
     # Perfect quality data
-    perfect = pd.DataFrame({
-        'date': pd.date_range('2024-01-01', periods=100, freq='D'),
-        'sales': np.random.lognormal(15, 0.5, 100),
-        'rate': np.random.uniform(0.05, 0.15, 100),
-        'category': np.random.choice(['A', 'B', 'C'], 100)
-    })
+    perfect = pd.DataFrame(
+        {
+            "date": pd.date_range("2024-01-01", periods=100, freq="D"),
+            "sales": np.random.lognormal(15, 0.5, 100),
+            "rate": np.random.uniform(0.05, 0.15, 100),
+            "category": np.random.choice(["A", "B", "C"], 100),
+        }
+    )
 
     # High missing data (> 5%)
     high_missing = perfect.copy()
-    high_missing.loc[::10, 'sales'] = np.nan  # 10% missing
-    high_missing.loc[5::10, 'rate'] = np.nan  # 10% missing
+    high_missing.loc[::10, "sales"] = np.nan  # 10% missing
+    high_missing.loc[5::10, "rate"] = np.nan  # 10% missing
 
     # Stale data (> 14 days old)
     stale = perfect.copy()
-    stale['date'] = pd.date_range('2023-01-01', periods=100, freq='D')  # Old data
+    stale["date"] = pd.date_range("2023-01-01", periods=100, freq="D")  # Old data
 
     # Duplicate keys
     duplicate = perfect.copy()
     duplicate = pd.concat([duplicate.iloc[:10], duplicate.iloc[:10]], ignore_index=True)
 
     # Type violations
-    type_error = pd.DataFrame({
-        'date': ['not_a_date'] * 50 + list(pd.date_range('2024-01-01', periods=50, freq='D')),
-        'sales': ['invalid'] * 10 + list(np.random.lognormal(15, 0.5, 90)),
-        'rate': np.random.uniform(0.05, 0.15, 100),
-        'category': np.random.choice(['A', 'B', 'C'], 100)
-    })
+    type_error = pd.DataFrame(
+        {
+            "date": ["not_a_date"] * 50 + list(pd.date_range("2024-01-01", periods=50, freq="D")),
+            "sales": ["invalid"] * 10 + list(np.random.lognormal(15, 0.5, 90)),
+            "rate": np.random.uniform(0.05, 0.15, 100),
+            "category": np.random.choice(["A", "B", "C"], 100),
+        }
+    )
 
     return {
-        'perfect': perfect,
-        'high_missing': high_missing,
-        'stale_data': stale,
-        'duplicate_keys': duplicate,
-        'type_violations': type_error
+        "perfect": perfect,
+        "high_missing": high_missing,
+        "stale_data": stale,
+        "duplicate_keys": duplicate,
+        "type_violations": type_error,
     }
 
 
 @pytest.fixture(scope="module")
-def constraint_violation_examples() -> Dict[str, pd.DataFrame]:
+def constraint_violation_examples() -> dict[str, pd.DataFrame]:
     """
     Test cases for economic constraint validation.
 
@@ -2125,45 +2183,53 @@ def constraint_violation_examples() -> Dict[str, pd.DataFrame]:
     np.random.seed(42)
 
     # Valid economic constraints
-    valid = pd.DataFrame({
-        'own_cap_rate': [0.10],  # Positive (correct)
-        'competitor_avg_rate': [0.08],  # Will have negative coefficient
-        'sales': [1000]
-    })
+    valid = pd.DataFrame(
+        {
+            "own_cap_rate": [0.10],  # Positive (correct)
+            "competitor_avg_rate": [0.08],  # Will have negative coefficient
+            "sales": [1000],
+        }
+    )
 
     # Own rate should be positive but is negative
-    own_rate_negative = pd.DataFrame({
-        'own_cap_rate': [-0.05],  # Negative (violation)
-        'competitor_avg_rate': [0.08],
-        'sales': [1000]
-    })
+    own_rate_negative = pd.DataFrame(
+        {
+            "own_cap_rate": [-0.05],  # Negative (violation)
+            "competitor_avg_rate": [0.08],
+            "sales": [1000],
+        }
+    )
 
     # Competitor rate coefficient should be negative but is positive
-    competitor_positive = pd.DataFrame({
-        'own_cap_rate': [0.10],
-        'competitor_avg_rate': [0.15],  # Too high relative to own
-        'sales': [500]  # Sales decreased (wrong direction)
-    })
+    competitor_positive = pd.DataFrame(
+        {
+            "own_cap_rate": [0.10],
+            "competitor_avg_rate": [0.15],  # Too high relative to own
+            "sales": [500],  # Sales decreased (wrong direction)
+        }
+    )
 
     # Magnitude unrealistic (coefficients too large)
-    magnitude_unrealistic = pd.DataFrame({
-        'own_cap_rate': [0.10],
-        'competitor_avg_rate': [0.08],
-        'coefficient_own': [1000.0],  # Unrealistically large
-        'coefficient_competitor': [-500.0],  # Unrealistically large
-        'sales': [1000]
-    })
+    magnitude_unrealistic = pd.DataFrame(
+        {
+            "own_cap_rate": [0.10],
+            "competitor_avg_rate": [0.08],
+            "coefficient_own": [1000.0],  # Unrealistically large
+            "coefficient_competitor": [-500.0],  # Unrealistically large
+            "sales": [1000],
+        }
+    )
 
     return {
-        'valid': valid,
-        'own_rate_negative': own_rate_negative,
-        'competitor_positive': competitor_positive,
-        'magnitude_unrealistic': magnitude_unrealistic
+        "valid": valid,
+        "own_rate_negative": own_rate_negative,
+        "competitor_positive": competitor_positive,
+        "magnitude_unrealistic": magnitude_unrealistic,
     }
 
 
 @pytest.fixture(scope="module")
-def schema_test_datasets() -> Dict[str, pd.DataFrame]:
+def schema_test_datasets() -> dict[str, pd.DataFrame]:
     """
     Datasets for schema validation testing.
 
@@ -2183,41 +2249,170 @@ def schema_test_datasets() -> Dict[str, pd.DataFrame]:
     np.random.seed(42)
 
     # Valid schema
-    valid_schema = pd.DataFrame({
-        'application_signed_date': pd.date_range('2024-01-01', periods=100, freq='D'),
-        'contract_issue_date': pd.date_range('2024-01-08', periods=100, freq='D'),
-        'product_name': ['FlexGuard 6Y 20%'] * 100,
-        'sales_amount': np.random.uniform(1000, 10000, 100),
-        'premium': np.random.uniform(50000, 500000, 100)
-    })
+    valid_schema = pd.DataFrame(
+        {
+            "application_signed_date": pd.date_range("2024-01-01", periods=100, freq="D"),
+            "contract_issue_date": pd.date_range("2024-01-08", periods=100, freq="D"),
+            "product_name": ["FlexGuard 6Y 20%"] * 100,
+            "sales_amount": np.random.uniform(1000, 10000, 100),
+            "premium": np.random.uniform(50000, 500000, 100),
+        }
+    )
 
     # Missing required columns
-    missing_columns = valid_schema.drop(columns=['product_name', 'sales_amount'])
+    missing_columns = valid_schema.drop(columns=["product_name", "sales_amount"])
 
     # Wrong types
-    wrong_types = pd.DataFrame({
-        'application_signed_date': ['2024-01-01'] * 100,  # String instead of datetime
-        'contract_issue_date': pd.date_range('2024-01-08', periods=100, freq='D'),
-        'product_name': ['FlexGuard 6Y 20%'] * 100,
-        'sales_amount': ['1000'] * 100,  # String instead of float
-        'premium': np.random.uniform(50000, 500000, 100)
-    })
+    wrong_types = pd.DataFrame(
+        {
+            "application_signed_date": ["2024-01-01"] * 100,  # String instead of datetime
+            "contract_issue_date": pd.date_range("2024-01-08", periods=100, freq="D"),
+            "product_name": ["FlexGuard 6Y 20%"] * 100,
+            "sales_amount": ["1000"] * 100,  # String instead of float
+            "premium": np.random.uniform(50000, 500000, 100),
+        }
+    )
 
     # Extra columns
     extra_columns = valid_schema.copy()
-    extra_columns['unexpected_column'] = np.random.randn(100)
-    extra_columns['another_extra'] = ['extra'] * 100
+    extra_columns["unexpected_column"] = np.random.randn(100)
+    extra_columns["another_extra"] = ["extra"] * 100
 
     # Empty dataset
     empty = pd.DataFrame(columns=valid_schema.columns)
 
     return {
-        'valid_schema': valid_schema,
-        'missing_columns': missing_columns,
-        'wrong_types': wrong_types,
-        'extra_columns': extra_columns,
-        'empty': empty
+        "valid_schema": valid_schema,
+        "missing_columns": missing_columns,
+        "wrong_types": wrong_types,
+        "extra_columns": extra_columns,
+        "empty": empty,
     }
+
+
+# =============================================================================
+# FIXTURE CHECKSUM VERIFICATION
+# =============================================================================
+
+
+@pytest.fixture(scope="session")
+def verify_fixture_checksums(fixtures_dir: Path) -> dict[str, bool]:
+    """
+    Verify fixture file checksums to detect unintended modifications.
+
+    This session-scoped fixture validates that critical fixture files
+    haven't been accidentally modified. It WARNS (doesn't fail) when
+    checksums differ, allowing intentional updates while catching accidents.
+
+    Checksum file: tests/fixtures/CHECKSUMS.sha256
+
+    Usage:
+        def test_something(verify_fixture_checksums, fixture_dataset):
+            # verify_fixture_checksums runs first (session scope)
+            # If checksums differ, a warning is issued
+            ...
+
+    Returns:
+        Dictionary mapping filename to verification status (True = match)
+    """
+    import hashlib
+
+    checksums_file = fixtures_dir.parent / "CHECKSUMS.sha256"
+
+    results = {}
+
+    if not checksums_file.exists():
+        logger.warning(
+            f"Checksum file not found: {checksums_file}\n"
+            "Run 'make checksum' to generate checksums for fixture verification."
+        )
+        return {"_checksum_file_missing": True}
+
+    # Load expected checksums
+    expected_checksums = {}
+    with open(checksums_file) as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#"):
+                parts = line.split("  ")
+                if len(parts) == 2:
+                    expected_checksums[parts[1]] = parts[0]
+
+    # Verify each file
+    for filename, expected_hash in expected_checksums.items():
+        filepath = fixtures_dir.parent / filename
+        if not filepath.exists():
+            logger.warning(f"Fixture file missing: {filepath}")
+            results[filename] = False
+            continue
+
+        # Compute actual hash
+        sha256 = hashlib.sha256()
+        with open(filepath, "rb") as f:
+            for chunk in iter(lambda: f.read(8192), b""):
+                sha256.update(chunk)
+        actual_hash = sha256.hexdigest()
+
+        if actual_hash != expected_hash:
+            logger.warning(
+                f"Checksum mismatch for {filename}:\n"
+                f"  Expected: {expected_hash[:16]}...\n"
+                f"  Actual:   {actual_hash[:16]}...\n"
+                "If this is intentional, run 'make checksum' to update."
+            )
+            results[filename] = False
+        else:
+            results[filename] = True
+
+    return results
+
+
+def generate_fixture_checksums(fixtures_dir: Path) -> None:
+    """
+    Generate checksums for fixture files.
+
+    Call this function to update CHECKSUMS.sha256 after intentional
+    fixture updates. Can be invoked via 'make checksum' target.
+
+    Parameters
+    ----------
+    fixtures_dir : Path
+        Path to fixtures directory
+    """
+    import hashlib
+
+    checksums_file = fixtures_dir.parent / "CHECKSUMS.sha256"
+
+    # Critical files to checksum
+    critical_files = [
+        "rila/final_weekly_dataset.parquet",
+        "rila/raw_sales_data.parquet",
+        "rila/raw_wink_data.parquet",
+        "rila/market_share_weights.parquet",
+    ]
+
+    lines = [
+        "# Fixture file checksums (SHA-256)",
+        f"# Generated: {datetime.now().isoformat()}",
+        "# Regenerate with: make checksum",
+        "",
+    ]
+
+    for filename in critical_files:
+        filepath = fixtures_dir.parent / filename
+        if filepath.exists():
+            sha256 = hashlib.sha256()
+            with open(filepath, "rb") as f:
+                for chunk in iter(lambda: f.read(8192), b""):
+                    sha256.update(chunk)
+            lines.append(f"{sha256.hexdigest()}  {filename}")
+        else:
+            logger.warning(f"Critical fixture missing: {filepath}")
+
+    with open(checksums_file, "w") as f:
+        f.write("\n".join(lines) + "\n")
+
+    logger.info(f"Checksums written to {checksums_file}")
 
 
 # =============================================================================
@@ -2232,38 +2427,24 @@ def pytest_configure(config):
     Registers custom markers and validates fixture directory.
     """
     # Register custom markers
+    config.addinivalue_line("markers", "unit: Unit tests (fast, isolated, no fixtures)")
     config.addinivalue_line(
-        "markers",
-        "unit: Unit tests (fast, isolated, no fixtures)"
+        "markers", "integration: Integration tests (use fixtures, test workflows)"
+    )
+    config.addinivalue_line("markers", "e2e: End-to-end tests (full pipeline runs)")
+    config.addinivalue_line(
+        "markers", "regression: Regression tests (baseline comparison, 1e-12 precision)"
+    )
+    config.addinivalue_line("markers", "slow: Slow tests (>5 seconds execution time)")
+    config.addinivalue_line(
+        "markers", "aws: Requires AWS credentials (skip in non-AWS environments)"
     )
     config.addinivalue_line(
-        "markers",
-        "integration: Integration tests (use fixtures, test workflows)"
+        "markers", "visualization: Visualization/snapshot tests (requires pytest-mpl)"
     )
-    config.addinivalue_line(
-        "markers",
-        "e2e: End-to-end tests (full pipeline runs)"
-    )
-    config.addinivalue_line(
-        "markers",
-        "regression: Regression tests (baseline comparison, 1e-12 precision)"
-    )
-    config.addinivalue_line(
-        "markers",
-        "slow: Slow tests (>5 seconds execution time)"
-    )
-    config.addinivalue_line(
-        "markers",
-        "aws: Requires AWS credentials (skip in non-AWS environments)"
-    )
-    config.addinivalue_line(
-        "markers",
-        "visualization: Visualization/snapshot tests (requires pytest-mpl)"
-    )
-    config.addinivalue_line(
-        "markers",
-        "notebook: Tests that validate notebook compatibility"
-    )
+    config.addinivalue_line("markers", "notebook: Tests that validate notebook compatibility")
+    config.addinivalue_line("markers", "leakage: Leakage detection tests (lag-0, temporal, buffer)")
+    config.addinivalue_line("markers", "parity: Parity/equivalence tests (mathematical precision)")
 
     logger.info("[PASS] Pytest markers registered")
     logger.info("[PASS] Central fixture system initialized")

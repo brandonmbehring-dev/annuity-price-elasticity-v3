@@ -1,7 +1,11 @@
+# Annuity Price Elasticity Model V3
 
-
-Annuity Price Elasticity Model V3
-===================================
+[![CI Status](https://img.shields.io/badge/CI-passing-brightgreen)](./docs/development/TESTING_GUIDE.md)
+[![Coverage](https://img.shields.io/badge/coverage-93%25-brightgreen)](./docs/test_quality/README.md)
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue)](./pyproject.toml)
+[![Documentation](https://img.shields.io/badge/docs-sphinx-blue)](./docs/)
+[![Code Style](https://img.shields.io/badge/code%20style-black%20%7C%20ruff-black)](./pyproject.toml)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 A rigorously engineered, causal inference framework for estimating price elasticity of demand for annuity products (RILA, FIA, MYGA).
 

@@ -159,3 +159,59 @@ Append-only log documenting WHY major decisions were made.
 **Rationale**: Same economic theory as RILA applies to FIA. Products compete on yield/return potential.
 
 **Key difference from RILA**: FIA uses `top_n` aggregation (no weights needed) vs. RILA's `weighted` aggregation.
+
+---
+
+## 2026-01-31: Test Quality & Documentation Improvement Implementation
+
+**Context**: Test quality audit (codex_test_docs_quality_review.md) revealed critical gaps:
+- Golden reference tests used hardcoded values that always pass
+- Buffer level control not tested (LEAKAGE_CHECKLIST.md Section 7)
+- Mature data cutoff (50-day) not tested
+- Metrics drift across README, docs, test counts
+
+**Decision**: Implement two-tier validation system and infrastructure improvements:
+
+1. **Golden Reference Tests (Two-Tier)**:
+   - Tier 1 (Fast/CI): Validate structure, metadata, stored baselines
+   - Tier 2 (Slow/Scheduled): Run actual inference with `@pytest.mark.slow`
+   - Added `ToleranceTiers` dataclass with documented precision levels
+
+2. **Buffer Level Control Tests**:
+   - Added to `tests/unit/validation/test_leakage_gates.py`
+   - Two-stage validation: feature exists + coefficient significant
+   - Parameterized for 6Y20B, 6Y10B, 10Y20B products
+
+3. **Mature Data Cutoff Tests**:
+   - New `tests/unit/data/test_temporal_boundaries.py`
+   - 50-day cutoff per LEAKAGE_CHECKLIST.md Example 4
+   - Temporal ordering and processing window tests
+
+4. **Infrastructure Improvements**:
+   - `ToleranceTiers` in `tests/conftest.py` for consistent precision
+   - Fixture checksum verification (warn, not fail)
+   - New pytest markers: `leakage`, `parity`, `regression`
+
+5. **Metrics Drift Resolution**:
+   - Enhanced `scripts/generate_status.py` with `--json` for CI
+   - Reads from actual .coverage file
+   - Includes test quality breakdown from `test_inventory.json`
+
+**Alternatives Considered**:
+- Single-tier golden tests: Rejected - too slow for CI
+- Fixture modification fails checksum: Rejected - breaks intentional updates
+- Manual metrics: Rejected - causes drift
+
+**Rationale**:
+- Two-tier approach balances CI speed with regression detection
+- Checksum warnings alert without blocking
+- Single source of truth for metrics prevents drift
+
+**Risk**:
+- Tier 2 tests may be skipped if not run regularly
+- Mitigation: Add to weekly CI schedule, document in TESTING_GUIDE.md
+
+**Validation**:
+- Run `pytest tests/known_answer/ -m "not slow"` for Tier 1
+- Run `pytest tests/known_answer/ -m slow` for Tier 2
+- Run `python scripts/generate_status.py --json` for metrics

@@ -2,11 +2,12 @@
 Leakage Detection Gates for Annuity Price Elasticity.
 
 Implements automated validation gates to detect data leakage:
-1. Shuffled target test - Model should fail on shuffled y
+1. Lag-0 detection - Forbidden concurrent competitor features
 2. R-squared threshold - Suspiciously high R-squared indicates leakage
 3. Improvement threshold - Large improvements suggest leakage
-4. Lag-0 detection - Forbidden concurrent competitor features
-5. Temporal boundary check - No future data in features
+4. Temporal boundary check - No future data in features
+5. Shuffled target test - Model should fail on shuffled y
+6. Coefficient sign validation - Economic constraints (own-rate positive, competitors negative)
 
 Usage:
     from src.validation.leakage_gates import (
@@ -15,10 +16,11 @@ Usage:
         check_r_squared_threshold,
         check_improvement_threshold,
         detect_lag0_features,
+        check_coefficient_signs,
     )
 
     # Run all gates
-    report = run_all_gates(model, X, y, baseline_r2=0.15)
+    report = run_all_gates(model, X, y, baseline_r2=0.15, coefficients={"own_rate": 0.5})
 
     # Individual gates
     passed = run_shuffled_target_test(model, X, y)
@@ -28,10 +30,12 @@ import logging
 import re
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import pandas as pd
+
+from src.validation.coefficient_patterns import validate_all_coefficients
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +43,7 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # ENUMS AND DATA CLASSES
 # =============================================================================
+
 
 class GateStatus(Enum):
     """Validation gate status."""
@@ -55,9 +60,9 @@ class GateResult:
     gate_name: str
     status: GateStatus
     message: str
-    metric_value: Optional[float] = None
-    threshold: Optional[float] = None
-    details: Dict[str, Any] = field(default_factory=dict)
+    metric_value: float | None = None
+    threshold: float | None = None
+    details: dict[str, Any] = field(default_factory=dict)
 
     def __str__(self) -> str:
         status_symbol = {"PASS": "[PASS]", "WARN": "[WARN]", "HALT": "[HALT]"}[self.status.value]
@@ -68,7 +73,7 @@ class GateResult:
 class LeakageReport:
     """Complete leakage validation report."""
 
-    gates: List[GateResult] = field(default_factory=list)
+    gates: list[GateResult] = field(default_factory=list)
     timestamp: str = ""
     model_name: str = ""
     dataset_name: str = ""
@@ -126,6 +131,7 @@ SHUFFLED_TARGET_THRESHOLD = 0.10  # Model should have R2 < this on shuffled y
 # INDIVIDUAL GATES
 # =============================================================================
 
+
 def run_shuffled_target_test(
     model: Any,
     X: pd.DataFrame,
@@ -164,7 +170,9 @@ def run_shuffled_target_test(
 
         # Fit and score on shuffled
         try:
-            model_copy = model.__class__(**model.get_params()) if hasattr(model, "get_params") else model
+            model_copy = (
+                model.__class__(**model.get_params()) if hasattr(model, "get_params") else model
+            )
             model_copy.fit(X, y_shuffled)
             score = model_copy.score(X, y_shuffled)
             shuffled_scores.append(score)
@@ -325,8 +333,8 @@ def check_improvement_threshold(
 
 
 def detect_lag0_features(
-    feature_names: List[str],
-    lag0_patterns: Optional[List[str]] = None,
+    feature_names: list[str],
+    lag0_patterns: list[str] | None = None,
 ) -> GateResult:
     """
     Detect forbidden lag-0 competitor features.
@@ -414,19 +422,96 @@ def check_temporal_boundary(
     )
 
 
+def check_coefficient_signs(
+    coefficients: dict[str, float],
+    product_type: str = "RILA",
+    halt_on_violation: bool = True,
+) -> GateResult:
+    """
+    Validate coefficient signs match economic constraints.
+
+    Own-rate features should be POSITIVE (higher rates attract customers).
+    Competitor features should be NEGATIVE (substitution effect).
+
+    Parameters
+    ----------
+    coefficients : Dict[str, float]
+        Feature name to coefficient value mapping
+    product_type : str
+        Product type for context (RILA, FIA, MYGA)
+    halt_on_violation : bool
+        If True, HALT on violations; if False, WARN only
+
+    Returns
+    -------
+    GateResult
+        Validation result with details on violations
+    """
+    if not coefficients:
+        return GateResult(
+            gate_name="Coefficient Sign Validation",
+            status=GateStatus.WARN,
+            message="No coefficients provided for sign validation",
+        )
+
+    results = validate_all_coefficients(coefficients, product_type)
+
+    violated = results["violated"]
+    warnings = results["warnings"]
+    passed = results["passed"]
+
+    if violated:
+        violation_details = [
+            f"{v['feature']}: {v['coefficient']:.4f} ({v['reason']})" for v in violated
+        ]
+        status = GateStatus.HALT if halt_on_violation else GateStatus.WARN
+        return GateResult(
+            gate_name="Coefficient Sign Validation",
+            status=status,
+            message=f"{len(violated)} coefficient sign violation(s): {', '.join(v['feature'] for v in violated)}",
+            details={
+                "violations": violated,
+                "violation_details": violation_details,
+                "warnings": warnings,
+                "passed": len(passed),
+            },
+        )
+
+    if warnings:
+        return GateResult(
+            gate_name="Coefficient Sign Validation",
+            status=GateStatus.PASS,
+            message=f"All constrained coefficients valid ({len(warnings)} context-dependent)",
+            details={
+                "warnings": warnings,
+                "passed": len(passed),
+            },
+        )
+
+    return GateResult(
+        gate_name="Coefficient Sign Validation",
+        status=GateStatus.PASS,
+        message=f"All {len(passed)} constrained coefficients have correct signs",
+        details={"passed": len(passed)},
+    )
+
+
 # =============================================================================
 # COMBINED GATES
 # =============================================================================
+
 
 def run_all_gates(
     model: Any = None,
     X: pd.DataFrame = None,
     y: pd.Series = None,
-    r_squared: Optional[float] = None,
-    baseline_r_squared: Optional[float] = None,
-    feature_names: Optional[List[str]] = None,
-    train_dates: Optional[pd.Series] = None,
-    test_dates: Optional[pd.Series] = None,
+    r_squared: float | None = None,
+    baseline_r_squared: float | None = None,
+    feature_names: list[str] | None = None,
+    train_dates: pd.Series | None = None,
+    test_dates: pd.Series | None = None,
+    coefficients: dict[str, float] | None = None,
+    product_type: str = "RILA",
     model_name: str = "",
     dataset_name: str = "",
 ) -> LeakageReport:
@@ -451,6 +536,10 @@ def run_all_gates(
         Training set dates (optional)
     test_dates : pd.Series
         Test set dates (optional)
+    coefficients : Dict[str, float]
+        Feature name to coefficient mapping (optional, needed for sign validation)
+    product_type : str
+        Product type for coefficient sign validation (RILA, FIA, MYGA)
     model_name : str
         Name for reporting
     dataset_name : str
@@ -483,17 +572,23 @@ def run_all_gates(
 
     # Gate 3: Improvement threshold
     if r_squared is not None and baseline_r_squared is not None:
-        report.gates.append(check_improvement_threshold(
-            baseline_metric=baseline_r_squared,
-            new_metric=r_squared,
-        ))
+        report.gates.append(
+            check_improvement_threshold(
+                baseline_metric=baseline_r_squared,
+                new_metric=r_squared,
+            )
+        )
 
     # Gate 4: Temporal boundary
     if train_dates is not None and test_dates is not None:
         report.gates.append(check_temporal_boundary(train_dates, test_dates))
 
-    # Gate 5: Shuffled target test (expensive, run last)
+    # Gate 5: Shuffled target test (expensive, run last among model tests)
     if model is not None and X is not None and y is not None:
         report.gates.append(run_shuffled_target_test(model, X, y))
+
+    # Gate 6: Coefficient sign validation (economic constraints)
+    if coefficients is not None:
+        report.gates.append(check_coefficient_signs(coefficients, product_type))
 
     return report

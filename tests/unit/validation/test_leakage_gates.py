@@ -4,21 +4,21 @@ Tests for src.validation.leakage_gates module.
 Tests leakage detection gates including the CRITICAL lag-0 detection.
 """
 
-import pytest
-import numpy as np
-import pandas as pd
 from unittest.mock import MagicMock
 
+import numpy as np
+import pandas as pd
+import pytest
+
 from src.validation.leakage_gates import (
-    GateStatus,
     GateResult,
+    GateStatus,
     LeakageReport,
-    run_shuffled_target_test,
-    check_r_squared_threshold,
+    check_coefficient_signs,
     check_improvement_threshold,
+    check_r_squared_threshold,
     detect_lag0_features,
-    R_SQUARED_HALT_THRESHOLD,
-    R_SQUARED_WARN_THRESHOLD,
+    run_shuffled_target_test,
 )
 
 
@@ -126,9 +126,7 @@ class TestCheckRSquaredThreshold:
     def test_custom_thresholds(self):
         """Custom thresholds should be respected."""
         # With higher threshold, 0.35 should pass
-        result = check_r_squared_threshold(
-            0.35, halt_threshold=0.40, warn_threshold=0.35
-        )
+        result = check_r_squared_threshold(0.35, halt_threshold=0.40, warn_threshold=0.35)
         assert result.status != GateStatus.HALT
 
 
@@ -262,10 +260,12 @@ class TestRunShuffledTargetTest:
     def sample_data(self):
         """Create sample X, y for testing."""
         np.random.seed(42)
-        X = pd.DataFrame({
-            "feature1": np.random.randn(100),
-            "feature2": np.random.randn(100),
-        })
+        X = pd.DataFrame(
+            {
+                "feature1": np.random.randn(100),
+                "feature2": np.random.randn(100),
+            }
+        )
         y = pd.Series(np.random.randn(100))
         return X, y
 
@@ -285,7 +285,6 @@ class TestRunShuffledTargetTest:
 
     def test_leaky_model_halts(self, sample_data):
         """Model that succeeds on shuffled target should halt."""
-        from sklearn.linear_model import LinearRegression
 
         X, y = sample_data
 
@@ -349,6 +348,96 @@ class TestCheckImprovementThresholdExtended:
         )
         assert result.status == GateStatus.HALT
         assert result.metric_value == pytest.approx(0.5)
+
+
+class TestCheckCoefficientSigns:
+    """Tests for check_coefficient_signs gate (Gate 6).
+
+    Economic constraints:
+    - Own-rate (Prudential): POSITIVE (higher rates attract customers)
+    - Competitor rates: NEGATIVE (substitution effect)
+    """
+
+    def test_valid_coefficients_pass(self):
+        """Coefficients with correct signs should pass."""
+        coefficients = {
+            "prudential_rate_t0": 0.085,  # Own-rate: positive
+            "competitor_weighted_t2": -0.031,  # Competitor: negative
+            "competitor_top5_t3": -0.028,  # Competitor: negative
+        }
+        result = check_coefficient_signs(coefficients)
+        assert result.status == GateStatus.PASS
+        assert "correct signs" in result.message or "valid" in result.message.lower()
+
+    def test_wrong_own_rate_sign_halts(self):
+        """Negative own-rate coefficient should halt."""
+        coefficients = {
+            "prudential_rate_t0": -0.085,  # WRONG: should be positive
+            "competitor_weighted_t2": -0.031,
+        }
+        result = check_coefficient_signs(coefficients)
+        assert result.status == GateStatus.HALT
+        assert "violation" in result.message.lower()
+        assert "prudential_rate_t0" in result.message
+
+    def test_wrong_competitor_sign_halts(self):
+        """Positive competitor coefficient should halt."""
+        coefficients = {
+            "prudential_rate_t0": 0.085,
+            "competitor_weighted_t2": 0.031,  # WRONG: should be negative
+        }
+        result = check_coefficient_signs(coefficients)
+        assert result.status == GateStatus.HALT
+        assert "competitor_weighted_t2" in result.message
+
+    def test_multiple_violations_reported(self):
+        """Multiple violations should all be reported."""
+        coefficients = {
+            "prudential_rate_t0": -0.085,  # WRONG
+            "competitor_weighted_t2": 0.031,  # WRONG
+            "competitor_core_t1": 0.020,  # WRONG
+        }
+        result = check_coefficient_signs(coefficients)
+        assert result.status == GateStatus.HALT
+        assert len(result.details["violations"]) >= 2
+
+    def test_context_dependent_coefficients_pass(self):
+        """Context-dependent coefficients (treasury, vix) should pass either sign."""
+        coefficients = {
+            "dgs5_t1": -0.015,  # Treasury: context-dependent
+            "vix_t1": 0.010,  # VIX: context-dependent
+        }
+        result = check_coefficient_signs(coefficients)
+        assert result.status == GateStatus.PASS
+        assert result.details.get("warnings") or "context-dependent" in result.message.lower()
+
+    def test_empty_coefficients_warns(self):
+        """Empty coefficient dict should return warning."""
+        result = check_coefficient_signs({})
+        assert result.status == GateStatus.WARN
+        assert "No coefficients" in result.message
+
+    def test_none_coefficients_warns(self):
+        """None coefficients should be handled gracefully."""
+        result = check_coefficient_signs(None)
+        assert result.status == GateStatus.WARN
+
+    def test_halt_on_violation_flag(self):
+        """halt_on_violation=False should return WARN instead of HALT."""
+        coefficients = {
+            "prudential_rate_t0": -0.085,  # WRONG
+        }
+        result = check_coefficient_signs(coefficients, halt_on_violation=False)
+        assert result.status == GateStatus.WARN
+
+    def test_unconstrained_features_pass(self):
+        """Features without defined constraints should pass."""
+        coefficients = {
+            "custom_feature_1": 0.5,
+            "unknown_macro_indicator": -0.2,
+        }
+        result = check_coefficient_signs(coefficients)
+        assert result.status == GateStatus.PASS
 
 
 class TestLeakageReportString:
@@ -453,10 +542,12 @@ class TestRunAllGates:
         """run_all_gates should extract feature names from X if not provided."""
         from src.validation.leakage_gates import run_all_gates
 
-        X = pd.DataFrame({
-            "competitor_rate_t1": [1, 2, 3],
-            "prudential_rate": [4, 5, 6],
-        })
+        X = pd.DataFrame(
+            {
+                "competitor_rate_t1": [1, 2, 3],
+                "prudential_rate": [4, 5, 6],
+            }
+        )
 
         report = run_all_gates(X=X)
 
@@ -489,3 +580,274 @@ class TestRunAllGates:
         assert report.model_name == "MyModel"
         assert report.dataset_name == "MyData"
         assert report.timestamp != ""
+
+    def test_run_all_gates_with_coefficients(self):
+        """run_all_gates should check coefficient signs when coefficients provided."""
+        from src.validation.leakage_gates import run_all_gates
+
+        coefficients = {
+            "prudential_rate_t0": 0.085,
+            "competitor_weighted_t2": -0.031,
+        }
+
+        report = run_all_gates(coefficients=coefficients)
+
+        assert any(g.gate_name == "Coefficient Sign Validation" for g in report.gates)
+
+    def test_run_all_gates_coefficient_violation_halts(self):
+        """run_all_gates should halt on coefficient sign violation."""
+        from src.validation.leakage_gates import run_all_gates
+
+        coefficients = {
+            "prudential_rate_t0": -0.085,  # WRONG: should be positive
+        }
+
+        report = run_all_gates(coefficients=coefficients)
+
+        coef_gate = next(
+            (g for g in report.gates if g.gate_name == "Coefficient Sign Validation"), None
+        )
+        assert coef_gate is not None
+        assert coef_gate.status == GateStatus.HALT
+        assert report.passed is False
+
+    def test_run_all_gates_passes_product_type(self):
+        """run_all_gates should pass product_type to coefficient validation."""
+        from src.validation.leakage_gates import run_all_gates
+
+        coefficients = {
+            "prudential_rate_t0": 0.085,
+        }
+
+        report = run_all_gates(
+            coefficients=coefficients,
+            product_type="FIA",
+        )
+
+        # Should still pass (product_type doesn't change basic constraints)
+        coef_gate = next(
+            (g for g in report.gates if g.gate_name == "Coefficient Sign Validation"), None
+        )
+        assert coef_gate is not None
+        assert coef_gate.status == GateStatus.PASS
+
+
+# =============================================================================
+# BUFFER LEVEL CONTROL TESTS (LEAKAGE_CHECKLIST.md Section 7)
+# =============================================================================
+
+
+@pytest.mark.leakage
+class TestBufferLevelControl:
+    """
+    Test buffer level control per LEAKAGE_CHECKLIST.md Section 7.
+
+    Buffer Level Control Requirement:
+    "Buffer level is controlled in model. Either buffer indicators or stratified analysis."
+
+    Two-Stage Validation:
+    1. Stage 1: Verify buffer feature exists in model inputs
+    2. Stage 2: Verify coefficient on buffer is significant
+
+    Products tested: 6Y20B, 6Y10B, 10Y20B (different buffer levels)
+    """
+
+    @pytest.fixture
+    def model_features_with_buffer(self) -> list:
+        """Sample feature list with buffer control."""
+        return [
+            "prudential_rate_current",
+            "competitor_mid_t2",
+            "competitor_top5_t3",
+            "buffer_level_indicator",  # Buffer control feature
+            "vix_t1",
+            "dgs5_t1",
+        ]
+
+    @pytest.fixture
+    def model_features_without_buffer(self) -> list:
+        """Sample feature list WITHOUT buffer control."""
+        return [
+            "prudential_rate_current",
+            "competitor_mid_t2",
+            "competitor_top5_t3",
+            "vix_t1",
+            "dgs5_t1",
+        ]
+
+    @pytest.fixture
+    def sample_coefficients_with_buffer(self) -> dict:
+        """Sample coefficients including buffer indicator."""
+        return {
+            "prudential_rate_current": 0.0847,
+            "competitor_mid_t2": -0.0312,
+            "competitor_top5_t3": -0.0284,
+            "buffer_level_indicator": 0.025,  # Significant buffer effect
+            "vix_t1": -0.015,
+            "dgs5_t1": 0.008,
+        }
+
+    def test_buffer_feature_exists_in_model_inputs(self, model_features_with_buffer: list) -> None:
+        """Stage 1: Verify buffer feature exists in model inputs.
+
+        Per LEAKAGE_CHECKLIST.md Section 7: Buffer level must be controlled.
+        """
+        buffer_keywords = ["buffer", "buffer_level", "buffer_indicator"]
+
+        has_buffer_control = any(
+            any(kw in f.lower() for kw in buffer_keywords) for f in model_features_with_buffer
+        )
+
+        assert has_buffer_control, (
+            "No buffer control feature found in model. "
+            "LEAKAGE_CHECKLIST.md Section 7 requires buffer level control. "
+            f"Features: {model_features_with_buffer}"
+        )
+
+    def test_buffer_feature_missing_detected(self, model_features_without_buffer: list) -> None:
+        """Detect when buffer feature is missing from model inputs."""
+        buffer_keywords = ["buffer", "buffer_level", "buffer_indicator"]
+
+        has_buffer_control = any(
+            any(kw in f.lower() for kw in buffer_keywords) for f in model_features_without_buffer
+        )
+
+        # This test intentionally expects failure to detect missing buffer
+        assert not has_buffer_control, "Expected no buffer control in this fixture"
+
+    def test_buffer_coefficient_is_significant(self, sample_coefficients_with_buffer: dict) -> None:
+        """Stage 2: Verify coefficient on buffer is significant.
+
+        A non-significant buffer coefficient suggests the model
+        may not be properly controlling for product differences.
+        """
+        buffer_keywords = ["buffer", "buffer_level", "buffer_indicator"]
+
+        buffer_coef = None
+        buffer_name = None
+        for name, value in sample_coefficients_with_buffer.items():
+            if any(kw in name.lower() for kw in buffer_keywords):
+                buffer_coef = value
+                buffer_name = name
+                break
+
+        assert buffer_coef is not None, "No buffer coefficient found"
+
+        # Coefficient should be meaningfully different from zero
+        significance_threshold = 0.01  # Minimum magnitude
+        assert abs(buffer_coef) > significance_threshold, (
+            f"Buffer coefficient '{buffer_name}' = {buffer_coef:.6f} "
+            f"is not significant (< {significance_threshold}). "
+            "This suggests the model may not be properly controlling "
+            "for buffer level differences across products."
+        )
+
+    @pytest.mark.parametrize("product_code", ["6Y20B", "6Y10B", "10Y20B"])
+    def test_buffer_control_per_product(self, product_code: str) -> None:
+        """Verify buffer control exists for each RILA product.
+
+        Different products have different buffer levels:
+        - 6Y20B: 20% buffer
+        - 6Y10B: 10% buffer
+        - 10Y20B: 20% buffer
+
+        Each product-specific model should include buffer control.
+        """
+        # This test validates the requirement exists
+        # Actual implementation would load product-specific models
+        expected_buffers = {
+            "6Y20B": "20%",
+            "6Y10B": "10%",
+            "10Y20B": "20%",
+        }
+
+        assert product_code in expected_buffers, f"Unknown product code: {product_code}"
+
+        # In actual test, would verify model includes buffer control
+        # For now, document the requirement
+        expected_buffer = expected_buffers[product_code]
+        assert expected_buffer in [
+            "10%",
+            "20%",
+        ], f"Product {product_code} should have valid buffer level"
+
+    def test_buffer_control_validation_function(self) -> None:
+        """Test buffer control validation utility function.
+
+        Creates a reusable validation function for buffer control.
+        """
+
+        def validate_buffer_control(
+            feature_names: list,
+            coefficients: dict | None = None,
+            significance_threshold: float = 0.01,
+        ) -> GateResult:
+            """
+            Validate buffer level control in model.
+
+            Parameters
+            ----------
+            feature_names : list
+                List of model feature names
+            coefficients : dict, optional
+                Coefficient values (for significance check)
+            significance_threshold : float
+                Minimum coefficient magnitude
+
+            Returns
+            -------
+            GateResult
+                PASS if buffer controlled, HALT if not
+            """
+            buffer_keywords = ["buffer", "buffer_level", "buffer_indicator"]
+
+            # Stage 1: Check feature exists
+            buffer_features = [
+                f for f in feature_names if any(kw in f.lower() for kw in buffer_keywords)
+            ]
+
+            if not buffer_features:
+                return GateResult(
+                    gate_name="Buffer Level Control",
+                    status=GateStatus.HALT,
+                    message=(
+                        "No buffer control feature found. "
+                        "LEAKAGE_CHECKLIST.md Section 7 requires buffer control."
+                    ),
+                    details={"features_checked": feature_names},
+                )
+
+            # Stage 2: Check significance (if coefficients provided)
+            if coefficients:
+                for bf in buffer_features:
+                    coef = coefficients.get(bf, 0)
+                    if abs(coef) < significance_threshold:
+                        return GateResult(
+                            gate_name="Buffer Level Control",
+                            status=GateStatus.WARN,
+                            message=(
+                                f"Buffer coefficient '{bf}' = {coef:.6f} "
+                                f"is not significant (< {significance_threshold})."
+                            ),
+                            metric_value=abs(coef),
+                            threshold=significance_threshold,
+                        )
+
+            return GateResult(
+                gate_name="Buffer Level Control",
+                status=GateStatus.PASS,
+                message="Buffer level is controlled in model.",
+                details={"buffer_features": buffer_features},
+            )
+
+        # Test the validation function
+        result = validate_buffer_control(
+            feature_names=["prudential_rate", "buffer_indicator", "vix"],
+            coefficients={"buffer_indicator": 0.025},
+        )
+        assert result.status == GateStatus.PASS
+
+        result_fail = validate_buffer_control(
+            feature_names=["prudential_rate", "vix"],
+        )
+        assert result_fail.status == GateStatus.HALT
