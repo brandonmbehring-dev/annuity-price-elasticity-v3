@@ -11,24 +11,54 @@ in annuity products (RILA, FIA, MYGA).
    :caption: Getting Started
 
    README
+   onboarding/GETTING_STARTED
+   onboarding/FIRST_MODEL_GUIDE
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Analysis
+
+   analysis/CAUSAL_FRAMEWORK
+   analysis/FEATURE_INTERPRETATION
+   analysis/MODEL_INTERPRETATION
 
 .. toctree::
    :maxdepth: 2
    :caption: Development Guides
 
-   development/TESTING_STRATEGY
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Validation
-
-   validation/VALIDATION_EVIDENCE
+   development/TESTING_GUIDE
+   development/CODING_STANDARDS
+   guides/TROUBLESHOOTING
 
 .. toctree::
    :maxdepth: 2
    :caption: Best Practices
 
-   guides/COMMON_PITFALLS
+   practices/LEAKAGE_CHECKLIST
+   practices/ANTI_PATTERNS
+   integration/LESSONS_LEARNED
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Bug Postmortems
+
+   knowledge/episodes/episode_01_lag0_competitor_rates
+   knowledge/episodes/episode_02_aggregation_lookahead
+   knowledge/episodes/episode_03_feature_selection_bias
+   knowledge/episodes/episode_04_product_mix_confounding
+   knowledge/episodes/episode_05_market_weight_leakage
+   knowledge/episodes/episode_06_temporal_cv_violation
+   knowledge/episodes/episode_07_scaling_leakage
+   knowledge/episodes/episode_08_holiday_lookahead
+   knowledge/episodes/episode_09_macro_lookahead
+   knowledge/episodes/episode_10_own_rate_endogeneity
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Domain Knowledge
+
+   domain-knowledge/RILA_ECONOMICS
+   domain-knowledge/GLOSSARY
 
 .. toctree::
    :maxdepth: 2
@@ -46,9 +76,9 @@ Indices and tables
 Quick Links
 ===========
 
-* :doc:`development/TESTING_STRATEGY` - 6-layer validation architecture
-* :doc:`validation/VALIDATION_EVIDENCE` - Proof that models are valid
-* :doc:`guides/COMMON_PITFALLS` - Avoid data leakage bugs
+* :doc:`analysis/FEATURE_INTERPRETATION` - Feature coefficient meanings
+* :doc:`practices/LEAKAGE_CHECKLIST` - Pre-deployment gate
+* :doc:`guides/TROUBLESHOOTING` - Pain-point organized debugging
 
 Key Features
 ============
@@ -65,14 +95,19 @@ Key Features
    Comprehensive testing from unit tests to end-to-end validation
    with automated leakage detection.
 
-**Leakage Gates**
-   Automated detection of data leakage bugs including lag-0 features,
-   temporal boundary violations, and scaling leakage.
+**Known-Answer Tests**
+   Validation against LIMRA 2023 literature bounds and golden reference
+   values for regression detection.
+
+**10 Bug Postmortems**
+   Complete audit trail of data leakage categories with symptoms,
+   root causes, and prevention gates.
 
 Project Statistics
 ==================
 
-* **Tests**: 6,126+
+* **Tests**: 6,200+
 * **Coverage**: 70%+
 * **Products**: 3 (RILA, FIA, MYGA)
-* **Documentation**: 96+ files
+* **Documentation**: 111+ files
+* **Bug Episodes**: 10
