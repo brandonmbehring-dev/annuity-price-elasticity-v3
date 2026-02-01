@@ -2,7 +2,7 @@
 
 **Master navigation for the V3 Annuity Price Elasticity repository.**
 
-**Last Updated:** 2026-01-30
+**Last Updated:** 2026-01-31
 
 ---
 
@@ -77,6 +77,7 @@ Causal framework and feature analysis.
 | [CAUSAL_FRAMEWORK.md](analysis/CAUSAL_FRAMEWORK.md) | Econometric theory and identification |
 | [FEATURE_RATIONALE.md](analysis/FEATURE_RATIONALE.md) | Why each feature is included |
 | [MODEL_INTERPRETATION.md](analysis/MODEL_INTERPRETATION.md) | Coefficient interpretation |
+| [FEATURE_INTERPRETATION.md](analysis/FEATURE_INTERPRETATION.md) | **NEW** Feature coefficient guide |
 
 ### api/
 API and interface documentation.
@@ -208,12 +209,61 @@ Research and technical deep-dives.
 
 ---
 
+### guides/
+User guides and troubleshooting.
+
+| File | Purpose |
+|------|---------|
+| [TROUBLESHOOTING.md](guides/TROUBLESHOOTING.md) | **NEW** Pain-point organized troubleshooting |
+
+### knowledge/episodes/
+Bug postmortems (10 episodes documenting major issues).
+
+| Episode | Topic |
+|---------|-------|
+| [episode_01](knowledge/episodes/episode_01_lag0_competitor_rates.md) | Lag-0 Competitor Rates |
+| [episode_02](knowledge/episodes/episode_02_aggregation_lookahead.md) | Aggregation Lookahead |
+| [episode_03](knowledge/episodes/episode_03_feature_selection_bias.md) | Feature Selection Bias |
+| [episode_04](knowledge/episodes/episode_04_product_mix_confounding.md) | Product Mix Confounding |
+| [episode_05](knowledge/episodes/episode_05_market_weight_leakage.md) | Market Weight Leakage |
+| [episode_06](knowledge/episodes/episode_06_temporal_cv_violation.md) | Temporal CV Violation |
+| [episode_07](knowledge/episodes/episode_07_scaling_leakage.md) | Scaling Leakage |
+| [episode_08](knowledge/episodes/episode_08_holiday_lookahead.md) | Holiday Lookahead |
+| [episode_09](knowledge/episodes/episode_09_macro_lookahead.md) | Macro Data Lookahead |
+| [episode_10](knowledge/episodes/episode_10_own_rate_endogeneity.md) | Own Rate Endogeneity |
+
+---
+
+## Testing Reference
+
+### tests/known_answer/
+Known-answer tests validating against literature and golden values.
+
+| File | Purpose |
+|------|---------|
+| `test_elasticity_bounds.py` | Literature-based coefficient ranges |
+| `test_coefficient_signs.py` | Economic sign constraints |
+| `test_golden_reference.py` | Regression detection |
+| `test_r_squared_calibration.py` | Performance bounds |
+| `golden_reference.json` | Frozen baseline values |
+
+### tests/validation/
+Monte Carlo and adversarial tests.
+
+| Subdirectory | Purpose |
+|--------------|---------|
+| `monte_carlo/` | Bootstrap coverage, sign stability |
+| `adversarial/` | Extreme rates, edge cases |
+
+---
+
 ## Cross-References
 
 - **Project root**: [../README.md](../README.md)
 - **Quick start**: [../QUICK_START.md](../QUICK_START.md)
 - **CLAUDE.md**: [../CLAUDE.md](../CLAUDE.md)
 - **Contributing**: [../CONTRIBUTING.md](../CONTRIBUTING.md)
+- **Hub Relationship**: [../.claude/HUB_RELATIONSHIP.md](../.claude/HUB_RELATIONSHIP.md) **NEW**
 
 ---
 

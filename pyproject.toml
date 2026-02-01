@@ -104,6 +104,9 @@ markers = [
     "leakage: marks leakage detection tests",
     "performance: marks performance baseline tests (timing)",
     "memory: marks memory baseline tests",
+    "known_answer: marks known-answer tests validating against literature/golden values",
+    "monte_carlo: marks Monte Carlo simulation tests",
+    "adversarial: marks adversarial/edge case stress tests",
 ]
 
 [tool.coverage.run]

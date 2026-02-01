@@ -4,17 +4,42 @@ FIA Product Methodology Implementation.
 Defines economic constraint rules and coefficient expectations for
 Fixed Index Annuity (FIA) products.
 
-FIA products share similar yield-based dynamics with RILA, but
-with some differences in competitive structure and rate interpretation.
+Knowledge Tier Tags
+-------------------
+[T1] = Academically validated (microeconomic theory)
+[T2] = Empirical finding from production models
+[T3] = Assumption needing domain justification
+
+Key Differences from RILA [T2]
+------------------------------
+1. No buffer level (FIA has floors, not buffers) [T1: Product structure]
+2. Different competitive landscape (more carriers) [T2: Market observation]
+3. Top-N aggregation typically preferred over weighted [T3: May vary]
+
+Price Elasticity Specification [T2]
+-----------------------------------
+Own rate coefficient: Expected positive (higher rates attract) [T1]
+  - FIA participation rates drive attractiveness
+
+Competitor rate coefficient: Expected negative (substitution) [T1]
+  - Top-N aggregation captures best alternatives
+
+Aggregation Strategy [T3]
+-------------------------
+Top-N competitor aggregation (default N=5). [T3: May vary by market]
+Rationale: FIA market has many carriers; top alternatives most relevant.
 
 Usage:
     from src.products.fia_methodology import FIAMethodology
 
     methodology = FIAMethodology()
     rules = methodology.get_constraint_rules()
+
+References:
+    - knowledge/domain/FIA_FEATURE_MAPPING.md - Feature inventory
+    - knowledge/practices/LEAKAGE_CHECKLIST.md - Validation requirements
 """
 
-from typing import List, Dict
 from src.products.base import ConstraintRule
 
 
@@ -24,15 +49,27 @@ class FIAMethodology:
     Implements economic constraint rules for FIA price elasticity modeling.
     Similar to RILA but adapted for FIA product characteristics.
 
-    Key Differences from RILA:
-        1. No buffer level (FIA has floors, not buffers)
-        2. Different competitive landscape (more carriers)
-        3. Top-N aggregation typically preferred over weighted
+    Key Differences from RILA [T2]
+    ------------------------------
+    1. No buffer level (FIA has floors, not buffers) [T1: Product structure]
+    2. Different competitive landscape (more carriers) [T2: Market observation]
+    3. Top-N aggregation typically preferred over weighted [T3]
 
-    Economic Foundation (same as RILA):
-        1. Own rate positive (higher rates attract)
-        2. Competitor rates negative (substitution)
-        3. No lag-0 competitors (causal identification)
+    Economic Foundation [T1]
+    ------------------------
+    1. Own rate positive (higher rates attract) [T1: Microeconomics]
+    2. Competitor rates negative (substitution) [T1: Cross-price elasticity]
+    3. No lag-0 competitors (causal identification) [T1]
+
+    Empirical Status [T2]
+    ---------------------
+    Current Status: Framework ready, data integration pending. [T2]
+    Production validation pending when FIA data available.
+
+    Assumptions [T3]
+    ----------------
+    - Top-N aggregation (N=5) captures relevant competition [T3]
+    - Same sign constraints as RILA apply [T3]
     """
 
     @property
@@ -40,7 +77,7 @@ class FIAMethodology:
         """Return 'fia' product type identifier."""
         return "fia"
 
-    def get_constraint_rules(self) -> List[ConstraintRule]:
+    def get_constraint_rules(self) -> list[ConstraintRule]:
         """Get FIA-specific economic constraint rules.
 
         Returns
@@ -66,8 +103,7 @@ class FIAMethodology:
                 expected_sign="negative",
                 constraint_type="COMPETITOR_NEGATIVE",
                 business_rationale=(
-                    "Higher competitor rates divert sales. "
-                    "FIA market has many substitutes."
+                    "Higher competitor rates divert sales. " "FIA market has many substitutes."
                 ),
                 strict=True,
             ),
@@ -95,7 +131,7 @@ class FIAMethodology:
             ),
         ]
 
-    def get_coefficient_signs(self) -> Dict[str, str]:
+    def get_coefficient_signs(self) -> dict[str, str]:
         """Get expected coefficient signs by feature pattern.
 
         Returns
@@ -122,7 +158,7 @@ class FIAMethodology:
         """
         return False
 
-    def get_competitive_structure(self) -> Dict[str, str]:
+    def get_competitive_structure(self) -> dict[str, str]:
         """Get FIA-specific competitive structure info.
 
         Returns

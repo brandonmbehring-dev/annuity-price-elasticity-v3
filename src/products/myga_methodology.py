@@ -4,19 +4,44 @@ MYGA Product Methodology Implementation (Stub).
 Defines economic constraint rules and coefficient expectations for
 Multi-Year Guaranteed Annuity (MYGA) products.
 
-MYGA products have different dynamics than RILA/FIA:
-- Fixed guaranteed rates, not index-linked
-- More sensitive to interest rate environment changes
-- May need regime detection for rate environment shifts
+Knowledge Tier Tags
+-------------------
+[T1] = Academically validated (microeconomic theory)
+[T2] = Empirical finding from production models
+[T3] = Assumption needing domain justification
+
+Key Differences from RILA/FIA [T1]
+----------------------------------
+- Fixed guaranteed rates, not index-linked [T1: Product structure]
+- More sensitive to interest rate environment changes [T1: Duration risk]
+- May need regime detection for rate environment shifts [T3]
+
+Price Elasticity Specification [T3]
+-----------------------------------
+Own rate coefficient: Expected positive (higher guaranteed rate attracts) [T1]
+Competitor rate coefficient: Expected negative (substitution) [T1]
+Treasury spread coefficient: Expected positive (MYGA attractive vs risk-free) [T3]
+
+Aggregation Strategy [T3]
+-------------------------
+Firm-level aggregation (each competitor modeled separately). [T3]
+Rationale: MYGA market has fewer dominant players.
+
+Current Status [T2]
+-------------------
+Stub implementation for multi-product extensibility.
+Will be enhanced when MYGA modeling is prioritized.
 
 Usage:
     from src.products.myga_methodology import MYGAMethodology
 
     methodology = MYGAMethodology()
     rules = methodology.get_constraint_rules()
+
+References:
+    - knowledge/practices/LEAKAGE_CHECKLIST.md - Validation requirements
 """
 
-from typing import List, Dict
 from src.products.base import ConstraintRule
 
 
@@ -41,7 +66,7 @@ class MYGAMethodology:
         """Return 'myga' product type identifier."""
         return "myga"
 
-    def get_constraint_rules(self) -> List[ConstraintRule]:
+    def get_constraint_rules(self) -> list[ConstraintRule]:
         """Get MYGA-specific economic constraint rules.
 
         MYGA Economics (Fixed Guaranteed Rates):
@@ -125,7 +150,7 @@ class MYGAMethodology:
             ),
         ]
 
-    def get_coefficient_signs(self) -> Dict[str, str]:
+    def get_coefficient_signs(self) -> dict[str, str]:
         """Get expected coefficient signs by feature pattern.
 
         MYGA products use fixed guaranteed rates, so the economic intuition
@@ -163,7 +188,7 @@ class MYGAMethodology:
         """
         return True
 
-    def get_leakage_patterns(self) -> List[str]:
+    def get_leakage_patterns(self) -> list[str]:
         """Get patterns that indicate potential data leakage.
 
         Returns
@@ -172,10 +197,10 @@ class MYGAMethodology:
             Regex patterns for leakage-prone features
         """
         return [
-            r".*_t0$",           # Lag-0 features
-            r".*_current$",      # Current-period features
-            r".*_forward.*",     # Forward-looking features
-            r".*_future.*",      # Future features
+            r".*_t0$",  # Lag-0 features
+            r".*_current$",  # Current-period features
+            r".*_forward.*",  # Forward-looking features
+            r".*_future.*",  # Future features
         ]
 
 

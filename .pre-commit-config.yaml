@@ -22,7 +22,7 @@ repos:
     hooks:
       - id: black
         args: ['--line-length=100']
-        language_version: python3.12
+        language_version: python3.13
 
   # Python linting
   - repo: https://github.com/astral-sh/ruff-pre-commit
@@ -33,7 +33,7 @@ repos:
 
   # Docstring coverage (start at 60%, ramp to 85%)
   - repo: https://github.com/econchick/interrogate
-    rev: 1.5.0
+    rev: 1.7.0
     hooks:
       - id: interrogate
         args: ['-vv', '--fail-under=60', '--exclude=tests', '--exclude=notebooks']

@@ -1,0 +1,19 @@
+# Documentation build requirements
+# For ReadTheDocs and local Sphinx builds
+
+# Core Sphinx
+sphinx>=7.0.0
+sphinx-rtd-theme>=2.0.0
+
+# Markdown support
+myst-parser>=2.0.0
+
+# Auto-documentation
+sphinx-autodoc-typehints>=1.25.0
+
+# API docs
+autodoc-pydantic>=2.0.0
+
+# Nice additions
+sphinx-copybutton>=0.5.0
+sphinx-design>=0.5.0
